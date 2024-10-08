@@ -953,7 +953,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 	$res = array();
 
 	if( $viewId === null || $viewId === 'cmn' )
-		$res[ 'cmn' ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.6' );
+		$res[ 'cmn' ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.7' );
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
 	{
@@ -1010,6 +1010,19 @@ function CacheVerifyEnvDropin( $sett, $verifyEnvDropin = null )
 
 	$verifyEnvDropin -> needed = str_replace( '.0,', ',', ( string )GetAdvCacheFileContent( $sett ) );
 	$verifyEnvDropin -> actual = str_replace( '.0,', ',', ( string )@file_get_contents( WP_CONTENT_DIR . '/advanced-cache.php' ) );
+
+	if( $verifyEnvDropin -> actual == $verifyEnvDropin -> needed )
+		return( true );
+
+}
+
+function CacheVerifyEnvReRoot( $sett, $verifyEnvDropin = null )
+{
+	if( $verifyEnvDropin === null )
+		$verifyEnvDropin = new AnyObj();
+
+	$verifyEnvDropin -> needed = ( string )PluginRe::GetRootFileContent();
+	$verifyEnvDropin -> actual = ( string )@file_get_contents( PluginRe::GetRootFileName() );
 
 	if( $verifyEnvDropin -> actual == $verifyEnvDropin -> needed )
 		return( true );
@@ -1120,6 +1133,7 @@ function IsWpCacheActive()
 function CacheInitEnv( $sett, $init = true )
 {
 	$cacheEnable = Gen::GetArrField( $sett, 'cache/enable', true, '/' );
+	$reFile = PluginRe::GetRootFileName();
 
 	if( !$cacheEnable || !$init )
 	{
@@ -1141,6 +1155,8 @@ function CacheInitEnv( $sett, $init = true )
 			if( @file_get_contents( $fileConfComprRedir ) !== $confComprRedirBlock )
 				@file_put_contents( $fileConfComprRedir, $confComprRedirBlock );
 		}
+
+		@unlink( $reFile );
 
 		return( Gen::S_OK );
 	}
@@ -1316,6 +1332,16 @@ function CacheInitEnv( $sett, $init = true )
 		if( @file_get_contents( $fileConfComprRedir ) !== $confComprRedirBlock )
 			@file_put_contents( $fileConfComprRedir, $confComprRedirBlock );
 	}
+
+	if( Gen::GetArrField( $sett, 'asyncMode', '', '/' ) === 're_r' )
+	{
+		$reFileCont = PluginRe::GetRootFileContent();
+
+		if( @file_get_contents( $reFile ) !== $reFileCont )
+			@file_put_contents( $reFile, $reFileCont );
+	}
+	else
+		@unlink( $reFile );
 
 	return( $hr );
 }

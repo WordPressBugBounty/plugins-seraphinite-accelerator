@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.6
-Stable tag: 2.22.6
+Stable tag: 2.22.7
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,17 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.22.7 =
+
+Improvements:
+
+* Optimization of 'mask-image' CSS rules.
+* Use internal requests for asynchronous tasks execution: using root site directory.
+
+Fixes:
+
+* CSS parsing: colors like 'rgb' with long floating values parsed incorrectly.
 
 = 2.22.6 =
 

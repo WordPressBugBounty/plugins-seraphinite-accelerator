@@ -74,6 +74,22 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 			unset( $lock );
 			break;
 		}
+
+		if( Gen::GetArrField( $sett, 'asyncMode', '', '/' ) === 're_r' )
+		{
+			$reFile = PluginRe::GetRootFileName();
+			$verifyEnvDropin = new AnyObj();
+			if( !CacheVerifyEnvReRoot( $sett, $verifyEnvDropin ) )
+			{
+				if( !@file_exists( $reFile ) && !@is_writable( dirname( $reFile ) ) )
+					call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDirNotWrittable_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), dirname( $reFile ), Gen::GetFileName( $reFile ) ) ) );
+				else if( !@is_writable( $reFile ) )
+					call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDropinNotWrittable_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), dirname( $reFile ), Gen::GetFileName( $reFile ) ) ) );
+				else
+					call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDropinNotMatch_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), dirname( $reFile ), Gen::GetFileName( $reFile ) ) . ( $ext ? '' : sprintf( Wp::safe_html_x( 'ContentDropinNotMatchEx_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), GetCodeViewHtmlBlock( $verifyEnvDropin -> needed ), GetCodeViewHtmlBlock( $verifyEnvDropin -> actual ) ) ) ) );
+			}
+		}
+
 	}
 
 	if( !isset( $sett[ PluginOptions::VERPREV ] ) && ( (isset($_SERVER[ 'REQUEST_METHOD' ])?$_SERVER[ 'REQUEST_METHOD' ]:null) == 'GET' ) && !CacheVerifyEnvNginxConf( $sett ) )

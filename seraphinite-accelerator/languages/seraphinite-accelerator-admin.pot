@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.22.7)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.22.7\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.22.8)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.22.8\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.22.7)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.22.7\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.22.8)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.22.8\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -2071,6 +2071,11 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "ElmntrWdgtPrmLottChk"
 msgstr ""
 
+# Lottie Widget of Nectar
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "NktrLottChk"
+msgstr ""
+
 # Sticky elements of Elementor
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "ElmntrStckChk"
@@ -2514,6 +2519,10 @@ msgstr ""
 # Player from Presto
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "PrstPlrChk"
+msgstr ""
+
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "GrnshftPbAosOnceAniChk"
 msgstr ""
 
 # Scripts
@@ -3064,11 +3073,12 @@ msgctxt "admin.Settings_Advanced_AsyncMode"
 msgid "Local"
 msgstr ""
 
+# internal root
 msgctxt "admin.Settings_Advanced_AsyncMode"
 msgid "ReRoot"
 msgstr ""
 
-# internal (beta)
+# internal
 msgctxt "admin.Settings_Advanced_AsyncMode"
 msgid "Re"
 msgstr ""
@@ -3183,7 +3193,7 @@ msgctxt "admin.Notice"
 msgid "CacheDirNotWrittable_%1$s"
 msgstr ""
 
-# The '%1$s' folder is not writable. It\\s needed to create a file '%2$s' in to that folder in order to work. Please, <strong>make it writable</strong> and save the plugin settings.
+# The '%1$s' directory is not writable. It is needed to create a file '%2$s' in to that folder in order to work. Please, <strong>make it writable</strong> and save the plugin settings.
 #, php-format
 msgctxt "admin.Notice"
 msgid "ContentDirNotWrittable_%1$s%2$s"

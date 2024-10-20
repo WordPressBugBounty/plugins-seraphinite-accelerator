@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 137;
+const PLUGIN_SETT_VER								= 138;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -797,6 +797,12 @@ function OnOptRead_Sett( $sett, $verFrom )
 		Gen::SetArrField( $sett, array( 'contPr', 'img', 'lazy', 'own' ), true );
 	}
 
+	if( $verFrom && $verFrom < 138 )
+	{
+		Gen::SetArrField( $sett, array( 'contPr', 'cp', 'nktrLott' ), false );
+		Gen::SetArrField( $sett, array( 'contPr', 'cp', 'grnshftPbAosOnceAni' ), false );
+	}
+
 	return( $sett );
 }
 
@@ -1390,6 +1396,7 @@ function OnOptGetDef_Sett()
 				'elmntrWdgtAvoShcs' => true,
 				'elmntrWdgtLott' => true,
 				'elmntrWdgtPrmLott' => true,
+				'nktrLott' => true,
 				'elmntrStck' => false,
 				'elmntrShe' => false,
 				'elmntrStrtch' => true,
@@ -1448,6 +1455,7 @@ function OnOptGetDef_Sett()
 				'sprflMenu' => true,
 				'jqJpPlr' => true,
 				'prstPlr' => true,
+				'grnshftPbAosOnceAni' => true,
 
 			),
 
@@ -1672,7 +1680,7 @@ function OnOptGetDef_Sett()
 
 					'wp-block-ultimate-post-slider'	=> array( 'enable' => true,		'descr' => 'Block Ultimate Post Slider',	'data' => "[class*=wp-block-ultimate-post-post-slider] .ultp-block-items-wrap:not(.slick-initialized) > .ultp-block-item:not(:first-child)\n{\n\tdisplay: none!important;\n}" ),
 
-					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}" ),
+					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader, .pix-page-loading-bg, .pix-loading-circ-path {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}" ),
 
 					'elementor-vis'		=> array( 'enable' => false, 'descr' => 'Elementor (visibility and animation)', 'data' => "body.seraph-accel-js-lzl-ing-ani .elementor-invisible {\r\n\tvisibility: visible !important;\r\n}\r\n\r\n.elementor-element[data-settings*=\"animation\\\"\"] {\r\n\tanimation-name: none !important;\r\n}" ),
 
@@ -2835,7 +2843,7 @@ function ContProcGetExclStatus( $siteId, $settCache, $path, $pathOrig, $pathIsDi
 
 	$varsOut = array();
 
-	$userAgent = strtolower( (isset($_SERVER[ 'HTTP_USER_AGENT' ])?$_SERVER[ 'HTTP_USER_AGENT' ]:null) );
+	$userAgent = strtolower( (isset($_SERVER[ 'HTTP_USER_AGENT' ])?$_SERVER[ 'HTTP_USER_AGENT' ]:'') );
 
 	$varsOut[ 'tmCur' ] = $tmCur;
 	$varsOut[ 'userAgent' ] = $userAgent;
@@ -3168,13 +3176,13 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.7 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.8 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
 {
 
-	if( strtolower( (isset($serverArgs[ 'HTTPS' ])?$serverArgs[ 'HTTPS' ]:null) ) == 'on' || ( $target == 'client' && strtolower( (isset($serverArgs[ 'HTTP_X_FORWARDED_PROTO' ])?$serverArgs[ 'HTTP_X_FORWARDED_PROTO' ]:null) ) == 'https' ) )
+	if( strtolower( (isset($serverArgs[ 'HTTPS' ])?$serverArgs[ 'HTTPS' ]:'') ) == 'on' || ( $target == 'client' && strtolower( (isset($serverArgs[ 'HTTP_X_FORWARDED_PROTO' ])?$serverArgs[ 'HTTP_X_FORWARDED_PROTO' ]:'') ) == 'https' ) )
 	{
 		if( (isset($serverArgs[ 'REQUEST_SCHEME' ])?$serverArgs[ 'REQUEST_SCHEME' ]:null) == 'http' && (isset($serverArgs[ 'SERVER_PORT' ])?$serverArgs[ 'SERVER_PORT' ]:null) == 80 )
 			$serverArgs[ 'SERVER_PORT' ] = 443;
@@ -4122,7 +4130,7 @@ function CachePostPreparePageEx( $url, $siteId, $priority, $priorityInitiator, $
 	$idLearn = md5( $idLearn, true );
 
 	$viewName = null;
-	if( $viewsDeviceGrp = GetCacheViewDeviceGrp( $settCache, strtolower( isset( $headers[ 'X-Seraph-Accel-Postpone-User-Agent' ] ) ? $headers[ 'X-Seraph-Accel-Postpone-User-Agent' ] : (isset($headers[ 'User-Agent' ])?$headers[ 'User-Agent' ]:null) ) ) )
+	if( $viewsDeviceGrp = GetCacheViewDeviceGrp( $settCache, strtolower( isset( $headers[ 'X-Seraph-Accel-Postpone-User-Agent' ] ) ? $headers[ 'X-Seraph-Accel-Postpone-User-Agent' ] : (isset($headers[ 'User-Agent' ])?$headers[ 'User-Agent' ]:'') ) ) )
 		$viewName = GetViewDeviceGrpNameFromData( $viewsDeviceGrp );
 
 	$dirQueue = GetCacheDir() . '/q/' . $siteId;
@@ -4224,7 +4232,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.7';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.8';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 

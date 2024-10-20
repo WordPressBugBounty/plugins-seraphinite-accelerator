@@ -157,7 +157,7 @@ function _SettingsPage()
 {
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.22.7' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.22.8' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -2701,6 +2701,17 @@ function _SettingsPage()
 							{
 								$o .= ( Ui::TagOpen( 'td' ) );
 								{
+									$fldId = 'contPr/cp/nktrLott';
+									$o .= ( Ui::CheckBox( esc_html_x( 'NktrLottChk', 'admin.Settings_Frames_ContParts', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
 									$fldId = 'contPr/cp/elmntrStck';
 									$o .= ( Ui::CheckBox( esc_html_x( 'ElmntrStckChk', 'admin.Settings_Frames_ContParts', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 								}
@@ -3671,6 +3682,17 @@ function _SettingsPage()
 								{
 									$fldId = 'contPr/cp/prstPlr';
 									$o .= ( Ui::CheckBox( esc_html_x( 'PrstPlrChk', 'admin.Settings_Frames_ContParts', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'contPr/cp/grnshftPbAosOnceAni';
+									$o .= ( Ui::CheckBox( esc_html_x( 'GrnshftPbAosOnceAniChk', 'admin.Settings_Frames_ContParts', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) );
 							}
@@ -5717,6 +5739,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'contPr/cp/elmntrWdgtAvoShcs';			Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/elmntrWdgtLott';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/elmntrWdgtPrmLott';			Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/cp/nktrLott';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/elmntrStck';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/elmntrShe';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/elmntrStrtch';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
@@ -5807,6 +5830,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'contPr/cp/sprflMenu';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/jqJpPlr';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/prstPlr';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/cp/grnshftPbAosOnceAni';			Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 
 		{ $fldId = 'contPr/js/optLoad';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 

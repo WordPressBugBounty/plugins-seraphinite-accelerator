@@ -471,7 +471,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.22.9;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.22.10;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -590,6 +590,7 @@ function _ProcessOutCachedData( $allowExtCache, $objSubType, $sett, $settCache, 
 		{
 
 			@unlink( $seraph_accel_g_dscFile );
+
 			return( Gen::S_FALSE );
 		}
 
@@ -723,7 +724,10 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 {
 	$oiCs = (isset($dsc[ 'p' ])?$dsc[ 'p' ]:null);
 	if( !is_array( $oiCs ) || count( $oiCs ) != 1 )
+	{
+
 		return( null );
+	}
 
 	$dataComprExts = Gen::GetArrField( $settCache, array( 'dataCompr' ), array() );
 	if( empty( $dataComprExts ) )
@@ -737,7 +741,10 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 
 		$oiCf = CacheDscGetDataCtxFirstFile( $settCache, $oiCi, $ctxData, $dataPath, $tmUpdate, $type, $dataComprExts );
 		if( !$oiCf )
+		{
+
 			return( null );
+		}
 
 		$ctxData[ 'fmt' ] = $oiCf[ 'fmt' ];
 	}
@@ -775,7 +782,10 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 		{
 			$oiCd = _GetCfc( $oiCf );
 			if( $oiCd === false || !CacheCvs( strlen( $oiCd ), $oiCos ) )
+			{
+
 				return( null );
+			}
 
 			switch( $fmt )
 			{
@@ -786,7 +796,10 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 			}
 
 			if( $oiCd === false )
+			{
+
 				return( null );
+			}
 
 			$content .= $oiCd;
 		}
@@ -794,7 +807,10 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 		{
 			$oiCfs = @filesize( $oiCf[ 'path' ] );
 			if( !CacheCvs( $oiCfs, $oiCos ) )
+			{
+
 				return( null );
+			}
 			$sizeRaw += $oiCfs;
 		}
 
@@ -834,7 +850,10 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 		}
 
 		if( $content === false )
+		{
+
 			return( null );
+		}
 
 		$sizeRaw = strlen( $content );
 	}
@@ -1298,7 +1317,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( (isset($settCache[ 'normAgent' ])?$settCache[ 'normAgent' ]:null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = (isset($_SERVER[ 'HTTP_USER_AGENT' ])?$_SERVER[ 'HTTP_USER_AGENT' ]:'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.9';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.10';
 	}
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )

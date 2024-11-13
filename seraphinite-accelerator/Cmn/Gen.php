@@ -6011,7 +6011,22 @@ class Wp
 	static private function _Loc_LoadTextDomain( $domain, $pathRel )
 	{
 
-		return( load_plugin_textdomain( $domain, false, $pathRel ) );
+		if( !function_exists( 'has_translation' )  )
+			return( load_plugin_textdomain( $domain, false, $pathRel ) );
+
+		$locale = apply_filters( 'plugin_locale', determine_locale(), $domain );
+
+		$mofile = $domain . '-' . $locale . '.mo';
+
+		if ( load_textdomain( $domain, WP_LANG_DIR . '/plugins/' . $mofile ) )
+			return true;
+
+		if( false !== $pathRel )
+			$path = WP_PLUGIN_DIR . '/' . trim( $pathRel, '/' );
+		else
+			$path = WP_PLUGIN_DIR;
+
+		return load_textdomain( $domain, $path . '/' . $mofile );
 
 	}
 

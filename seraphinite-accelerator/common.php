@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 138;
+const PLUGIN_SETT_VER								= 139;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -801,6 +801,12 @@ function OnOptRead_Sett( $sett, $verFrom )
 	{
 		Gen::SetArrField( $sett, array( 'contPr', 'cp', 'nktrLott' ), false );
 		Gen::SetArrField( $sett, array( 'contPr', 'cp', 'grnshftPbAosOnceAni' ), false );
+	}
+
+	if( $verFrom && $verFrom < 139 )
+	{
+		foreach( Gen::GetArrField( $sett, array( 'contPr', 'cdn', 'items' ), array() ) as $i => $settCdnItem )
+			Gen::SetArrField( $sett, array( 'contPr', 'cdn', 'items', $i, 'sa' ), false );
 	}
 
 	return( $sett );
@@ -1716,8 +1722,9 @@ function OnOptGetDef_Sett()
 				'items' => array(
 					array(
 						'enable' => true,
+						'sa' => true,
 						'addr' => '',
-						'types' => array( 'js', 'css', 'less', 'gif', 'jpeg', 'jpg', 'bmp', 'png', 'svg', 'webp', 'avif', 'eot', 'aac', 'mp3', 'mp4', 'ogg', 'pdf', 'docx', 'otf', 'ttf', 'woff' ),
+						'types' => array( 'js', 'css', 'less', 'gif', 'jpeg', 'jpg', 'bmp', 'png', 'svg', 'webp', 'avif', 'eot', 'aac', 'mp3', 'mp4', 'ogg', 'pdf', 'docx', 'otf', 'ttf', 'woff', 'woff2' ),
 						'uris' => array( 'wp-content', 'wp-includes' ),
 						'urisExcl' => array(),
 					),
@@ -3176,7 +3183,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.9 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.10 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4232,7 +4239,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.9';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.10';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 

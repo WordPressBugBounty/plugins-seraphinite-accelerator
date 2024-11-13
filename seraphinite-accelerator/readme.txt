@@ -4,8 +4,8 @@ Donate link: https://www.s-sols.com/products/wordpress/accelerator#offer
 Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
-Tested up to: 6.6
-Stable tag: 2.22.9
+Tested up to: 6.7
+Stable tag: 2.22.10
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,19 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.22.10 =
+
+Improvements:
+
+* Applying CDN URL in content.
+
+Fixes:
+
+* First touching under mobiles is not delayed as click.
+* Localization in admin is not loaded under WordPress 6.7 and higher.
+* No 'Enable auto-updates' in plugins list if the plugin is up-to-date.
+* Undefined variable $norm in 'content.php'.
 
 = 2.22.9 =
 

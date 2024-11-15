@@ -471,7 +471,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.22.10;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.22.11;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -1280,6 +1280,7 @@ function _CbContentFinish( $content )
 	if( !$dsc )
 	{
 		$skipStatus = 'dscFileUpdateError';
+
 		if( !$seraph_accel_g_noFo )
 			_ProcessOutHdrTrace( $sett, true, true, 'skipped', array( 'reason' => $skipStatus ), $seraph_accel_g_dscFile );
 
@@ -1317,7 +1318,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( (isset($settCache[ 'normAgent' ])?$settCache[ 'normAgent' ]:null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = (isset($_SERVER[ 'HTTP_USER_AGENT' ])?$_SERVER[ 'HTTP_USER_AGENT' ]:'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.10';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.11';
 	}
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )

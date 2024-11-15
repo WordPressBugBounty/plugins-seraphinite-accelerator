@@ -1501,6 +1501,7 @@ class Gen
 
 	static function ExecEscArg( $a )
 	{
+
 		return( function_exists( 'escapeshellarg' ) ? escapeshellarg( $a ) : ( "'" . str_replace( "'", "\\'", $a ) . "'" ) );
 	}
 

@@ -40,7 +40,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.22.11', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.22.12', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -778,7 +778,7 @@ function _OnContentTest( $buffer )
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.22.11' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.22.12' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1013,6 +1013,9 @@ function _ManagePage()
 
 		Ui::PostBoxes_MetaboxAdd( 'about', Plugin::GetAboutPluginTitle(), false, function( $callbacks_args, $box ) { echo( Plugin::GetAboutPluginContent() ); }, null, 'side' );
 		Ui::PostBoxes_MetaboxAdd( 'aboutVendor', Plugin::GetAboutVendorTitle(), false, function( $callbacks_args, $box ) { echo( Plugin::GetAboutVendorContent() ); }, null, 'side' );
+
+		if( Gen::GetArrField( PluginRmtCfg::Get(), 'Prms.HostingBannerShow-Base' ) )
+			Ui::PostBoxes_MetaboxAdd( 'hostingBanner', esc_html_x( 'Title', 'admin.HostingBanner', 'seraphinite-accelerator' ), true, function( $callbacks_args, $box ) { echo( GetHostingBannerContent() ); }, null, 'side' );
 	}
 
 	Ui::PostBoxes( Plugin::GetSubjectTitle( esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ) ), array( 'body' => array(  ), 'normal' => array(), 'side' => array(  ) ),
@@ -1020,6 +1023,41 @@ function _ManagePage()
 		get_defined_vars(),
 		array( 'wrap' => array( 'id' => 'seraph_accel_manage', 'data-oninit' => 'seraph_accel.Manager._int.OnDataRefreshInit(this,' . ( $adminMsModes[ 'local' ] ? 'false' : 'true' ) . ')' ) )
 	);
+}
+
+function GetHostingBannerContent()
+{
+	$rmtCfg = PluginRmtCfg::Get();
+
+	$urlLogoImg = add_query_arg( array( 'v' => '2.22.12' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
+
+	$res = '';
+
+	$res .= Ui::Tag( 'p' );
+
+	{
+		$res .= Ui::TagOpen( 'div' );
+
+		if( !empty( $urlLogoImg ) )
+			$res .= Ui::Link( Ui::Tag( 'img', null, array( 'class' => 'ctlSpaceAfter', 'width' => 100, 'style' => array( 'float' => 'left' ), 'src' => $urlLogoImg ), true ), $urlMoreInfo, true );
+
+		$res .= '<h3 style="margin:0">' . esc_html_x( 'Name', 'admin.HostingBanner', 'seraphinite-accelerator' ) . '</h3>';
+
+		$res .= Ui::TagClose( 'div' );
+	}
+
+	$res .= Ui::Tag( 'p', esc_html_x( 'Description', 'admin.HostingBanner', 'seraphinite-accelerator' ) );
+
+	{
+		$resPart = '';
+
+			$resPart .= Ui::Button( Wp::GetLocString( array( 'MoreInfoBtn', 'admin.Common_AboutVendor' ), null, 'seraphinite-accelerator' ), false, null, 'ctlSpaceAfter', 'button', array( 'onclick' => 'window.open( \'' . $urlMoreInfo . '\', \'_blank\' )' ) );
+
+		$res .= Ui::Tag( 'p', $resPart, null, false, array( 'noTagsIfNoContent' => true ) );
+	}
+
+	return( $res );
 }
 
 function CacheInitClearProcessor( $force = false, $init = true )
@@ -1387,17 +1425,13 @@ function OnAdminApi_UpdateStatCancel( $args )
 	return( PluginFileValues::Del( 'su' ) );
 }
 
-function OnAdminApi_PostUpdCancel( $args )
+function PostUpdCancelEx( $siteId )
 {
-	if( !current_user_can( 'manage_options' ) )
-		return( Gen::E_ACCESS_DENIED );
-
-	$siteId = GetSiteId();
+	$dirFileValues = PluginFileValues::GetDirVar( $siteId );
 
 	foreach( array( 'uppq', 'upq' ) as $dirQueue )
 	{
 		$dirQueue = GetCacheDir() . '/' . $dirQueue . '/' . $siteId;
-		$dirFileValues = PluginFileValues::GetDirVar( $siteId );
 
 		$lock = new Lock( 'l', $dirQueue );
 		if( !$lock -> Acquire() )
@@ -1413,6 +1447,19 @@ function OnAdminApi_PostUpdCancel( $args )
 
 	PluginFileValues::DelEx( $dirFileValues, 'up' );
 	return( Gen::S_OK );
+}
+
+function PostUpdCancel( $siteId = null )
+{
+	foreach( ( $siteId ? array( $siteId ) : GetSiteIds() ) as $siteIdEnum )
+		PostUpdCancelEx( $siteIdEnum );
+}
+
+function OnAdminApi_PostUpdCancel( $args )
+{
+	if( !current_user_can( 'manage_options' ) )
+		return( Gen::E_ACCESS_DENIED );
+	return( PostUpdCancelEx( GetSiteId() ) );
 }
 
 function OnAdminApi_ScheUpdCancel( $args )

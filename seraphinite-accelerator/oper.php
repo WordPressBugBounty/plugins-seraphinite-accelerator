@@ -686,6 +686,7 @@ function _CacheObjFileOp( $lock, $objFile, $op )
 
 	case 2:
 		$lock -> Acquire();
+
 		@unlink( $objFile );
 		$lock -> Release();
 		break;
@@ -953,7 +954,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 	$res = array();
 
 	if( $viewId === null || $viewId === 'cmn' )
-		$res[ 'cmn' ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.11' );
+		$res[ 'cmn' ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.12' );
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
 	{

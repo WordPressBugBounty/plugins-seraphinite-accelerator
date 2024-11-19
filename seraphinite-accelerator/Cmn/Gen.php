@@ -6040,7 +6040,10 @@ class Wp
 		if( !count( $subSystemIds ) )
 			return( false );
 
-		$aFlt = array(); Wp::RemoveFilters( 'override_load_textdomain', array( 'Performant_Translations', Wp::REMOVEFILTER_FUNCNAME_ALL ), Wp::REMOVEFILTER_PRIORITY_ALL, $aFlt );
+		$aFlt = array();
+		Wp::RemoveFilters( 'override_load_textdomain', array( 'Performant_Translations', Wp::REMOVEFILTER_FUNCNAME_ALL ), Wp::REMOVEFILTER_PRIORITY_ALL, $aFlt );
+		Wp::RemoveFilters( Wp::REMOVEFILTER_TAG_ALL, array( 'Loco_hooks_LoadHelper', Wp::REMOVEFILTER_FUNCNAME_ALL ), Wp::REMOVEFILTER_PRIORITY_ALL, $aFlt );
+		Wp::RemoveFilters( Wp::REMOVEFILTER_TAG_ALL, array( 'Loco_hooks_LegacyLoadHelper', Wp::REMOVEFILTER_FUNCNAME_ALL ), Wp::REMOVEFILTER_PRIORITY_ALL, $aFlt );
 
 		$pathAbsRoot = WP_PLUGIN_DIR . '/' . $domainLocDir;
 		$pathRel = $domainLocDir . '/' . $locSubPath;

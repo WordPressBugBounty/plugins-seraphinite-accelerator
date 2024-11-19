@@ -96,6 +96,9 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 		if( !Gen::DoesFuncExist( 'mb_detect_encoding' ) || !Gen::DoesFuncExist( 'mb_convert_encoding' ) )
 			call_user_func_array( $cb, array( Ui::MsgWarn, sprintf( Wp::safe_html_x( 'PhpExtNotActive_%1$s', 'admin.Notice', 'seraphinite-accelerator' ), 'MBSTRING' ) ) );
 
+		if( !Gen::DoesFuncExist( '\\DOMElement::getAttribute' ) )
+			call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'PhpExtNotActive_%1$s', 'admin.Notice', 'seraphinite-accelerator' ), 'LIBXML' ) ) );
+
 		if( !Gen::DoesFuncExist( 'imagecreatefromstring' ) )
 		{
 			foreach( array( 'webp','avif' ) as $comprType )

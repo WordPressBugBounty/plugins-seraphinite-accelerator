@@ -40,7 +40,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.22.13', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.22.14', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -137,8 +137,10 @@ function _InitCatchDataUpdate( $level )
 
 		if( _CheckUpdatePost_Rtn::$level < 2 && $level >= 2 )
 		{
-			add_action( 'add_term_relationship', 'seraph_accel\\_OnPostTermsBeforeUpdate', 99999, 1 );
-			add_action( 'delete_term_relationships', 'seraph_accel\\_OnPostTermsBeforeUpdate', 99999, 1 );
+			add_action( 'add_term_relationship', 'seraph_accel\\_OnPostTermsBeforeAdd', 99999, 3 );
+			add_action( 'delete_term_relationships', 'seraph_accel\\_OnPostTermsBeforeDelete', 99999, 3 );
+			add_action( 'deleted_term_relationships', 'seraph_accel\\_OnPostTermsAfterDelete', 99999, 3 );
+			add_action( 'set_object_terms', 'seraph_accel\\_OnPostTermsAfterUpdate', 99999, 6 );
 
 			add_action( 'edit_post',						'seraph_accel\\_OnPostUpdated', 0 );
 
@@ -355,7 +357,7 @@ function _OnOptionUpdated_PermalinkManagerUris( $option, $value, $valueOld )
 	if( !is_array( $value ) || !is_array( $valueOld ) )
 		return;
 
-	global $seraph_accel_g_delUrls;
+	global $seraph_accel_g_aDelUrls;
 
 	global $permalink_manager_uris;
 
@@ -364,12 +366,16 @@ function _OnOptionUpdated_PermalinkManagerUris( $option, $value, $valueOld )
 
 	foreach( $valueOld as $postId => $path )
 	{
-		if( $path === (isset($value[ $postId ])?$value[ $postId ]:null) )
+		$pathNew = (isset($value[ $postId ])?$value[ $postId ]:null);
+		if( $path === $pathNew )
 			continue;
 
 		$permalink_manager_uris[ $postId ] = $path;
 		if( $url = get_permalink( $postId ) )
-			$seraph_accel_g_delUrls[ $url ] = true;
+		{
+			$seraph_accel_g_aDelUrls[ $url ][ 'postId' ] = $postId;
+			$seraph_accel_g_aDelUrls[ $url ][ 'permalinkManager_pathChanged' ] = array( 'old' => $path, 'new' => $pathNew );
+		}
 	}
 
 	$permalink_manager_uris = $permalink_manager_uris_prev;
@@ -425,17 +431,93 @@ function _OnPostStatusUpdate( $new_status, $old_status, $post )
 
 }
 
-function _OnPostTermsBeforeUpdate( $postId )
+function _OnPostTermsBeforeAdd( $postId, $tt_id, $taxonomy )
 {
+	global $seraph_accel_g_aPostTermsUpdating;
+
 	global $seraph_accel_g_postUpdated;
-	global $seraph_accel_g_delUrls;
+	global $seraph_accel_g_aDelUrls;
+
+	if( isset( $seraph_accel_g_aPostTermsUpdating[ $postId ] ) )
+		return;
+	$seraph_accel_g_aPostTermsUpdating[ $postId ] = false;
 
 	$post = get_post( $postId );
-	if( !$post || !is_post_type_viewable( $post -> post_type ) || !CacheOp_IsPostVisible( $post ) )
+	if( !$post )
+		return;
+
+	if( !isset( $seraph_accel_g_postUpdated[ $postId ] ) && ( !is_post_type_viewable( $post -> post_type ) || !CacheOp_IsPostVisible( $post ) ) )
 		return;
 
 	if( $url = get_permalink( $post ) )
-		$seraph_accel_g_delUrls[ $url ] = true;
+	{
+		$seraph_accel_g_aPostTermsUpdating[ $postId ] = $url;
+	}
+
+	$seraph_accel_g_postUpdated[ $postId ] = true;
+}
+
+function _OnPostTermsBeforeDelete( $postId, $tt_ids, $taxonomy )
+{
+	global $seraph_accel_g_postUpdated;
+	global $seraph_accel_g_aDelUrls;
+
+	$post = get_post( $postId );
+	if( !$post )
+		return;
+
+	if( !isset( $seraph_accel_g_postUpdated[ $postId ] ) && ( !is_post_type_viewable( $post -> post_type ) || !CacheOp_IsPostVisible( $post ) ) )
+		return;
+
+	if( $url = get_permalink( $post ) )
+	{
+		$seraph_accel_g_aDelUrls[ $url ][ 'postId' ] = $postId;
+		$seraph_accel_g_aDelUrls[ $url ][ 'termsDel' ] = $taxonomy . ':' . implode( ',', $tt_ids );
+	}
+	$seraph_accel_g_postUpdated[ $postId ] = true;
+}
+
+function _OnPostTermsAfterDelete( $postId, $tt_ids, $taxonomy )
+{
+	global $seraph_accel_g_postUpdated;
+	global $seraph_accel_g_aDelUrls;
+
+	if( !isset( $seraph_accel_g_postUpdated[ $postId ] ) )
+		return;
+
+	$post = get_post( $postId );
+	if( !$post )
+		return;
+
+	if( $url = get_permalink( $post ) )
+		unset( $seraph_accel_g_aDelUrls[ $url ][ 'termsDel' ] );
+}
+
+function _OnPostTermsAfterUpdate( $postId, $terms, $tt_ids, $taxonomy, $append, $old_tt_ids )
+{
+	global $seraph_accel_g_aPostTermsUpdating;
+
+	global $seraph_accel_g_postUpdated;
+	global $seraph_accel_g_aDelUrls;
+
+	if( !isset( $seraph_accel_g_aPostTermsUpdating[ $postId ] ) )
+		return;
+	$urlOld = $seraph_accel_g_aPostTermsUpdating[ $postId ];
+	unset( $seraph_accel_g_aPostTermsUpdating[ $postId ] );
+
+	if( !isset( $seraph_accel_g_postUpdated[ $postId ] ) )
+		return;
+
+	unset( $seraph_accel_g_aDelUrls[ $urlOld ][ 'termsDel' ] );
+	$seraph_accel_g_aDelUrls[ $urlOld ][ 'postId' ] = $postId;
+	$seraph_accel_g_aDelUrls[ $urlOld ][ 'termsUpd' ] = $taxonomy . ':' . implode( ',', $tt_ids );
+
+	$post = get_post( $postId );
+	if( !$post )
+		return;
+
+	if( $url = get_permalink( $post ) )
+		unset( $seraph_accel_g_aDelUrls[ $url ][ 'termsUpd' ] );
 	$seraph_accel_g_postUpdated[ $postId ] = true;
 }
 
@@ -450,26 +532,33 @@ function _OnPostUpdated( $postId )
 function _OnPostUpdatedEx( $postId, $post, $postBefore )
 {
 	global $seraph_accel_g_postUpdated;
-	global $seraph_accel_g_delUrls;
+	global $seraph_accel_g_aDelUrls;
 
 	if( !$post || !$postBefore || !is_post_type_viewable( $post -> post_type ) )
 		return;
 
-	$isVis = CacheOp_IsPostVisible( $post );
-	$isPrevVis = CacheOp_IsPostVisible( $postBefore );
-
-	if( $isVis )
+	if( CacheOp_IsPostVisible( $post ) )
 	{
 		$seraph_accel_g_postUpdated[ $postId ] = true;
 
-		if( $post -> post_name != $postBefore -> post_name || $post -> post_parent != $postBefore -> post_parent )
-			if( $url = get_permalink( $postBefore ) )
-				$seraph_accel_g_delUrls[ $url ] = true;
+		if( CacheOp_IsPostVisible( $postBefore ) )
+		{
+			$urlOld = get_permalink( $postBefore );
+			$url = get_permalink( $post );
+			if( $urlOld != $url )
+			{
+				$seraph_accel_g_aDelUrls[ $urlOld ][ 'postId' ] = $postId;
+				$seraph_accel_g_aDelUrls[ $urlOld ][ 'postUpdated' ] = $post -> post_name != $postBefore -> post_name ? 'slug' : ( $post -> post_parent != $postBefore -> post_parent ? 'parent' : 'other' );
+			}
+		}
 	}
-	else if( $isPrevVis )
+	else if( CacheOp_IsPostVisible( $postBefore ) )
 	{
 		if( $url = get_permalink( $postBefore ) )
-			$seraph_accel_g_delUrls[ $url ] = true;
+		{
+			$seraph_accel_g_aDelUrls[ $url ][ 'postId' ] = $postId;
+			$seraph_accel_g_aDelUrls[ $url ][ 'postUpdated' ] = 'hidden';
+		}
 		$seraph_accel_g_postUpdated[ $postId ] = true;
 	}
 }
@@ -486,12 +575,29 @@ function _OnPostDeleting( $postId )
 
 function _OnCheckUpdatePost()
 {
-	global $seraph_accel_g_delUrls;
+	global $seraph_accel_g_aDelUrls;
 	global $seraph_accel_g_postUpdated;
 	global $seraph_accel_g_postUpdatedSync;
 
-	if( $seraph_accel_g_delUrls )
-		CacheOpUrls( false, array_keys( $seraph_accel_g_delUrls ), 2, 5, false );
+	if( $seraph_accel_g_aDelUrls )
+	{
+		$aUrl = array();
+		foreach( $seraph_accel_g_aDelUrls as $url => $aU )
+			if( count( $aU ) > 1 )
+				$aUrl[] = $url;
+
+		if( $aUrl )
+		{
+			if( Gen::GetArrField( Plugin::SettGet(), array( 'log' ), false ) && Gen::GetArrField( Plugin::SettGet(), array( 'logScope', 'upd' ), false ) )
+			{
+				foreach( $seraph_accel_g_aDelUrls as $url => $aU )
+					if( count( $aU ) > 1 )
+						LogWrite( 'Automatic deleting due to URL was changed ' . json_encode( $aU ) . ', old URL: ' . $url, Ui::MsgInfo, 'Cache update' );
+			}
+
+			CacheOpUrls( false, $aUrl, 2, 5, false );
+		}
+	}
 
 	if( $seraph_accel_g_postUpdatedSync )
 	{
@@ -778,7 +884,7 @@ function _OnContentTest( $buffer )
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.22.13' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.22.14' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1029,7 +1135,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.22.13' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.22.14' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';

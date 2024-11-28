@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.22.14)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.22.14\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.22.15)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.22.15\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.22.14)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.22.14\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.22.15)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.22.15\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -653,10 +653,17 @@ msgctxt "admin.Manage_Operate"
 msgid "Check"
 msgstr ""
 
+# Hosting
+msgctxt "admin.HostingBanner"
+msgid "Title"
+msgstr ""
+
+# Seraphinite Hosting
 msgctxt "admin.HostingBanner"
 msgid "Name"
 msgstr ""
 
+# We recommend our hosting, which is fully optimized to work with Seraphinite Accelerator.
 msgctxt "admin.HostingBanner"
 msgid "Description"
 msgstr ""
@@ -3195,10 +3202,6 @@ msgctxt "admin.Settings_Advanced_Test"
 msgid "TestContExtraChk_%1$s"
 msgstr ""
 
-msgctxt "admin.HostingBanner"
-msgid "Title"
-msgstr ""
-
 # After the settings will been changed, please, don't forget to update the cache %1$shere%2$s.
 #, php-format
 msgctxt "admin.Notice"
@@ -3286,6 +3289,12 @@ msgstr ""
 #, php-format
 msgctxt "admin.Notice"
 msgid "PhpGdNotActive_%1$s%2$s%3$s"
+msgstr ""
+
+# A conflicting setting has been detected that is preventing correct working. The <strong>'%2$s' should be turned off</strong> in '%1$s''s settings.
+#, php-format
+msgctxt "admin.Notice"
+msgid "3rdSett_ConflictSoft_%1$s%2$s"
 msgstr ""
 
 # A conflicting module has been detected that is preventing correct working. The <strong>'%1$s' should be disabled</strong>.

@@ -122,37 +122,37 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 	{
 		switch( $theme -> template )
 		{
-		case 'woostroid2':
+			case 'woostroid2':
 
-			break;
-		case 'woodmart':
-			$themeOpts = get_option( 'xts-woodmart-options' );
+				break;
+			case 'woodmart':
+				$themeOpts = get_option( 'xts-woodmart-options' );
 
-			break;
+				break;
 
-		case 'dt-the7':
-			$themeOpts = get_option( $themeCh -> stylesheet == 'dt-the7-child' ? 'the7dtchild' : 'the7' );
+			case 'dt-the7':
+				$themeOpts = get_option( $themeCh -> stylesheet == 'dt-the7-child' ? 'the7dtchild' : 'the7' );
 
-			break;
+				break;
 
-		case 'themify-ultra':
-			$themeOpts = get_option( 'themify_data' );
+			case 'themify-ultra':
+				$themeOpts = get_option( 'themify_data' );
 
-			break;
+				break;
 
-		case 'thegem':
-			$themeOpts = get_option( 'thegem_theme_options' );
+			case 'thegem':
+				$themeOpts = get_option( 'thegem_theme_options' );
 
-			break;
+				break;
 
-		case 'xstore':
+			case 'xstore':
 
-			break;
+				break;
 
-		case 'superio':
-			$themeOpts = get_option( 'superio_theme_options' );
+			case 'superio':
+				$themeOpts = get_option( 'superio_theme_options' );
 
-			break;
+				break;
 		}
 	}
 
@@ -307,24 +307,7 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 		if( (isset($plg[ 'IsActive' ])?$plg[ 'IsActive' ]:null) )
 		{
 			if( $isCacheEnabled && get_option( 'siteground_optimizer_enable_cache' ) && !$isExtCacheAllowed )
-				call_user_func_array( $cb, array( Gen::SevErr, sprintf( Wp::safe_html_x( '3rdSett_Conflict_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), $plg[ 'Name' ], Wp::GetLocString( 'Dynamic Caching', null, 'sg-cachepress' ) ) ) );
-			if( $isContProcEnabled )
-			{
-				if( get_option( 'siteground_optimizer_optimize_html' ) )
-					call_user_func_array( $cb, array( Gen::SevErr, sprintf( Wp::safe_html_x( '3rdSett_Conflict_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), $plg[ 'Name' ], Wp::GetLocString( 'Minify the HTML Output', null, 'sg-cachepress' ) ) ) );
-				if( get_option( 'siteground_optimizer_optimize_javascript' ) )
-					call_user_func_array( $cb, array( Gen::SevErr, sprintf( Wp::safe_html_x( '3rdSett_Conflict_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), $plg[ 'Name' ], Wp::GetLocString( 'Minify JavaScript Files', null, 'sg-cachepress' ) ) ) );
-				if( get_option( 'siteground_optimizer_combine_javascript' ) )
-					call_user_func_array( $cb, array( Gen::SevErr, sprintf( Wp::safe_html_x( '3rdSett_Conflict_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), $plg[ 'Name' ], Wp::GetLocString( 'Combine JavaScript Files', null, 'sg-cachepress' ) ) ) );
-				if( get_option( 'siteground_optimizer_optimize_javascript_async' ) )
-					call_user_func_array( $cb, array( Gen::SevErr, sprintf( Wp::safe_html_x( '3rdSett_Conflict_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), $plg[ 'Name' ], Wp::GetLocString( 'Defer Render-blocking JavaScript', null, 'sg-cachepress' ) ) ) );
-				if( get_option( 'siteground_optimizer_optimize_css' ) )
-					call_user_func_array( $cb, array( Gen::SevErr, sprintf( Wp::safe_html_x( '3rdSett_Conflict_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), $plg[ 'Name' ], Wp::GetLocString( 'Minify CSS Files', null, 'sg-cachepress' ) ) ) );
-				if( get_option( 'siteground_optimizer_combine_css' ) )
-					call_user_func_array( $cb, array( Gen::SevErr, sprintf( Wp::safe_html_x( '3rdSett_Conflict_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), $plg[ 'Name' ], Wp::GetLocString( 'Combine CSS Files', null, 'sg-cachepress' ) ) ) );
-				if( get_option( 'siteground_optimizer_optimize_web_fonts' ) )
-					call_user_func_array( $cb, array( Gen::SevErr, sprintf( Wp::safe_html_x( '3rdSett_Conflict_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), $plg[ 'Name' ], Wp::GetLocString( 'Web Fonts Optimization', null, 'sg-cachepress' ) ) ) );
-			}
+				call_user_func_array( $cb, array( Gen::SevErr, sprintf( Wp::safe_html_x( '3rdSett_ConflictSoft_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), $plg[ 'Name' ], Wp::GetLocString( 'Dynamic Caching', null, 'sg-cachepress' ) ) ) );
 
 		}
 		else
@@ -375,6 +358,13 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 	if( $plg && (isset($plg[ 'IsActive' ])?$plg[ 'IsActive' ]:null) )
 	{
 		call_user_func_array( $cb, array( Gen::SevErr, sprintf( Wp::safe_html_x( '3rdMdl_Conflict_%1$s', 'admin.Notice', 'seraphinite-accelerator' ), $plg[ 'Name' ] ) ) );
+	}
+
+	$plg = (isset($availablePlugins[ 'perfmatters' ])?$availablePlugins[ 'perfmatters' ]:null);
+	if( $plg && (isset($plg[ 'IsActive' ])?$plg[ 'IsActive' ]:null) )
+	{
+		$plgOpts = get_option( 'perfmatters_options' );
+
 	}
 
 	$plg = (isset($availablePlugins[ 'flying-pages' ])?$availablePlugins[ 'flying-pages' ]:null);

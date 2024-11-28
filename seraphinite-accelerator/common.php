@@ -875,8 +875,8 @@ function OnOptGetDef_Sett()
 			'cntLen' => true,
 			'opAgentPostpone' => true,
 
-			'srv' => false,
-			'srvClr' => false,
+			'srv' => true,
+			'srvClr' => true,
 			'nginx' => array(
 				'fastCgiDir' => '',
 				'fastCgiLevels' => '1:2',
@@ -1190,7 +1190,7 @@ function OnOptGetDef_Sett()
 					'name' => 'WooCommerce',
 					'cookies' => array(
 						'woocommerce_cart_hash',
-						'wp_woocommerce_session_',
+						'DISABLED-wp_woocommerce_session_',
 						'yith_wcwl_session_',
 					),
 
@@ -1516,6 +1516,7 @@ function OnOptGetDef_Sett()
 						'.//a[starts-with(@href,"#grve-")]',
 						'.//button[contains(concat(" ",normalize-space(@class)," ")," elementskit-menu-toggler ")]',
 						'.//a[starts-with(@href,"#")][contains(concat(" ",normalize-space(@class)," ")," infinite-mm-menu-button ")]',
+						'.//*[contains(concat(" ",normalize-space(@class)," ")," elementor-swiper-button ")]',
 
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," jet-button__instance ")]',
 						'.//*[contains(concat(" ",normalize-space(@class)," ")," jet-menu-item ")]/a[contains(concat(" ",normalize-space(@class)," ")," menu-link ")]',
@@ -1557,6 +1558,8 @@ function OnOptGetDef_Sett()
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," bricks-button ")]',
 
 						'.//button[contains(concat(" ",normalize-space(@class)," ")," e-n-menu-toggle ")]',
+
+						'.//img[contains(concat(" ",normalize-space(@class)," ")," swiper-slide-image ")]',
 					),
 				),
 
@@ -1586,7 +1589,7 @@ function OnOptGetDef_Sett()
 
 					'timeout' => array(
 						'enable' => true,
-						'v' => 4500,
+						'v' => 7500,
 					),
 				),
 
@@ -1599,6 +1602,8 @@ function OnOptGetDef_Sett()
 					'items' => array(
 
 						'src:@\\.cookiebot\\.com@',
+
+						'id:@^cookieyes$@',
 					),
 				),
 
@@ -1686,7 +1691,7 @@ function OnOptGetDef_Sett()
 
 					'wp-block-ultimate-post-slider'	=> array( 'enable' => true,		'descr' => 'Block Ultimate Post Slider',	'data' => "[class*=wp-block-ultimate-post-post-slider] .ultp-block-items-wrap:not(.slick-initialized) > .ultp-block-item:not(:first-child)\n{\n\tdisplay: none!important;\n}" ),
 
-					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader, .pix-page-loading-bg, .pix-loading-circ-path {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}" ),
+					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader, .pix-page-loading-bg, .pix-loading-circ-path, .mesh-loader {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}" ),
 
 					'elementor-vis'		=> array( 'enable' => false, 'descr' => 'Elementor (visibility and animation)', 'data' => "body.seraph-accel-js-lzl-ing-ani .elementor-invisible {\r\n\tvisibility: visible !important;\r\n}\r\n\r\n.elementor-element[data-settings*=\"animation\\\"\"] {\r\n\tanimation-name: none !important;\r\n}" ),
 
@@ -1749,7 +1754,7 @@ function OnOptGetDef_Sett()
 							'js' => array(
 								'optLoad' => true,
 								'nonCrit' => array( 'timeout' => array( 'enable' => false, 'v' => 0 ), 'inl' => true, 'int' => true, 'ext' => true, 'excl' => true, 'items' => array(), ),
-								'spec' => array( 'timeout' => array( 'enable' => false, 'v' => 4500, ) ),
+								'spec' => array( 'timeout' => array( 'enable' => false, 'v' => 7500, ) ),
 							),
 							'jsNonCritScopeOvr' => false,
 							'cssOvr'=> false,
@@ -1794,8 +1799,8 @@ function OnOptGetDef_Sett()
 							'jsOvr' => true,
 							'js' => array(
 								'optLoad' => true,
-								'nonCrit' => array( 'timeout' => array( 'enable' => true, 'v' => 4500 ), 'inl' => true, 'int' => true, 'ext' => true, 'excl' => true, 'items' => array(), ),
-								'spec' => array( 'timeout' => array( 'enable' => false, 'v' => 4500, ) ),
+								'nonCrit' => array( 'timeout' => array( 'enable' => true, 'v' => 7500 ), 'inl' => true, 'int' => true, 'ext' => true, 'excl' => true, 'items' => array(), ),
+								'spec' => array( 'timeout' => array( 'enable' => false, 'v' => 7500, ) ),
 							),
 							'jsNonCritScopeOvr' => false,
 							'cssOvr'=> false,
@@ -3186,7 +3191,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.14 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.15 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4242,7 +4247,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.14';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.15';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 

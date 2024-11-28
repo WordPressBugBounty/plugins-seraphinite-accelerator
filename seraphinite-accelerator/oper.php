@@ -954,7 +954,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 	$res = array();
 
 	if( $viewId === null || $viewId === 'cmn' )
-		$res[ 'cmn' ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.14' );
+		$res[ 'cmn' ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.15' );
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
 	{
@@ -1083,6 +1083,13 @@ function CacheGetEnvNginxConf( $sett )
 	return( $confComprRedirBlock );
 }
 
+function _OpCache_Invalidate( $file )
+{
+
+	if( function_exists( 'opcache_invalidate' ) )
+		@opcache_invalidate( $file, true );
+}
+
 function CacheInitEnvDropin( $sett, $init = true )
 {
 	$file = WP_CONTENT_DIR . '/advanced-cache.php';
@@ -1093,8 +1100,7 @@ function CacheInitEnvDropin( $sett, $init = true )
 		if( $cont && strpos( $cont, '/* seraphinite-accelerator */' ) !== false )
 		{
 			@file_put_contents( $file, '<?php /* Disabled by seraphinite-accelerator */' );
-			if( function_exists( 'opcache_invalidate' ) )
-				@opcache_invalidate( $file, true );
+			_OpCache_Invalidate( $file );
 		}
 
 		return( Gen::S_OK );
@@ -1106,8 +1112,7 @@ function CacheInitEnvDropin( $sett, $init = true )
 	if( $cont != $contNew )
 	{
 		$hr = Gen::HrAccom( $hr, @file_put_contents( $file, $contNew ) !== false ? Gen::S_OK : Gen::E_FAIL );
-		if( function_exists( 'opcache_invalidate' ) )
-			@opcache_invalidate( $file, true );
+		_OpCache_Invalidate( $file );
 	}
 
 	return( $hr );

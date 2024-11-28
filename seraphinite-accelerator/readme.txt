@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.7
-Stable tag: 2.22.14
+Stable tag: 2.22.15
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,22 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.22.15 =
+
+Improvements:
+
+* CDN page was removed from Setup Wizard.
+* Checking compatibility with Perfmatters.
+* Counter Widget of Elementor.
+* Increased scripts delay time and external cache clearing are now by default.
+* Lazy dragging.
+
+Fixes:
+
+* CSS parsing: @layer rule declaration loose original position.
+* PHP 'opcache' is not cleared when internal async tasks is used.
+* Scripts with type 'module' might be not loaded with delay correctly.
 
 = 2.22.14 =
 
@@ -2441,7 +2457,7 @@ Fixes:
 Fixes:
 
 * If optimization request is marked as timeout by CloudFlare the optimization stops.
-* Scripts with type 'module' are not supported.
+* Scripts with type 'module' might be not loaded with delay correctly.
 
 = 2.9.12 =
 

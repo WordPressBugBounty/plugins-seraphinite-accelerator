@@ -2603,6 +2603,7 @@ class ArrayOnFiles implements \Iterator, \ArrayAccess, \Countable
 			if( $filePrev && $filePrev != $file && !@rename( $filePrev, $file ) )
 			{
 				Gen::LastErrDsc_Set( LocId::Pack( 'FileRenameErr_%1$s%2$s', 'Common', array( $filePrev, $file ) ) );
+
 				return( false );
 			}
 
@@ -2621,6 +2622,7 @@ class ArrayOnFiles implements \Iterator, \ArrayAccess, \Countable
 					if( Gen::FilePutContentWithMakeDir( $fileTmp, ( string )$data ) != Gen::S_OK )
 					{
 						Gen::LastErrDsc_Set( LocId::Pack( 'FileWriteErr_%1$s', 'Common', array( $fileTmp ) ) );
+
 						return( false );
 					}
 
@@ -2630,6 +2632,7 @@ class ArrayOnFiles implements \Iterator, \ArrayAccess, \Countable
 				if( !@rename( $fileTmp, $file ) )
 				{
 					Gen::LastErrDsc_Set( LocId::Pack( 'FileRenameErr_%1$s%2$s', 'Common', array( $fileTmp, $file ) ) );
+
 					return( false );
 				}
 			}
@@ -2639,6 +2642,7 @@ class ArrayOnFiles implements \Iterator, \ArrayAccess, \Countable
 			if( $filePrev && !@unlink( $filePrev ) && file_exists( $filePrev ) )
 			{
 				Gen::LastErrDsc_Set( LocId::Pack( 'FileDeleteErr_%1$s', 'Common', array( $filePrev ) ) );
+
 				return( false );
 			}
 

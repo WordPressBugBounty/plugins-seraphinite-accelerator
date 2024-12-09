@@ -40,7 +40,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.22.16', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.23', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -884,7 +884,7 @@ function _OnContentTest( $buffer )
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.22.16' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.23' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -897,6 +897,8 @@ function _ManagePage()
 	$rmtCfg = PluginRmtCfg::Get();
 	$sett = Plugin::SettGet();
 	$siteId = GetSiteId();
+
+	$aViews = GetViewsList( $sett, true );
 
 	{
 		Ui::PostBoxes_MetaboxAdd( 'status', esc_html_x( 'Title', 'admin.Manage_Status', 'seraphinite-accelerator' ) . Ui::Tag( 'span', Ui::AdminHelpBtn( Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Manage_Status' ), Ui::AdminHelpBtnModeBlockHeader ) ), false,
@@ -1056,6 +1058,9 @@ function _ManagePage()
 
 					echo( Ui::Tag( 'div', Ui::Tag( 'textarea', null, array( 'id' => 'seraph_accel_opUrl', 'class' => 'uri ns-uri ctlSpaceAfter ctlSpaceVBefore seraph_accel_textarea', 'style' => array( 'min-height' => 2 * (3/2) . 'em', 'max-height' => 20 * (3/2) . 'em', 'width' => '100%', 'display' => 'none' ), 'placeholder' => _x( 'UriPhlr', 'admin.Manage_Operate', 'seraphinite-accelerator' ) ) ) ) );
 
+					if( count( $aViews ) > 1 )
+						echo( Ui::TokensList( array_keys( $aViews ), 'seraph_accel_views', array( 'class' => 'ctlSpaceVBefore', 'style' => array( 'min-height' => '3em', 'height' => '5em', 'max-height' => '15em' ), 'data-oninit' => 'seraph_accel.Ui.TokensMetaTree.Expand(this,seraph_accel.Manager._int.views,true)' ) ) );
+
 					echo( Ui::Tag( 'div',
 						Ui::Button( Wp::safe_html_x( 'Delete', 'admin.Manage_Operate', 'seraphinite-accelerator' ), true, null, null, 'button', array( 'class' => array( 'ns-all', 'ns-uri', 'ctlSpaceAfter', 'ctlSpaceVBefore', 'ctlVaMiddle' ), 'style' => array( 'min-width' => '7em' ), 'onclick' => 'seraph_accel.Manager._int.OnCacheOp(this,2);return false;' ) ) .
 						Ui::Button( Wp::safe_html_x( 'Revalidate', 'admin.Manage_Operate', 'seraphinite-accelerator' ), false, null, null, 'button', array( 'class' => array( 'ns-all', 'ns-uri', 'ctlSpaceAfter', 'ctlSpaceVBefore', 'ctlVaMiddle' ), 'style' => array( 'min-width' => '7em' ), 'onclick' => 'seraph_accel.Manager._int.OnCacheOp(this,0);return false;' ) ) .
@@ -1127,7 +1132,7 @@ function _ManagePage()
 	Ui::PostBoxes( Plugin::GetSubjectTitle( esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ) ), array( 'body' => array(  ), 'normal' => array(), 'side' => array(  ) ),
 		array(),
 		get_defined_vars(),
-		array( 'wrap' => array( 'id' => 'seraph_accel_manage', 'data-oninit' => 'seraph_accel.Manager._int.OnDataRefreshInit(this,' . ( $adminMsModes[ 'local' ] ? 'false' : 'true' ) . ')' ) )
+		array( 'wrap' => array( 'id' => 'seraph_accel_manage', 'data-oninit' => 'seraph_accel.Manager._int.views = ' . @json_encode( $aViews ) . ';seraph_accel.Manager._int.OnDataRefreshInit(this,' . ( $adminMsModes[ 'local' ] ? 'false' : 'true' ) . ')' ) )
 	);
 }
 
@@ -1135,7 +1140,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.22.16' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.23' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -1393,7 +1398,7 @@ function OnAsyncTask_CacheNextScheduledOp( $args )
 
 			if( $urls === true )
 			{
-				if( CacheOp( $op, $prior, $cbIsAborted ) === false )
+				if( CacheOp( $op, $prior, null, $cbIsAborted ) === false )
 					break;
 			}
 			else if( CacheOpUrls( true, $urls, $op, $prior, $cbIsAborted ) === false )
@@ -1602,7 +1607,7 @@ function IsViewsEnabled( $sett )
 	return( false );
 }
 
-function GetViewDisplayName( $viewName, $isViewsEnabled )
+function GetViewDisplayName( $viewName, $isViewsEnabled, $itemType = 0 )
 {
 	$viewId = is_string( $viewName ) ? strpos( $viewName, 'id:' ) : false;
 	if( $viewId === 0 )
@@ -1612,17 +1617,23 @@ function GetViewDisplayName( $viewName, $isViewsEnabled )
 			$viewName = esc_html_x( 'ViewOtherTxt', 'admin.Manage_Queue', 'seraphinite-accelerator' );
 	}
 	else if( !$viewName )
-		$viewName = $isViewsEnabled ? esc_html_x( 'ViewComonTxt', 'admin.Manage_Queue', 'seraphinite-accelerator' ) : esc_html_x( 'ViewComonSingleTxt', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+		$viewName = ( $isViewsEnabled && $itemType == 0 ) ? esc_html_x( 'ViewComonTxt', 'admin.Manage_Queue', 'seraphinite-accelerator' ) : esc_html_x( 'ViewComonSingleTxt', 'admin.Manage_Queue', 'seraphinite-accelerator' );
 
 	return( $viewName );
 }
 
-function GetViewsList( $sett )
+function GetViewsList( $sett, $bActiveOnly = false )
 {
 	$isViewsEnabled = IsViewsEnabled( $sett );
 	$aViews = array( 'cmn' => array( 'name' => GetViewDisplayName( '', $isViewsEnabled ) ) );
 	foreach( Gen::GetArrField( $sett, array( 'cache', 'viewsDeviceGrps' ), array() ) as $viewsDeviceGrp )
+	{
+		if( $bActiveOnly && !(isset($viewsDeviceGrp[ 'enable' ])?$viewsDeviceGrp[ 'enable' ]:null) )
+			continue;
+
 		$aViews[ $viewsDeviceGrp[ 'id' ] ] = array( 'name' => GetViewDisplayName( GetViewDeviceGrpNameFromData( $viewsDeviceGrp ), $isViewsEnabled ) );
+	}
+
 	return( $aViews );
 }
 
@@ -1679,7 +1690,7 @@ function MsgUnpackLocIds( $v )
 	esc_html_x( 'ImgConvertUnsupp', 'admin.Msg', 'seraphinite-accelerator' );
 	esc_html_x( 'ImgConvertFile_%1$s%2$s', 'admin.Msg', 'seraphinite-accelerator' );
 	esc_html_x( 'ImgConvertFileErr_%1$s%2$s%3$s', 'admin.Msg', 'seraphinite-accelerator' );
-	esc_html_x( 'ImgAdaptFile_%1$s', 'admin.Msg', 'seraphinite-accelerator' );
+	esc_html_x( 'ImgAdaptFile_%1$s%2$s', 'admin.Msg', 'seraphinite-accelerator' );
 	esc_html_x( 'DataComprUnsupp_%1$s', 'admin.Msg', 'seraphinite-accelerator' );
 	esc_html_x( 'DataComprErr_%1$s', 'admin.Msg', 'seraphinite-accelerator' );
 	esc_html_x( 'CacheExtImgErr_%1$s', 'admin.Msg', 'seraphinite-accelerator' );
@@ -1720,11 +1731,11 @@ function OnAsyncTask_CacheOp( $args )
 		if( !$urls )
 			$urls = array( Wp::GetSiteRootUrl() );
 
-		$res = CacheOpUrls( true, $urls, $op, 0 );
+		$res = CacheOpUrls( true, $urls, $op, 0, true, null, Gen::GetArrField( $args, array( 'v' ) ), Gen::GetArrField( $args, array( 'u' ), 0 ) );
 		break;
 
 	default:
-		if( ( $res = CacheOp( $op, 100 ) ) && $op != 1 )
+		if( ( $res = CacheOp( $op, 100, Gen::GetArrField( $args, array( 'v' ) ) ) ) && $op != 1 )
 			Plugin::StateUpdateFlds( array( 'settChangedUpdateCache' => null ) );
 		break;
 	}
@@ -1738,6 +1749,14 @@ function OnAdminApi_CacheOpBegin( $args )
 
 	$args[ 'uri' ] = array_map( 'trim', explode( ";", str_replace( array( '{ASTRSK}' ), array( '*' ), Gen::GetArrField( $args, array( 'uri' ), '' ) ) ) );
 	$args[ 'op' ] = @intval( (isset($args[ 'op' ])?$args[ 'op' ]:'0') );
+
+	if( isset( $args[ 'v' ] ) )
+	{
+		if( strlen( $args[ 'v' ] ) )
+			$args[ 'v' ] = explode( ',', $args[ 'v' ] );
+		else
+			unset( $args[ 'v' ] );
+	}
 
 	if( $args[ 'op' ] == 10 )
 		CacheExt_ClearOnExtRequest( Gen::GetArrField( $args, array( 'type' ), '' ) == 'uri' ? (isset($args[ 'uri' ][ 0 ])?$args[ 'uri' ][ 0 ]:'') : null );
@@ -1832,9 +1851,13 @@ class API
 	const CACHE_OP_DEL = 2;
 	const CACHE_OP_SRVDEL = 10;
 
-	static function OperateCache( $op = API::CACHE_OP_DEL, $obj = null )
+	static function OperateCache( $op = API::CACHE_OP_DEL, $obj = null, $viewId = null, $userId = null )
 	{
 		$args = array( 'uri' => ( array )$obj, 'op' => $op, 'type' => $obj ? 'uri' : '' );
+		if( $viewId )
+		    $args[ 'v' ] = $viewId;
+		if( $userId )
+			$args[ 'u' ] = $userId;
 
 		if( Gen::GetArrField( Plugin::SettGet(), array( 'log' ), false ) && Gen::GetArrField( Plugin::SettGet(), array( 'logScope', 'upd' ), false ) )
 		{

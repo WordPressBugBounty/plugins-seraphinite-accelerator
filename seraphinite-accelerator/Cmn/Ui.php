@@ -651,8 +651,6 @@ class Ui
 
 	static function TokensList( $value, $id = null, $attrs = null, $addNames = false )
 	{
-		$res = '';
-
 		if( $attrs === null )
 			$attrs = array();
 

@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 139;
+const PLUGIN_SETT_VER								= 140;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -809,6 +809,16 @@ function OnOptRead_Sett( $sett, $verFrom )
 			Gen::SetArrField( $sett, array( 'contPr', 'cdn', 'items', $i, 'sa' ), false );
 	}
 
+	if( $verFrom && $verFrom < 140 )
+	{
+		Gen::SetArrField( $sett, array( 'contPr', 'img', 'comprAsync' ), false );
+
+		Gen::SetArrField( $sett, array( 'contPr', 'img', 'szAdaptAsync' ), false );
+		Gen::SetArrField( $sett, array( 'contPr', 'img', 'szAdaptOnDemand' ), false );
+
+		Gen::SetArrField( $sett, array( 'contPr', 'cp', 'grnshftPbAosAni' ), false );
+	}
+
 	return( $sett );
 }
 
@@ -1292,6 +1302,7 @@ function OnOptGetDef_Sett()
 				'deinlLrgSize' => 2048,
 				'redirOwn' => false,
 				'redirCacheAdapt' => false,
+				'comprAsync' => true,
 				'webp' => array(
 					'enable' => true,
 					'redir' => true,
@@ -1309,6 +1320,10 @@ function OnOptGetDef_Sett()
 				),
 				'szAdaptImg' => false,
 				'szAdaptBg' => false,
+
+				'szAdaptAsync' => false,
+				'szAdaptOnDemand' => true,
+
 				'szAdaptExcl' => array(
 
 				),
@@ -1462,6 +1477,7 @@ function OnOptGetDef_Sett()
 				'jqJpPlr' => true,
 				'prstPlr' => true,
 				'grnshftPbAosOnceAni' => true,
+				'grnshftPbAosAni' => true,
 
 			),
 
@@ -3191,7 +3207,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.16 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -3724,6 +3740,7 @@ function OnAsyncTask_CacheProcessItem( $args )
 
 	$tmBegin = microtime( true );
 
+	$itemType = ( int )(isset($item[ 'tp' ])?$item[ 'tp' ]:0);
 	$tmOrig = ( float )(isset($item[ 't' ])?$item[ 't' ]:null);
 	$priorOrig = ( int )(isset($item[ 'p' ])?$item[ 'p' ]:null);
 	$item[ 't' ] = $tmBegin;
@@ -3759,134 +3776,177 @@ function OnAsyncTask_CacheProcessItem( $args )
 		unset( $aInitial, $aProgress, $lock );
 	}
 
-	$prepArgs = array( 'nonce' => hash_hmac( 'md5', '' . $tmBegin, GetSalt() ), '_tm' => '' . $tmBegin, 'pc' => $data[ 'pc' ] );
-	if( $priorOrig == -480 )
-		$prepArgs[ 'lrn' ] = (isset($data[ 'l' ])?$data[ 'l' ]:null);
-
-	$url = add_query_arg( array( 'seraph_accel_prep' => @rawurlencode( @base64_encode( @json_encode( $prepArgs ) ) ) ), (isset($data[ 'u' ])?$data[ 'u' ]:null) );
-
-	$hdrs = (isset($data[ 'h' ])?$data[ 'h' ]:null);
-	if( !is_array( $hdrs ) )
-		$hdrs = array();
-
-	{
-		$hdrsForRequest = $hdrs;
-		Net::GetUrlWithoutProtoEx( $url, $proto );
-		if( strtolower( $proto ) == 'https' )
-		{
-			Net::RemoveHeader( $hdrsForRequest, 'Upgrade-Insecure-Requests' );
-			Net::RemoveHeader( $hdrsForRequest, 'Ssl' );
-
-		}
-
-		Net::RemoveHeader( $hdrsForRequest, 'Accept-Encoding' );
-		Net::RemoveHeader( $hdrsForRequest, 'Cloud-Protector-Client-Ip' );
-
-		unset( $proto );
-
-		$asyncMode = null;
-
-			$requestRes = Wp::RemoteGet( $url, array( 'local' => $asyncMode == 'loc', 'redirection' => 0, 'timeout' => 30, 'sslverify' => false, 'headers' => $hdrsForRequest ) );
-
-		$tmFinish = microtime( true );
-		$hr = Net::GetHrFromWpRemoteGet( $requestRes, true );
-		$httpCode = Net::GetResponseCodeFromHr( $hr );
-
-	}
-
-	$needRepeat = false;
+	$needRepeatPage = false;
 	$needLrn = false;
 	$repeatIdx = null;
 	$skipStatus = null;
 	$warns = null;
+	$requestRes = null;
+	$hr = Gen::S_OK;
 
-	$ctlRes = ProcessCtlData_Get( $fileCtl, $isLive );
-	if( Gen::GetArrField( $ctlRes, array( 'stage' ) ) )
+	$immediatelyPushQueue = false;
+
+	if( $itemType == 0 )
 	{
+		$prepArgs = array( 'nonce' => hash_hmac( 'md5', '' . $tmBegin, GetSalt() ), '_tm' => '' . $tmBegin, 'pc' => $data[ 'pc' ], 'p' => $priorOrig );
+		if( $priorOrig == -480 )
+			$prepArgs[ 'lrn' ] = (isset($data[ 'l' ])?$data[ 'l' ]:null);
 
-		for( ;; )
+		$url = add_query_arg( array( 'seraph_accel_prep' => @rawurlencode( @base64_encode( @json_encode( $prepArgs ) ) ) ), (isset($data[ 'u' ])?$data[ 'u' ]:null) );
+
+		$hdrs = (isset($data[ 'h' ])?$data[ 'h' ]:null);
+		if( !is_array( $hdrs ) )
+			$hdrs = array();
+
 		{
+			$hdrsForRequest = $hdrs;
+			Net::GetUrlWithoutProtoEx( $url, $proto );
+			if( strtolower( $proto ) == 'https' )
+			{
+				Net::RemoveHeader( $hdrsForRequest, 'Upgrade-Insecure-Requests' );
+				Net::RemoveHeader( $hdrsForRequest, 'Ssl' );
+
+			}
+
+			Net::RemoveHeader( $hdrsForRequest, 'Accept-Encoding' );
+			Net::RemoveHeader( $hdrsForRequest, 'Cloud-Protector-Client-Ip' );
+
+			unset( $proto );
+
+			$asyncMode = null;
+
+				$requestRes = Wp::RemoteGet( $url, array( 'local' => $asyncMode == 'loc', 'redirection' => 0, 'timeout' => 30, 'sslverify' => false, 'headers' => $hdrsForRequest ) );
 
 			$tmFinish = microtime( true );
-			if( $tmFinish - $tmBegin > $procTmLim )
-			{
-				$hr = Gen::E_TIMEOUT;
-				$requestRes = null;
-				break;
-			}
+			$hr = Net::GetHrFromWpRemoteGet( $requestRes, true );
+			$httpCode = Net::GetResponseCodeFromHr( $hr );
 
-			if( is_int( $ctlRes ) )
-			{
-				$hr = $ctlRes;
-				$requestRes = null;
-				break;
-			}
+		}
 
-			if( $ctlRes === null )
+		$ctlRes = ProcessCtlData_Get( $fileCtl, $isLive );
+		if( Gen::GetArrField( $ctlRes, array( 'stage' ) ) )
+		{
+
+			for( ;; )
+			{
+
+				$tmFinish = microtime( true );
+				if( $tmFinish - $tmBegin > $procTmLim )
+				{
+					$hr = Gen::E_TIMEOUT;
+					$requestRes = null;
+					break;
+				}
+
+				if( is_int( $ctlRes ) )
+				{
+					$hr = $ctlRes;
+					$requestRes = null;
+					break;
+				}
+
+				if( $ctlRes === null )
+				{
+					$hr = Gen::S_ABORTED;
+					$requestRes = null;
+					break;
+				}
+
+				if( Gen::GetArrField( $ctlRes, array( 'finish' ) ) )
+				{
+					$skipStatus = Gen::GetArrField( $ctlRes, array( 'skip' ) );
+					$hr = $skipStatus ? ( Gen::StrStartsWith( $skipStatus, 'err:' ) ? Gen::E_FAIL : Gen::S_FALSE ) : Gen::S_OK;
+					$warns = Gen::GetArrField( $ctlRes, array( 'warns' ), array() );
+					break;
+				}
+
+				if( !$isLive )
+				{
+					$hr = Gen::E_INVALID_STATE;
+					$requestRes = null;
+					break;
+				}
+
+				sleep( 1 );
+
+				$ctlRes = ProcessCtlData_Get( $fileCtl, $isLive );
+			}
+		}
+		else
+		{
+			if( ProcessCtlData_IsAborted( $fileCtl ) )
 			{
 				$hr = Gen::S_ABORTED;
 				$requestRes = null;
-				break;
 			}
-
-			if( Gen::GetArrField( $ctlRes, array( 'finish' ) ) )
+			else if( $httpCode && $httpCode != 500 )
 			{
-				$skipStatus = Gen::GetArrField( $ctlRes, array( 'skip' ) );
-				$hr = $skipStatus ? ( Gen::StrStartsWith( $skipStatus, 'err:' ) ? Gen::E_FAIL : Gen::S_FALSE ) : Gen::S_OK;
-				$warns = Gen::GetArrField( $ctlRes, array( 'warns' ), array() );
-				break;
+				if( $httpCode == 524 || $httpCode == 522 || $httpCode == 504 || $httpCode == 503 )
+					if( ( $repeatIdx = (isset($data[ 'rdr' ])?$data[ 'rdr' ]:0) ) <= 3 )
+						$needRepeatPage = true;
+				$hr = Gen::HrSuccFromFail( $hr );
 			}
+		}
 
-			if( !$isLive )
+		$urlRedir = trim( wp_remote_retrieve_header( $requestRes, 'location' ) );
+		if( !$urlRedir && $skipStatus && preg_match( '@^httpCode\\:(?:301|302|307|308)\\:@', $skipStatus ) )
+			$urlRedir = rawurldecode( substr( $skipStatus, 13 ) );
+
+		if( $urlRedir && $urlRedir != (isset($data[ 'u' ])?$data[ 'u' ]:null) )
+		{
+			$urlRedir = remove_query_arg( array( 'seraph_accel_prep' ), $urlRedir );
+			if( Gen::StrStartsWith( $urlRedir, '//' ) )
 			{
-				$hr = Gen::E_INVALID_STATE;
-				$requestRes = null;
-				break;
+				GetUrlWithoutProtoEx( $url, $proto );
+				$urlRedir = $proto . ':' . $urlRedir;
+				unset( $proto );
 			}
+			else if( strpos( $urlRedir, '://' ) === false )
+				$urlRedir = Net::GetSiteAddrFromUrl( $url, true ) . $urlRedir;
 
-			sleep( 1 );
-
-			$ctlRes = ProcessCtlData_Get( $fileCtl, $isLive );
+			if( $priorOrig !== 10 )
+				if( ( $redirIdx = (isset($data[ 'rdr' ])?$data[ 'rdr' ]:0) ) <= 4 )
+					if( CachePostPreparePageEx( $urlRedir, $siteId, $priorOrig, (isset($data[ 'p' ])?$data[ 'p' ]:null), $hdrs, $tmOrig, $redirIdx + 1, (isset($data[ 'l' ])?$data[ 'l' ]:null) ) )
+						$immediatelyPushQueue = true;
 		}
 	}
 	else
 	{
-		if( ProcessCtlData_IsAborted( $fileCtl ) )
+		global $seraph_accel_g_prepPrms;
+
+		$seraph_accel_g_prepPrms = array( 'pc' => $fileCtl, 'p' => $priorOrig );
+		$sett = Plugin::SettGet();
+
+		$ctxProcess = &GetContentProcessCtx( $_SERVER, $sett );
+
+		if( $itemType == 10 )
 		{
-			$hr = Gen::S_ABORTED;
-			$requestRes = null;
+			ProcessCtlData_Update( (isset($seraph_accel_g_prepPrms[ 'pc' ])?$seraph_accel_g_prepPrms[ 'pc' ]:null), array( 'stage' => 'images' ) );
+
+			$file = (isset($data[ 'u' ])?$data[ 'u' ]:null);
+			Images_ProcessSrc_ConvertAll( Gen::GetArrField( $sett, array( 'contPr', 'img' ), array() ), null, $file, Images_ProcessSrcEx_FileMTime( $file ), false );
 		}
-		else if( $httpCode && $httpCode != 500 )
+		else if( $itemType == 20 )
 		{
-			if( $httpCode == 524 || $httpCode == 522 || $httpCode == 504 || $httpCode == 503 )
-				if( ( $repeatIdx = (isset($data[ 'rdr' ])?$data[ 'rdr' ]:0) ) <= 3 )
-					$needRepeat = true;
-			$hr = Gen::HrSuccFromFail( $hr );
+			ProcessCtlData_Update( (isset($seraph_accel_g_prepPrms[ 'pc' ])?$seraph_accel_g_prepPrms[ 'pc' ]:null), array( 'stage' => 'images' ) );
+
+			$file = (isset($data[ 'u' ])?$data[ 'u' ]:null);
+			Images_ProcessSrc_SizeAlternatives( $ctxProcess, $file, $sett, (isset($data[ 'ai' ])?$data[ 'ai' ]:null) );
 		}
-	}
 
-	$immediatelyPushQueue = false;
+		unset( $ctxProcess );
 
-	$urlRedir = trim( wp_remote_retrieve_header( $requestRes, 'location' ) );
-	if( !$urlRedir && $skipStatus && preg_match( '@^httpCode\\:(?:301|302|307|308)\\:@', $skipStatus ) )
-		$urlRedir = rawurldecode( substr( $skipStatus, 13 ) );
-
-	if( $urlRedir && $urlRedir != (isset($data[ 'u' ])?$data[ 'u' ]:null) )
-	{
-		$urlRedir = remove_query_arg( array( 'seraph_accel_prep' ), $urlRedir );
-		if( Gen::StrStartsWith( $urlRedir, '//' ) )
+		if( Gen::LastErrDsc_Is() )
 		{
-			GetUrlWithoutProtoEx( $url, $proto );
-			$urlRedir = $proto . ':' . $urlRedir;
-			unset( $proto );
+			$hr = Gen::E_FAIL;
+			$skipStatus = 'err:' . rawurlencode( Gen::LastErrDsc_Get() );
 		}
-		else if( strpos( $urlRedir, '://' ) === false )
-			$urlRedir = Net::GetSiteAddrFromUrl( $url, true ) . $urlRedir;
 
-		if( $priorOrig !== 10 )
-			if( ( $redirIdx = (isset($data[ 'rdr' ])?$data[ 'rdr' ]:0) ) <= 4 )
-				if( CachePostPreparePageEx( $urlRedir, $siteId, $priorOrig, (isset($data[ 'p' ])?$data[ 'p' ]:null), $hdrs, $tmOrig, $redirIdx + 1, (isset($data[ 'l' ])?$data[ 'l' ]:null) ) )
-					$immediatelyPushQueue = true;
+		$warns = LastWarnDscs_Get();
+
+		unset( $seraph_accel_g_prepPrms );
+
+		$tmFinish = microtime( true );
 	}
 
 	$data[ 'td' ] = $tmFinish - $tmBegin;
@@ -3903,7 +3963,7 @@ function OnAsyncTask_CacheProcessItem( $args )
 		$data[ 'r' ] = $skipStatus;
 
 		if( $skipStatus == 'alreadyProcessing' || $skipStatus == 'lrnNeed' )
-			$needRepeat = true;
+			$needRepeatPage = true;
 		else if( Gen::StrStartsWith( $skipStatus, 'lrnNeed:' ) )
 			$needLrn = substr( $skipStatus, 8 );
 	}
@@ -3964,7 +4024,7 @@ function OnAsyncTask_CacheProcessItem( $args )
 				{
 					if( $dataExtUpdated = Gen::GetArrField( Gen::Unserialize( (isset($dataExtUpdated[ 'd' ])?$dataExtUpdated[ 'd' ]:null) ), array( '' ), array() ) )
 						if( (isset($dataExtUpdated[ 'rpt' ])?$dataExtUpdated[ 'rpt' ]:null) )
-							$needRepeat = true;
+							$needRepeatPage = true;
 
 					unset( $dataExtUpdated );
 				}
@@ -3986,7 +4046,7 @@ function OnAsyncTask_CacheProcessItem( $args )
 
 	PluginFileValues::SetEx( $dirFileValues, 'pelt', ( int )$tmFinish );
 
-	if( $needRepeat && CachePostPreparePageEx( (isset($data[ 'u' ])?$data[ 'u' ]:null), $siteId, $priorOrig, (isset($data[ 'p' ])?$data[ 'p' ]:null), $hdrs, $tmOrig, $repeatIdx !== null ? ( $repeatIdx + 1 ) : null, (isset($data[ 'l' ])?$data[ 'l' ]:null) ) )
+	if( $needRepeatPage && CachePostPreparePageEx( (isset($data[ 'u' ])?$data[ 'u' ]:null), $siteId, $priorOrig, (isset($data[ 'p' ])?$data[ 'p' ]:null), $hdrs, $tmOrig, $repeatIdx !== null ? ( $repeatIdx + 1 ) : null, (isset($data[ 'l' ])?$data[ 'l' ]:null) ) )
 	    $immediatelyPushQueue = true;
 
 	CachePushQueueProcessor( true, $immediatelyPushQueue, $hr != Gen::S_OK && Gen::HrSucc( $hr ) );
@@ -4215,6 +4275,53 @@ function CachePostPreparePageEx( $url, $siteId, $priority, $priorityInitiator, $
 	return( $res );
 }
 
+function CachePostPrepareObjEx( $type, $addr, $siteId, $priority, $data = array(), $priorityInitiator = null, $time = null )
+{
+
+	if( !$addr )
+		return( false );
+
+	if( $priorityInitiator === null )
+		$priorityInitiator = $priority;
+
+	$settCache = Gen::GetArrField( Plugin::SettGet(), array( 'cache' ), array() );
+
+	if( $time === null )
+		$time = microtime( true );
+
+	$id = ( string )$type . $addr . $priority;
+	$id = md5( $id, true );
+
+	$dirQueue = GetCacheDir() . '/q/' . $siteId;
+
+	$data = array_merge( $data, array( 'p' => $priorityInitiator, 'u' => $addr ) );
+
+	{
+		$lock = new Lock( 'l', $dirQueue );
+		if( !$lock -> Acquire() )
+		{
+
+			return( false );
+		}
+
+		$aInitial = new ArrayOnFiles( Queue_GetStgPrms( $dirQueue, 0 ) );
+		$aDone = new ArrayOnFiles( Queue_GetStgPrms( $dirQueue, 2 ) );
+
+		unset( $aDone[ $id ] );
+
+		$res = false;
+		{
+			$aInitial[ $id ] = array( 'tp' => $type, 'p' => $priority, 't' => $time, 'd' => Gen::Serialize( $data ) );
+			$res = true;
+		}
+
+		$aInitial -> dispose(); $aDone -> dispose(); $lock -> Release();
+		unset( $aInitial, $aDone, $lock );
+	}
+
+	return( $res );
+}
+
 function CacheQueueDelete( $siteId )
 {
 	$res = true;
@@ -4247,7 +4354,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.16';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -4274,6 +4381,11 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 	$contMimeType = trim( $contMimeType );
 
 	return( wp_remote_retrieve_body( $res ) );
+}
+
+function Images_ProcessSrcEx_FileMTime( $file )
+{
+	return( Gen::FileSize( $file ) ? @filemtime( $file ) : false );
 }
 
 function CacheExtractPreparePageParams( &$args )
@@ -4391,9 +4503,11 @@ function GetCountryCodeByIp( $settCache, &$ip_address )
 	return( $country_code );
 }
 
-function GetViewGeoIdByIp( $settCache, &$ip )
+function GetViewGeoId( $settCache, $serverArgs, &$ip )
 {
-	$countryCode = GetCountryCodeByIp( $settCache, $ip );
+	$countryCode = isset( $serverArgs[ 'HTTP_CF_IPCOUNTRY' ] ) ? trim( $serverArgs[ 'HTTP_CF_IPCOUNTRY' ] ) : '';
+	if( !$countryCode )
+		$countryCode = GetCountryCodeByIp( $settCache, $ip );
 
 	$viewGeoId = null;
 	$grpIsFirst = true;

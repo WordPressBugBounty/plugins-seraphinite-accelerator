@@ -1358,7 +1358,7 @@ class Gen
 
 		{
 			$fileHtaccess = Gen::GetFileDir( $file ) . '/.htaccess';
-			if( !@file_exists( $htaccessFile ) )
+			if( !@file_exists( $fileHtaccess ) )
 				@file_put_contents( $fileHtaccess, 'Options -Indexes' );
 		}
 
@@ -4659,6 +4659,9 @@ class Wp
 
 	static function GetSiteRootUrl( $path = '', $base = true )
 	{
+		if( !function_exists( 'home_url' ) )
+			return( false );
+
 		if( !$base )
 			return( home_url( $path ) );
 
@@ -4690,6 +4693,8 @@ class Wp
 
 	static function GetSiteWpRootUrl( $path = '', $blog_id = null, $base = false )
 	{
+		if( !function_exists( 'get_site_url' ) )
+			return( false );
 
 		if( !$base )
 			return( get_site_url( $blog_id, $path ) );

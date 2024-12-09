@@ -364,7 +364,7 @@ function _CacheOp_Clear_Dsc_MarkExistedParts( &$datasDel, $dsc, $aTypes )
 			unset( $datasDel[ $childType ][ $childId ] );
 }
 
-function CacheOp( $op, $priority = 0, $cbIsAborted = true )
+function CacheOp( $op, $priority = 0, $viewId = null, $cbIsAborted = true )
 {
 	$ctx = new AnyObj();
 	$ctx -> op = $op;
@@ -385,8 +385,9 @@ function CacheOp( $op, $priority = 0, $cbIsAborted = true )
 	$settCacheGlobal = Gen::GetArrField( Plugin::SettGetGlobal(), array( 'cache' ), array() );
 
 	$sett = Plugin::SettGet();
-	$curSiteId = GetSiteId();
 
+	$ctx -> viewId = $viewId !== null ? ( is_array( $viewId ) ? $viewId : array( $viewId ) ) : null;
+	$ctx -> curSiteId = GetSiteId();
 	$ctx -> lock = new DscLockUpdater(  );
 	$ctx -> datasDel = array();
 	$ctx -> procWorkInt = (isset($settCacheGlobal[ 'procWorkInt' ])?$settCacheGlobal[ 'procWorkInt' ]:null);
@@ -430,7 +431,7 @@ function CacheOp( $op, $priority = 0, $cbIsAborted = true )
 			return( false );
 		}
 
-		if( _CacheDirWalk( $curSiteId, null, null, $ctx, null,
+		if( _CacheDirWalk( $ctx -> curSiteId, null, null, $ctx, null,
 			null,
 
 			function( &$ctx, $dataType, $dataId, $dataFile )
@@ -448,7 +449,7 @@ function CacheOp( $op, $priority = 0, $cbIsAborted = true )
 
 	if( $op != 3 )
 	{
-		if( _CacheDirWalk( $curSiteId, null, null, $ctx, null,
+		if( _CacheDirWalk( $ctx -> curSiteId, null, $ctx -> viewId !== null ? array_map( function( $v ) { return( $v . '*' ); }, $ctx -> viewId ) : null, $ctx, null,
 			function( &$ctx, $isUserCtx, $objFile )
 			{
 				if( $ctx -> isAborted() )
@@ -604,7 +605,7 @@ function CacheOp( $op, $priority = 0, $cbIsAborted = true )
 
 		if( $ctx -> datasDel )
 		{
-			if( _CacheDirWalk( $curSiteId, null, null, $ctx, null,
+			if( _CacheDirWalk( $ctx -> curSiteId, null, null, $ctx, null,
 				null,
 				function( &$ctx, $dataType, $dataId, $dataFile )
 				{
@@ -627,7 +628,7 @@ function CacheOp( $op, $priority = 0, $cbIsAborted = true )
 
 	if( $op == 1 || $op == 2 )
 	{
-		$siteCacheRootPath = GetCacheDir() . '/s/' . $curSiteId;
+		$siteCacheRootPath = GetCacheDir() . '/s/' . $ctx -> curSiteId;
 
 		foreach( glob( GetCacheViewsDir( $siteCacheRootPath ) . '*' ) as $viewDir )
 		{
@@ -769,7 +770,7 @@ function CacheOpPost( $postId, $del, $priority = 0, $proc = null, $cbIsAborted =
 		array_splice( $ctx -> urls, 0, 1 );
 	}
 
-	return( CacheOpUrls( false, $ctx -> urls, $op, $priority, $cbIsAborted, $proc, null, $immediatelyPushQueue ) );
+	return( CacheOpUrls( false, $ctx -> urls, $op, $priority, $cbIsAborted, $proc, null, null, $immediatelyPushQueue ) );
 }
 
 function CacheOpCancel( $op )
@@ -822,7 +823,7 @@ function CacheOpUrl_DeParseUrl( $siteAddr, $path, $query = null )
 	return( $url );
 }
 
-function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $proc = null, $viewId = null, $immediatelyPushQueue = true )
+function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $proc = null, $viewId = null, $userId = null, $immediatelyPushQueue = true )
 {
 	if( $cbIsAborted === true && PluginFileValues::Get( 'o' ) !== null )
 		return( false );
@@ -843,7 +844,8 @@ function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $
 	$ctx -> curPathIsDir = false;
 	$ctx -> cbIsAborted = $cbIsAborted;
 	$ctx -> priority = $priority;
-	$ctx -> viewId = $viewId;
+	$ctx -> viewId = $viewId !== null ? ( is_array( $viewId ) ? $viewId : array( $viewId ) ) : null;
+	$ctx -> userId = $userId;
 	$ctx -> lock = new DscLockUpdater();
 	$ctx -> procWorkInt = (isset($settCacheGlobal[ 'procWorkInt' ])?$settCacheGlobal[ 'procWorkInt' ]:null);
 	$ctx -> procPauseInt = (isset($settCacheGlobal[ 'procPauseInt' ])?$settCacheGlobal[ 'procPauseInt' ]:null);
@@ -884,7 +886,7 @@ function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $
 				$ctx -> curPathIsDir = Gen::StrEndsWith( $path, '/' );
 			}
 
-			if( _CacheDirWalk( $ctx -> curSiteId, $siteSubId, $ctx -> viewId !== null ? array( $ctx -> viewId . '*' ) : null, $ctx, array( 'objPath' => strtolower( trim( $path, '/' ) ), 'objPathRecurse' => $recurse, 'objPathMask' => $mask ),
+			if( _CacheDirWalk( $ctx -> curSiteId, $siteSubId, $ctx -> viewId !== null ? array_map( function( $v ) { return( $v . '*' ); }, $ctx -> viewId ) : null, $ctx, array( 'objPath' => strtolower( trim( $path, '/' ) ), 'objPathRecurse' => $recurse, 'objPathMask' => $mask, 'userId' => $ctx -> userId ),
 				function( &$ctx, $isUserCtx, $objFile )
 				{
 					if( $ctx -> isAborted() )
@@ -953,8 +955,11 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 {
 	$res = array();
 
-	if( $viewId === null || $viewId === 'cmn' )
-		$res[ 'cmn' ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.22.16' );
+	if( $viewId !== null && !is_array( $viewId ) )
+		$viewId = array( $viewId );
+
+	if( $viewId === null || in_array( 'cmn', $viewId ) )
+		$res[ 'cmn' ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23' );
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
 	{
@@ -965,7 +970,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 				continue;
 
 			$id = (isset($viewsDeviceGrp[ 'id' ])?$viewsDeviceGrp[ 'id' ]:null);
-			if( $viewId !== null && $viewId !== $id )
+			if( $viewId !== null && !in_array( $id, $viewId ) )
 				continue;
 
 			$res[ $id ] = array( 'User-Agent' => GetViewTypeUserAgent( $viewsDeviceGrp ) );
@@ -975,7 +980,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 		if( Gen::GetArrField( $settCache, array( 'viewsGeo', 'enable' ) ) )
 		{
 			$ip = gethostbyname( Gen::GetArrField( Net::UrlParse( Wp::GetSiteRootUrl() ), array( 'host' ), '' ) );
-			$viewGeoId = GetViewGeoIdByIp( $settCache, $ip );
+			$viewGeoId = GetViewGeoId( $settCache, array(), $ip );
 
 			foreach( $res as $id => &$aHdr )
 			{
@@ -1022,13 +1027,50 @@ function CacheVerifyEnvNginxConf( $sett )
 	return( @file_get_contents( Wp::GetHomePath() . 'seraph-accel-img-compr-redir.conf' ) == CacheGetEnvNginxConf( $sett ) );
 }
 
-function CacheGetEnvNginxConf( $sett )
+function _CacheGetEnvConfPrms( $sett )
 {
 	$imgTypesCnvFrom_RegExpEnum = implode( '|', array( 'jpe','jpg','jpeg','png','gif','bmp', 'webp','avif' ) );
+
+	$siteRootUri = null;
+	$dataUri = null;
+	$dataPath = GetCacheDir();
+	{
+		$ctxProcess = &GetContentProcessCtx( $_SERVER, $sett );
+
+		if( $ctxProcess[ 'siteRootPath' ] !== null && strpos( $dataPath, $ctxProcess[ 'siteRootPath' ] . '/' ) === 0 )
+		{
+			$dataPath = str_replace( '\\', '/', $dataPath );
+			$dataUri = $ctxProcess[ 'siteRootUri' ] . '/' . substr( $dataPath, strlen( $ctxProcess[ 'siteRootPath' ] ) + 1 );
+			$siteRootUri = $ctxProcess[ 'siteRootUri' ];
+		}
+
+		unset( $ctxProcess );
+	}
+
+	return( array( 'imgTypesCnvFrom_RegExpEnum' => $imgTypesCnvFrom_RegExpEnum, 'siteRootUri' => $siteRootUri, 'dataUri' => $dataUri, 'dataPath' => $dataPath ) );
+}
+
+function CacheGetEnvNginxConf( $sett )
+{
+	extract( _CacheGetEnvConfPrms( $sett ) );
+
 	$confComprRedirBlock = '';
 
 	if( !Gen::GetArrField( $sett, array( 'contPr', 'img', 'redirOwn' ), false ) )
 	{
+		$bAiRedir = ( Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptAsync' ), false ) || Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) ) && $dataUri;
+		if( $bAiRedir )
+		{
+			$confComprRedirBlock .=
+				"\t" . 'set $file_ai "";' . "\n\t" . 'if ($arg_seraph_accel_ai ~* ^([\w\-]+)\.([\w\-]+)$) { set $arg_seraph_accel_ai ""; set $ai_s "$1"; set $ai_f "$2"; set $file_ai "' . $dataPath . '/s/${ai_s}/ai/${ai_f}.${file_ext}"; }' . "\n\t" . 'if (-f $file_ai) { rewrite . ' . $dataUri . '/s/${ai_s}/ai/${ai_f}.${file_ext}; set $file_ai ""; break; }' . "\n" .
+				'';
+
+			if( Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) )
+				$confComprRedirBlock .=
+					"\t" . 'if ($file_ai) { rewrite . ' . str_replace( array( '.seraph_accel_gi.', '.ai.' ), array( '$request_filename', '${ai_s}.${ai_f}' ), Net::UrlDeParse( array( 'path' => $siteRootUri . '/', 'query' => Image_MakeOwnRedirUrlArgsEx( '.seraph_accel_gi.', '.ai.' ) ), Net::URLPARSE_F_PRESERVEEMPTIES ) ) . ' last; break; }' . "\n" .
+					'';
+		}
+
 		$redirCacheAdapt = Gen::GetArrField( $sett, array( 'contPr', 'img', 'redirCacheAdapt' ), false );
 
 		$redir = false;
@@ -1050,7 +1092,9 @@ function CacheGetEnvNginxConf( $sett )
 		if( $redir )
 		{
 			$confComprRedirBlock =
-				"\t" . 'set $any_redir "";' . "\n\n" .
+				"\t" . 'set $any_redir "";' . "\n" .
+				( $bAiRedir ? ( "\t" . 'set $file_ext "$1";' . "\n" ) : '' ) .
+				"\n" .
 				$confComprRedirBlock .
 				'';
 
@@ -1166,9 +1210,11 @@ function CacheInitEnv( $sett, $init = true )
 		$hr = Gen::HrAccom( $hr, Gen::MakeDir( GetCacheDir(), true ) );
 	}
 
-	$imgTypesCnvFrom_RegExpEnum = implode( '|', array( 'jpe','jpg','jpeg','png','gif','bmp', 'webp','avif' ) );
+	extract( _CacheGetEnvConfPrms( $sett ) );
+
 	if( Gen::HtAccess_IsSupported() )
 	{
+
 		$htaccessBlock = '';
 
 		if( Gen::GetArrField( $sett, 'cacheBr/enable', false, '/' ) )
@@ -1195,6 +1241,20 @@ function CacheInitEnv( $sett, $init = true )
 
 		if( !Gen::GetArrField( $sett, array( 'contPr', 'img', 'redirOwn' ), false ) )
 		{
+			if( ( Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptAsync' ), false ) || Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) ) && $dataUri )
+			{
+				$htaccessBlock .=
+					'<IfModule mod_rewrite.c>' . "\n\t" . 'RewriteEngine On' . "\n\t" . 'RewriteCond %{REQUEST_URI}?%{QUERY_STRING} \\.(' . $imgTypesCnvFrom_RegExpEnum . ')\\?(|.*\\&)seraph_accel_ai=([\\w\\-]+)\\.([\\w\\-]+)(\\&.*$|$) [NC]' . "\n\t" . 'RewriteCond "' . $dataPath . '/s/%3/ai/%4.%1" -f' . "\n\t" . 'RewriteRule . ' . $dataUri . '/s/%3/ai/%4.%1?%2%5 [L,QSD]' . "\n" .
+					'</IfModule>' . "\n" .
+					'';
+
+				if( Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) )
+					$htaccessBlock .=
+						'<IfModule mod_rewrite.c>' . "\n\t" . 'RewriteEngine On' . "\n\t" . 'RewriteCond %{REQUEST_URI}?%{QUERY_STRING} \\.(' . $imgTypesCnvFrom_RegExpEnum . ')\\?(|.*\\&)seraph_accel_ai=([\\w\\-]+)\\.([\\w\\-]+)(\\&.*$|$) [NC]' . "\n\t" . 'RewriteCond "' . $dataPath . '/s/%3/ai/%4.%1" !-f' . "\n\t" . 'RewriteRule . ' . str_replace( array( '.seraph_accel_gi.', '.ai.' ), array( '%{REQUEST_FILENAME}', '%3.%4' ), Net::UrlDeParse( array( 'path' => $siteRootUri . '/', 'query' => Image_MakeOwnRedirUrlArgsEx( '.seraph_accel_gi.', '.ai.' ) ), Net::URLPARSE_F_PRESERVEEMPTIES ) ) . '&%2%5 [L,QSD,END]' . "\n" .
+						'</IfModule>' . "\n" .
+						'';
+			}
+
 			$redirCacheAdapt = Gen::GetArrField( $sett, array( 'contPr', 'img', 'redirCacheAdapt' ), false );
 
 			$htaccessBlockRedir = '';

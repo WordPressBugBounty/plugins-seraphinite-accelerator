@@ -1974,6 +1974,99 @@ class Lock
 	private $hr;
 }
 
+class CsvFileAsDb implements \Iterator
+{
+	private $h;
+	private $aHdr;
+	private $aData;
+	private $iLine;
+
+	public function __construct()
+	{
+		$this -> iLine = -1;
+	}
+
+	function __destruct()
+	{
+		$this -> Release();
+	}
+
+	public function open( $file )
+	{
+		$this -> h = @fopen( $file, 'r' );
+		if( !$this -> h )
+			return( Gen::E_NOT_FOUND );
+
+		$this -> reset();
+		if( !$this -> aHdr )
+			return( Gen::E_DATACORRUPTED );
+
+		return( Gen::S_OK );
+	}
+
+	function Release()
+	{
+		if( !$this -> h )
+			return;
+
+		@fclose( $this -> h );
+		$this -> h = null;
+	}
+
+	public function get( $name )
+	{
+		if( !$this -> aHdr || !$this -> aData || count( $this -> aHdr ) != count( $this -> aData ) )
+			return( null );
+
+		$i = (isset($this -> aHdr[ $name ])?$this -> aHdr[ $name ]:null);
+		return( $i === null ? null : $this -> aData[ $i ] );
+	}
+
+	#[\ReturnTypeWillChange]
+	public function current()
+	{
+		return( $this -> aData );
+	}
+
+	#[\ReturnTypeWillChange]
+	public function key()
+	{
+		return( $this -> iLine );
+	}
+
+	#[\ReturnTypeWillChange]
+	public function next()
+	{
+		$this -> iLine ++;
+		$this -> aData = @fgetcsv( $this -> h );
+	}
+
+	#[\ReturnTypeWillChange]
+	public function rewind()
+	{
+		$this -> reset();
+	}
+
+	#[\ReturnTypeWillChange]
+	public function reset()
+	{
+		$this -> iLine = -1;
+		@fseek( $this -> h, 0 );
+
+		$this -> aHdr = @fgetcsv( $this -> h );
+		if( $this -> aHdr )
+			$this -> aHdr = array_flip( $this -> aHdr );
+
+		$this -> next();
+	}
+
+	#[\ReturnTypeWillChange]
+	public function valid()
+	{
+		return( !!$this -> aData );
+	}
+}
+
 class Bs
 {
 	static function Find( $nElemCount, $findValue, $cbValCmp, &$pnFoundIndex )

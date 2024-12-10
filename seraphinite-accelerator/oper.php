@@ -959,7 +959,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 		$viewId = array( $viewId );
 
 	if( $viewId === null || in_array( 'cmn', $viewId ) )
-		$res[ 'cmn' ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23' );
+		$res[ 'cmn' ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.1' );
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
 	{

@@ -157,7 +157,7 @@ function _SettingsPage()
 {
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.23.1' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.23.2' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -5635,7 +5635,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'cache/viewsGeo/enable';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{
 			$fldId = 'cache/viewsGeo/grps';
-			Gen::SetArrField( $sett, $fldId, Ui::ItemsList_GetSaveItems( 'seraph_accel/' . $fldId, '/', $args,
+			Gen::SetArrField( $sett, $fldId, _ViewsGeo_Normalize( $sett, Ui::ItemsList_GetSaveItems( 'seraph_accel/' . $fldId, '/', $args,
 				function( $cbArgs, $idItems, $itemKey, $item, $args )
 				{
 					$item = array();
@@ -5646,7 +5646,7 @@ function _OnSaveSettings( $args )
 
 					return( $item );
 				}
-			, null, 'G^' ), '/' );
+			, null, 'G^' ) ), '/' );
 		}
 
 		{ $fldId = 'cache/urisExcl';						Gen::SetArrField( $sett, $fldId, _ArrToLwr( Ui::TokensList_GetVal( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null), null, true ), true ), '/' ); }
@@ -6121,6 +6121,80 @@ function _Cdn_IsEnabled( $settCdn )
 			return( true );
 
 	return( false );
+}
+
+function _ViewsGeo_Normalize( $sett, $aGrp )
+{
+	if( !Gen::GetArrField( $sett, array( 'cache', 'viewsGeo', 'enable' ), false ) )
+		return( $aGrp );
+
+	$aRegionsIp = GetRegion2IPMap();
+	if( !$aRegionsIp )
+		return( $aGrp );
+
+	foreach( $aGrp as $grpId => &$grp )
+	{
+		if( !(isset($grp[ 'enable' ])?$grp[ 'enable' ]:null) )
+			continue;
+
+		$aGrpItem = Gen::GetArrField( $grp, array( 'items' ), array() );
+
+		$countryCodeForce = null;
+		foreach( $aGrpItem as &$grpItem )
+		{
+			$ee = ExprConditionsSet_Parse( $grpItem );
+
+			if( !ExprConditionsSet_IsRegExp( $ee ) )
+				$grpItem = strtoupper( $grpItem );
+
+			if( !ExprConditionsSet_IsTrivial( $ee ) )
+				continue;
+
+			if( $countryCodeForce !== null )
+				continue;
+
+			if( !isset( $aRegionsIp[ $grpItem ] ) )
+				continue;
+
+			$countryCodeForce = $grpItem;
+		}
+		unset( $grpItem );
+
+		$aRegionsIpMatched = array();
+		foreach( $aRegionsIp as $regId => $regIP )
+		{
+			$matched = false;
+			foreach( $aGrpItem as $grpItem )
+			{
+				if( !DoesViewGeoGrpItemMatchEx( ExprConditionsSet_Parse( $grpItem ), $regId ) )
+					continue;
+
+				$matched = true;
+				break;
+			}
+
+			if( !$matched )
+				continue;
+
+			if( $countryCodeForce === null )
+				$countryCodeForce = $regId;
+			$aRegionsIpMatched[] = $regId;
+		}
+
+		foreach( $aRegionsIpMatched as $regId )
+			unset( $aRegionsIp[ $regId ] );
+		unset( $aRegionsIpMatched );
+
+		if( $countryCodeForce === null )
+			$grp[ 'enable' ] = false;
+		else
+			$aGrpItem = array_values( array_unique( array_merge( array( $countryCodeForce ), $aGrpItem ) ) );
+
+		$grp[ 'items' ] = $aGrpItem;
+	}
+	unset( $grp );
+
+	return( $aGrp );
 }
 
 function _ArrToLwr( $arr, $bExpr = false )

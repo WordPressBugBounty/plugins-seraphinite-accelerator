@@ -1269,6 +1269,7 @@ function OnOptGetDef_Sett()
 					'@\\[et-ajax\\]@i',
 				),
 				'items' => array(
+					'.//link[@rel="preload"][@as="font"][not(self::node()[@seraph-accel-crit="1"])]',
 				),
 			),
 			'rpl' => array(
@@ -1646,7 +1647,7 @@ function OnOptGetDef_Sett()
 				'groupFont' => true,
 				'groupFontCombine' => true,
 				'font' => array(
-					'deinlLrg' => false,
+					'deinlLrg' => true,
 					'deinlLrgSize' => 512,
 					'optLoadNameExpr' => '',
 				),
@@ -1683,7 +1684,7 @@ function OnOptGetDef_Sett()
 
 				'fontOptLoad' => true,
 				'fontOptLoadDisp' => 'swap',
-				'fontCrit' => false,
+				'fontCrit' => true,
 
 				'skips' => array(
 					'id:@^reycore-critical-css$@',
@@ -3005,6 +3006,14 @@ function ExprConditionsSet_IsTrivial( $ee )
 	return( count( $ee ) == 1 && $ee[ 0 ][ 'op' ] === '' );
 }
 
+function ExprConditionsSet_IsRegExp( $ee )
+{
+	foreach( $ee as $e )
+		if( IsStrRegExp( $e[ 'expr' ] ) )
+			return( true );
+	return( false );
+}
+
 function AccomulateCookiesState( &$state, $cookies, $elems )
 {
 	foreach( $elems as $ee )
@@ -3207,7 +3216,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.1 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.2 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4354,7 +4363,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.1';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.2';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -4464,6 +4473,60 @@ function GetCurHdrsToStoreInCache( $settCache )
 	return( $res );
 }
 
+function _FileWriteTmpAndReplace( $file, $fileTime = null, $data = null, $fileTmp = null, $lock = null )
+{
+
+	if( $fileTmp === null )
+		$fileTmp = $file . '.tmp';
+
+	if( !$lock )
+		$lock = new Lock( $fileTmp . '.l', false, true );
+
+	if( $lock -> Acquire() )
+	{
+		if( $data === null || @file_put_contents( $fileTmp, $data ) )
+		{
+			if( $fileTime === null || @touch( $fileTmp, $fileTime ) )
+			{
+
+				if( @rename( $fileTmp, $file ) )
+				{
+					$lock -> Release();
+					return( true );
+				}
+				else
+					Gen::LastErrDsc_Set( LocId::Pack( 'FileRenameErr_%1$s%2$s', 'Common', array( $fileTmp, $file ) ) );
+			}
+			else
+				Gen::LastErrDsc_Set( LocId::Pack( 'FileWriteErr_%1$s', 'Common', array( $fileTmp ) ) );
+		}
+		else
+			Gen::LastErrDsc_Set( LocId::Pack( 'FileWriteErr_%1$s', 'Common', array( $fileTmp ) ) );
+
+		$lock -> Release();
+	}
+	else
+		Gen::LastErrDsc_Set( $lock -> GetErrDescr() );
+
+	@unlink( $fileTmp );
+	@unlink( $file );
+
+	return( false );
+}
+
+function _FileReadWithLocker( $file, $lock = null )
+{
+	if( !$lock )
+		$lock = new Lock( $fileTmp . '.l', false, true );
+
+	if( !$lock -> Acquire() )
+		return( false );
+
+	$data = @file_get_contents( $file );
+	$lock -> Release();
+	return( $data );
+}
+
 function LastWarnDscs_Add( $txt )
 {
 	global $seraph_accel_g_aLastWarnDsc;
@@ -4503,8 +4566,73 @@ function GetCountryCodeByIp( $settCache, &$ip_address )
 	return( $country_code );
 }
 
-function GetViewGeoId( $settCache, $serverArgs, &$ip )
+function GetRegion2IPMap()
 {
+	$lock = new Lock( GetCacheDir() . '/db/l', false );
+	$aRegionsIp = ( array )@unserialize( _FileReadWithLocker( GetCacheDir() . '/db/mm/c2ip-v1.dat', $lock ) );
+	unset( $lock );
+
+	return( $aRegionsIp );
+}
+
+function DoesViewGeoGrpItemMatchEx( $aa, $countryCode )
+{
+	$matched = false;
+	foreach( $aa as $a )
+	{
+		$v = null;
+		if( IsStrRegExp( $a[ 'expr' ] ) )
+		{
+			if( @preg_match( $a[ 'expr' ], $countryCode ) )
+				$v = $countryCode;
+		}
+		else if( $countryCode === $a[ 'expr' ] )
+			$v = $countryCode;
+
+		$matched = ExprConditionsSet_ItemOp( $a, $v );
+		if( !$matched )
+			break;
+	}
+
+	return( $matched );
+}
+
+function GetViewGeoId( $settCache, $serverArgs, &$ip, $geoIdForce = null )
+{
+	$aRegionsIp = GetRegion2IPMap();
+
+	$aGrp = Gen::GetArrField( $settCache, array( 'viewsGeo', 'grps' ), array() );
+
+	if( $geoIdForce !== null && $aRegionsIp )
+	{
+		$countryCodeForce = null;
+		if( $geoIdForce === '' || Gen::StrStartsWith( $geoIdForce, 'G^' ) )
+		{
+			foreach( $aGrp as $grpId => $grp )
+			{
+				if( !(isset($grp[ 'enable' ])?$grp[ 'enable' ]:null) || ( $geoIdForce !== '' && $geoIdForce !== $grpId ) )
+					continue;
+
+				$grpItem = Gen::ArrGetByPos( Gen::GetArrField( $grp, array( 'items' ), array() ), 0 );
+				if( ExprConditionsSet_IsTrivial( ExprConditionsSet_Parse( $grpItem ) ) )
+				{
+					if( isset( $aRegionsIp[ $grpItem ] ) )
+						$countryCodeForce = $grpItem;
+				}
+
+				break;
+			}
+		}
+		else
+			$countryCodeForce = $geoIdForce;
+
+		if( $countryCodeForce && isset( $aRegionsIp[ $countryCodeForce ] ) )
+		{
+			$ip = $aRegionsIp[ $countryCodeForce ];
+			return( $geoIdForce );
+		}
+	}
+
 	$countryCode = isset( $serverArgs[ 'HTTP_CF_IPCOUNTRY' ] ) ? trim( $serverArgs[ 'HTTP_CF_IPCOUNTRY' ] ) : '';
 	if( !$countryCode )
 		$countryCode = GetCountryCodeByIp( $settCache, $ip );
@@ -4512,7 +4640,7 @@ function GetViewGeoId( $settCache, $serverArgs, &$ip )
 	$viewGeoId = null;
 	$grpIsFirst = true;
 	$countryCodeForce = null;
-	foreach( Gen::GetArrField( $settCache, array( 'viewsGeo', 'grps' ), array() ) as $grpId => $grp )
+	foreach( $aGrp as $grpId => $grp )
 	{
 		if( !(isset($grp[ 'enable' ])?$grp[ 'enable' ]:null) )
 			continue;
@@ -4525,24 +4653,11 @@ function GetViewGeoId( $settCache, $serverArgs, &$ip )
 			if( $countryCodeFirstTmp === null && ExprConditionsSet_IsTrivial( $aa ) )
 				$countryCodeFirstTmp = $grpItem;
 
-			foreach( $aa as $a )
-			{
-				$v = null;
-				if( IsStrRegExp( $a[ 'expr' ] ) )
-				{
-					if( @preg_match( $a[ 'expr' ], $countryCode ) )
-						$v = $countryCode;
-				}
-				else if( $countryCode === $a[ 'expr' ] )
-					$v = $countryCode;
+			if( !DoesViewGeoGrpItemMatchEx( $aa, $countryCode ) )
+				continue;
 
-				$matched = ExprConditionsSet_ItemOp( $a, $v );
-				if( !$matched )
-					break;
-			}
-
-			if( $matched )
-				break;
+			$matched = true;
+			break;
 		}
 
 		if( $matched )
@@ -4555,13 +4670,18 @@ function GetViewGeoId( $settCache, $serverArgs, &$ip )
 		$grpIsFirst = false;
 	}
 
+	if( $aRegionsIp )
+	{
+		if( $countryCodeForce && isset( $aRegionsIp[ $countryCodeForce ] ) )
+			$ip = $aRegionsIp[ $countryCodeForce ];
+		else if( $countryCode != '^' && isset( $aRegionsIp[ $countryCode ] ) )
+			$ip = $aRegionsIp[ $countryCode ];
+		else
+			$ip = '127.0.0.1';
+	}
+
 	if( $viewGeoId === null )
 		$viewGeoId = $countryCode;
-
-	if( $countryCodeForce )
-	{
-
-	}
 
 	return( $viewGeoId );
 }

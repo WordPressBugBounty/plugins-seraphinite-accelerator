@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.23.1)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.23.1\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.23.2)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.23.2\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.23.1)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.23.1\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.23.2)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.23.2\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -185,6 +185,15 @@ msgstr ""
 #, php-format
 msgctxt "admin.Common"
 msgid "PluginNameToDetails_%1$s%2$s"
+msgstr ""
+
+# , 
+msgctxt "admin.Common"
+msgid "PluginListSep"
+msgstr ""
+
+msgctxt "admin.Common"
+msgid "PluginListTokenSep"
 msgstr ""
 
 # Start
@@ -533,6 +542,11 @@ msgctxt "admin.Manage_Status"
 msgid "LoadAvgLbl"
 msgstr ""
 
+# GEO database:
+msgctxt "admin.Manage_Status"
+msgid "ExtDbLbl"
+msgstr ""
+
 # Statistics
 msgctxt "admin.Manage_Stat"
 msgid "Title"
@@ -699,6 +713,11 @@ msgctxt "admin.Manage_Status"
 msgid "CleanUpRunningDscr"
 msgstr ""
 
+# none
+msgctxt "admin.Manage_Status"
+msgid "GeoDbNone"
+msgstr ""
+
 # Mobile High Res
 msgctxt "admin.Manage_Queue"
 msgid "ViewMobileHighResTxt"
@@ -746,7 +765,7 @@ msgctxt "admin.Msg"
 msgid "ImgConvertFileErr_%1$s%2$s%3$s"
 msgstr ""
 
-# Adapting '%1$s' image
+# Adapting '%1$s' image to '%2$s'
 #, php-format
 msgctxt "admin.Msg"
 msgid "ImgAdaptFile_%1$s%2$s"
@@ -1813,6 +1832,16 @@ msgctxt "admin.Settings_Images_Common"
 msgid "DeInlineLargeChk_%1$s"
 msgstr ""
 
+# Adaptive redirection for simple external cache
+msgctxt "admin.Settings_Images_Compr"
+msgid "RedirCacheAdaptChk"
+msgstr ""
+
+# Alternative redirection
+msgctxt "admin.Settings_Images_Compr"
+msgid "RedirOwnChk"
+msgstr ""
+
 # Excludes:
 msgctxt "admin.Settings_Common"
 msgid "ExclsLbl"
@@ -1848,16 +1877,6 @@ msgstr ""
 # Auto-redirection to Avif version
 msgctxt "admin.Settings_Images_Compr"
 msgid "RedirAvifChk"
-msgstr ""
-
-# Adaptive redirection for simple external cache
-msgctxt "admin.Settings_Images_Compr"
-msgid "RedirCacheAdaptChk"
-msgstr ""
-
-# Alternative redirection
-msgctxt "admin.Settings_Images_Compr"
-msgid "RedirOwnChk"
 msgstr ""
 
 # Process asynchronously

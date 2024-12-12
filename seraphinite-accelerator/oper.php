@@ -364,7 +364,34 @@ function _CacheOp_Clear_Dsc_MarkExistedParts( &$datasDel, $dsc, $aTypes )
 			unset( $datasDel[ $childType ][ $childId ] );
 }
 
-function CacheOp( $op, $priority = 0, $viewId = null, $cbIsAborted = true )
+function _CacheOp_GetViews( $viewId = null, $geoId = null )
+{
+	if( $viewId !== null && !is_array( $viewId ) )
+		$viewId = array( $viewId );
+
+	if( $geoId === null )
+		return( $viewId );
+
+	if( $viewId === null )
+		$viewId = array( 'cmn' );
+
+	if( !is_array( $geoId ) )
+		$geoId = array( $geoId );
+
+	$viewIdNew = array();
+	foreach( $viewId as $viewIdI )
+		foreach( $geoId as $geoIdI )
+			$viewIdNew[] = $viewIdI . ( strlen( $geoIdI ) ? ( '-' . $geoIdI ) : '' );
+
+	return( $viewIdNew );
+}
+
+function _CacheOp_GetViewsForDirWalk( $viewId )
+{
+	return( $viewId !== null ? array_map( function( $v ) { return( $v . '*' ); }, $viewId ) : null );
+}
+
+function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $cbIsAborted = true )
 {
 	$ctx = new AnyObj();
 	$ctx -> op = $op;
@@ -386,7 +413,7 @@ function CacheOp( $op, $priority = 0, $viewId = null, $cbIsAborted = true )
 
 	$sett = Plugin::SettGet();
 
-	$ctx -> viewId = $viewId !== null ? ( is_array( $viewId ) ? $viewId : array( $viewId ) ) : null;
+	$ctx -> viewId = _CacheOp_GetViews( $viewId, $geoId );
 	$ctx -> curSiteId = GetSiteId();
 	$ctx -> lock = new DscLockUpdater(  );
 	$ctx -> datasDel = array();
@@ -449,7 +476,7 @@ function CacheOp( $op, $priority = 0, $viewId = null, $cbIsAborted = true )
 
 	if( $op != 3 )
 	{
-		if( _CacheDirWalk( $ctx -> curSiteId, null, $ctx -> viewId !== null ? array_map( function( $v ) { return( $v . '*' ); }, $ctx -> viewId ) : null, $ctx, null,
+		if( _CacheDirWalk( $ctx -> curSiteId, null, _CacheOp_GetViewsForDirWalk( $ctx -> viewId ), $ctx, null,
 			function( &$ctx, $isUserCtx, $objFile )
 			{
 				if( $ctx -> isAborted() )
@@ -770,7 +797,7 @@ function CacheOpPost( $postId, $del, $priority = 0, $proc = null, $cbIsAborted =
 		array_splice( $ctx -> urls, 0, 1 );
 	}
 
-	return( CacheOpUrls( false, $ctx -> urls, $op, $priority, $cbIsAborted, $proc, null, null, $immediatelyPushQueue ) );
+	return( CacheOpUrls( false, $ctx -> urls, $op, $priority, $cbIsAborted, $proc, null, null, null, $immediatelyPushQueue ) );
 }
 
 function CacheOpCancel( $op )
@@ -823,7 +850,7 @@ function CacheOpUrl_DeParseUrl( $siteAddr, $path, $query = null )
 	return( $url );
 }
 
-function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $proc = null, $viewId = null, $userId = null, $immediatelyPushQueue = true )
+function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $proc = null, $viewId = null, $geoId = null, $userId = null, $immediatelyPushQueue = true )
 {
 	if( $cbIsAborted === true && PluginFileValues::Get( 'o' ) !== null )
 		return( false );
@@ -844,7 +871,7 @@ function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $
 	$ctx -> curPathIsDir = false;
 	$ctx -> cbIsAborted = $cbIsAborted;
 	$ctx -> priority = $priority;
-	$ctx -> viewId = $viewId !== null ? ( is_array( $viewId ) ? $viewId : array( $viewId ) ) : null;
+	$ctx -> viewId = _CacheOp_GetViews( $viewId, $geoId );
 	$ctx -> userId = $userId;
 	$ctx -> lock = new DscLockUpdater();
 	$ctx -> procWorkInt = (isset($settCacheGlobal[ 'procWorkInt' ])?$settCacheGlobal[ 'procWorkInt' ]:null);
@@ -886,7 +913,7 @@ function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $
 				$ctx -> curPathIsDir = Gen::StrEndsWith( $path, '/' );
 			}
 
-			if( _CacheDirWalk( $ctx -> curSiteId, $siteSubId, $ctx -> viewId !== null ? array_map( function( $v ) { return( $v . '*' ); }, $ctx -> viewId ) : null, $ctx, array( 'objPath' => strtolower( trim( $path, '/' ) ), 'objPathRecurse' => $recurse, 'objPathMask' => $mask, 'userId' => $ctx -> userId ),
+			if( _CacheDirWalk( $ctx -> curSiteId, $siteSubId, _CacheOp_GetViewsForDirWalk( $ctx -> viewId ), $ctx, array( 'objPath' => strtolower( trim( $path, '/' ) ), 'objPathRecurse' => $recurse, 'objPathMask' => $mask, 'userId' => $ctx -> userId ),
 				function( &$ctx, $isUserCtx, $objFile )
 				{
 					if( $ctx -> isAborted() )
@@ -951,6 +978,19 @@ function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $
 	return( !$bAborted );
 }
 
+function CacheOpViewsHeadersGetViewId( $id, &$geoId = null )
+{
+	$pos = strpos( $id, '-' );
+	if( $pos === false )
+	{
+		$geoId = '';
+		return( $id );
+	}
+
+	$geoId = substr( $id, $pos + 1 );
+	return( substr( $id, 0, $pos ) );
+}
+
 function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 {
 	$res = array();
@@ -958,8 +998,9 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 	if( $viewId !== null && !is_array( $viewId ) )
 		$viewId = array( $viewId );
 
-	if( $viewId === null || in_array( 'cmn', $viewId ) )
-		$res[ 'cmn' ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.1' );
+	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
+		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.2' );
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
 	{
@@ -970,22 +1011,34 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 				continue;
 
 			$id = (isset($viewsDeviceGrp[ 'id' ])?$viewsDeviceGrp[ 'id' ]:null);
-			if( $viewId !== null && !in_array( $id, $viewId ) )
-				continue;
-
-			$res[ $id ] = array( 'User-Agent' => GetViewTypeUserAgent( $viewsDeviceGrp ) );
+			foreach( $viewId === null ? array( $id ) : $viewId as $viewIdI )
+				if( CacheOpViewsHeadersGetViewId( $viewIdI ) == $id )
+					$res[ $viewIdI ] = array( 'User-Agent' => GetViewTypeUserAgent( $viewsDeviceGrp ) );
 
 		}
 
 		if( Gen::GetArrField( $settCache, array( 'viewsGeo', 'enable' ) ) )
 		{
-			$ip = gethostbyname( Gen::GetArrField( Net::UrlParse( Wp::GetSiteRootUrl() ), array( 'host' ), '' ) );
-			$viewGeoId = GetViewGeoId( $settCache, array(), $ip );
+			$aGeoIdInfo = array();
+			foreach( $res as $id => $aHdr )
+			{
+				CacheOpViewsHeadersGetViewId( $id, $geoId );
+				$aGeoIdInfo[ $geoId ] = array();
+			}
+
+			$ipHost = gethostbyname( Gen::GetArrField( Net::UrlParse( Wp::GetSiteRootUrl() ), array( 'host' ), '' ) );
+			foreach( $aGeoIdInfo as $geoId => &$ipInfo )
+			{
+				$ipInfo[ 'ip' ] = $ipHost;
+				$ipInfo[ 'id' ] = GetViewGeoId( $settCache, array(), $ipInfo[ 'ip' ], $geoId );
+			}
+			unset( $ip );
 
 			foreach( $res as $id => &$aHdr )
 			{
-				$aHdr[ 'X-Seraph-Accel-Geoid' ] = $viewGeoId;
-				$aHdr[ 'X-Seraph-Accel-Geo-Remote-Addr' ] = $ip;
+				CacheOpViewsHeadersGetViewId( $id, $geoId );
+				$aHdr[ 'X-Seraph-Accel-Geoid' ] = $aGeoIdInfo[ $geoId ][ 'id' ];
+				$aHdr[ 'X-Seraph-Accel-Geo-Remote-Addr' ] = $aGeoIdInfo[ $geoId ][ 'ip' ];
 			}
 			unset( $aHdr );
 		}

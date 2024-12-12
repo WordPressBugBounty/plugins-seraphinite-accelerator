@@ -40,7 +40,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.23.1', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.23.2', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -180,6 +180,11 @@ function OnInit( $isAdminMode )
 	CacheInitQueueTable();
 
 	Gen::SetTempDirFunc( 'seraph_accel\\Wp::GetTempDir' );
+
+	if( Gen::GetArrField( $sett, 'cache/viewsGeo/enable', false, '/' ) )
+	{
+		add_action( 'woocommerce_geoip_updater', 'seraph_accel\\_OnUpdateGeoDb' );
+	}
 
 	if( $cacheEnable && Gen::GetArrField( $sett, array( 'cache', 'useTimeoutClnForWpNonce' ), false ) )
 	{
@@ -881,10 +886,116 @@ function _OnContentTest( $buffer )
 	return( $buffer );
 }
 
+function _OnUpdateGeoDb()
+{
+	$svc = Gen::GetArrField( Wp::GetFilters( 'woocommerce_get_geolocation', array( 'WC_Integration_MaxMind_Geolocation', 'get_geolocation' ) ), array( 0, 'f', 0 ) );
+	$apiKey = $svc ? $svc -> get_option( 'license_key' ) : null;
+	if( !$apiKey )
+		return;
+
+	if( PluginFileValues::GetEx( PluginFileValues::GetDirVar( 'm' ), 'edbu' ) )
+		return;
+
+	PluginFileValues::SetEx( PluginFileValues::GetDirVar( 'm' ), 'edbu', true );
+
+	$requestRes = Wp::RemoteGet( 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&suffix=zip&license_key=' . urlencode( wc_clean( $apiKey ) ) );
+	$hr = Net::GetHrFromWpRemoteGet( $requestRes, true );
+	if( $hr != Gen::S_OK )
+	{
+		PluginFileValues::DelEx( PluginFileValues::GetDirVar( 'm' ), 'edbu' );
+		return;
+	}
+
+	$dirTmp = GetCacheDir() . '/tmp/mmdb';
+	$fileTmp = $dirTmp . '/db.zip';
+
+	Gen::MakeDir( $dirTmp, true );
+	Gen::DelDir( $dirTmp, false );
+
+	if( !@file_put_contents( $fileTmp, wp_remote_retrieve_body( $requestRes ) ) )
+	{
+		PluginFileValues::DelEx( PluginFileValues::GetDirVar( 'm' ), 'edbu' );
+		return;
+	}
+
+	try
+	{
+		$file = new \PharData( $fileTmp );
+		$file -> extractTo( $dirTmp, null, true );
+		unset( $file );
+	}
+	catch ( Exception $exception )
+	{
+
+	}
+	@unlink( $fileTmp );
+
+	$dirDbRoot = null;
+	Gen::DirEnum( $dirTmp, $dirDbRoot,
+		function( $path, $item, &$dirDbRoot )
+		{
+			$path = $path . '/' . $item;
+			if( @is_dir( $path ) )
+			{
+				$dirDbRoot = $item;
+				return( false );
+			}
+
+			return( true );
+		}
+	);
+
+	$aGeonameIdIp = array();
+	foreach( array( 'IPv4', 'IPv6' ) as $ipDbId )
+	{
+		$oDataBlocksIP = new CsvFileAsDb(); $oDataBlocksIP -> open( $dirTmp . '/' . $dirDbRoot . '/GeoLite2-Country-Blocks-' . $ipDbId . '.csv' );
+		for( ; $oDataBlocksIP -> valid(); $oDataBlocksIP -> next() )
+		{
+			$geoname_id = $oDataBlocksIP -> get( 'geoname_id' );
+			if( !$geoname_id || isset( $aGeonameIdIp[ $geoname_id ] ) )
+				continue;
+
+			$ip = $oDataBlocksIP -> get( 'network' );
+			if( $ip && preg_match( '@([^/]+)/\\d+@S', $ip, $m ) )
+				$aGeonameIdIp[ $geoname_id ] = $m[ 1 ];
+		}
+
+		$oDataBlocksIP -> Release(); unset( $oDataBlocksIP );
+	}
+
+	$aRegionsIp = array();
+	{
+		$oDataLocations = new CsvFileAsDb(); $oDataLocations -> open( $dirTmp . '/' . $dirDbRoot . '/GeoLite2-Country-Locations-en.csv' );
+		for( ; $oDataLocations -> valid(); $oDataLocations -> next() )
+		{
+			$geoname_id = $oDataLocations -> get( 'geoname_id' ); $k = $oDataLocations -> get( 'country_iso_code' );
+			if( !$geoname_id || !$k )
+				continue;
+
+			$v = (isset($aGeonameIdIp[ $geoname_id ])?$aGeonameIdIp[ $geoname_id ]:null);
+			if( $v !== null )
+				$aRegionsIp[ $k ] = $v;
+		}
+
+		$oDataLocations -> Release(); unset( $oDataLocations );
+	}
+
+	Gen::DelDir( $dirTmp );
+
+	Gen::MakeDir( dirname( GetCacheDir() . '/db/mm/c2ip-v1.dat' ), true );
+
+	ksort( $aRegionsIp );
+
+	$lock = new Lock( GetCacheDir() . '/db/l', false );
+	_FileWriteTmpAndReplace( GetCacheDir() . '/db/mm/c2ip-v1.dat', null, @serialize( $aRegionsIp ), null, $lock );
+
+	PluginFileValues::DelEx( PluginFileValues::GetDirVar( 'm' ), 'edbu' );
+}
+
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.23.1' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.23.2' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -899,6 +1010,7 @@ function _ManagePage()
 	$siteId = GetSiteId();
 
 	$aViews = GetViewsList( $sett, true );
+	$aGeos = GetGeosList( $sett, true );
 
 	{
 		Ui::PostBoxes_MetaboxAdd( 'status', esc_html_x( 'Title', 'admin.Manage_Status', 'seraphinite-accelerator' ) . Ui::Tag( 'span', Ui::AdminHelpBtn( Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Manage_Status' ), Ui::AdminHelpBtnModeBlockHeader ) ), false,
@@ -955,6 +1067,22 @@ function _ManagePage()
 							echo( Ui::Label( $info[ 'cont' ][ 'loadAvg' ], false, array( 'data-id-cont' => 'loadAvg' ) ) );
 						}
 						echo( Ui::SettBlock_Item_End() );
+
+						if( Gen::GetArrField( $sett, 'cache/viewsGeo/enable', false, '/' ) )
+						{
+							echo( Ui::SettBlock_Item_Begin( esc_html_x( 'ExtDbLbl', 'admin.Manage_Status', 'seraphinite-accelerator' ), array( 'class' => array( 'blck', 'extdb' ) ) ) );
+							{
+								echo( Ui::Label( $info[ 'cont' ][ 'extDb' ], false, array( 'data-id-cont' => 'extDb' ) ) );
+								echo( Ui::TagOpen( 'p' ) );
+								{
+									echo( Ui::Button( Wp::GetLocString( 'Update' ), false, null, null, 'button', array( 'class' => array( 'ctlSpaceAfter', 'ctlVaMiddle' ), 'style' => array( 'min-width' => '7em' ), 'onclick' => 'seraph_accel.Manager._int.OnExtDbUpdBegin(this); return false;' ) ) );
+									echo( Ui::Button( Wp::GetLocString( 'Cancel' ), false, null, null, 'button', array( 'class' => array( 'ctlSpaceAfter', 'ctlVaMiddle', 'cancel' ), 'style' => array( 'min-width' => '7em' ), 'disabled' => true, 'onclick' => 'seraph_accel.Manager._int.OnExtDbUpdCancel(this); return false;' ) ) );
+									echo( Ui::Spinner( false, array( 'class' => array( 'ctlSpaceAfter', 'ctlVaMiddle' ), 'style' => array( 'display' => 'none' ) ) ) );
+								}
+								echo( Ui::TagClose( 'p' ) );
+							}
+							echo( Ui::SettBlock_Item_End() );
+						}
 					}
 					echo( Ui::SettBlock_End() );
 				}
@@ -1058,8 +1186,23 @@ function _ManagePage()
 
 					echo( Ui::Tag( 'div', Ui::Tag( 'textarea', null, array( 'id' => 'seraph_accel_opUrl', 'class' => 'uri ns-uri ctlSpaceAfter ctlSpaceVBefore seraph_accel_textarea', 'style' => array( 'min-height' => 2 * (3/2) . 'em', 'max-height' => 20 * (3/2) . 'em', 'width' => '100%', 'display' => 'none' ), 'placeholder' => _x( 'UriPhlr', 'admin.Manage_Operate', 'seraphinite-accelerator' ) ) ) ) );
 
-					if( count( $aViews ) > 1 )
-						echo( Ui::TokensList( array_keys( $aViews ), 'seraph_accel_views', array( 'class' => 'ctlSpaceVBefore', 'style' => array( 'min-height' => '3em', 'height' => '5em', 'max-height' => '15em' ), 'data-oninit' => 'seraph_accel.Ui.TokensMetaTree.Expand(this,seraph_accel.Manager._int.views,true)' ) ) );
+					{
+						$oSub = '';
+						if( count( $aViews ) > 1 )
+							$oSub .= Ui::Tag( 'td', Ui::TokensList( array_keys( $aViews ), 'seraph_accel_views', array( 'style' => array( 'min-height' => '3em', 'height' => '5em', 'max-height' => '15em' ), 'data-oninit' => 'seraph_accel.Ui.TokensMetaTree.Expand(this,seraph_accel.Manager._int.views,true)' ) ) );
+
+						if( $aGeos )
+							$oSub .= Ui::Tag( 'td', Ui::TokensList( array( '' ), 'seraph_accel_geos', array( 'style' => array( 'min-height' => '3em', 'height' => '5em', 'max-height' => '15em' ), 'data-oninit' => 'seraph_accel.Ui.TokensMetaTree.Expand(this,seraph_accel.Manager._int.geos,true)' ) ) );
+
+						if( $oSub )
+						{
+							echo( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'ctlSpaceVBefore std', 'style' => array( 'width' => '100%' ) ) ) );
+							echo( Ui::Tag( 'tr', $oSub ) );
+							echo( Ui::SettBlock_ItemSubTbl_End() );
+						}
+
+						unset( $oSub );
+					}
 
 					echo( Ui::Tag( 'div',
 						Ui::Button( Wp::safe_html_x( 'Delete', 'admin.Manage_Operate', 'seraphinite-accelerator' ), true, null, null, 'button', array( 'class' => array( 'ns-all', 'ns-uri', 'ctlSpaceAfter', 'ctlSpaceVBefore', 'ctlVaMiddle' ), 'style' => array( 'min-width' => '7em' ), 'onclick' => 'seraph_accel.Manager._int.OnCacheOp(this,2);return false;' ) ) .
@@ -1132,7 +1275,7 @@ function _ManagePage()
 	Ui::PostBoxes( Plugin::GetSubjectTitle( esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ) ), array( 'body' => array(  ), 'normal' => array(), 'side' => array(  ) ),
 		array(),
 		get_defined_vars(),
-		array( 'wrap' => array( 'id' => 'seraph_accel_manage', 'data-oninit' => 'seraph_accel.Manager._int.views = ' . @json_encode( $aViews ) . ';seraph_accel.Manager._int.OnDataRefreshInit(this,' . ( $adminMsModes[ 'local' ] ? 'false' : 'true' ) . ')' ) )
+		array( 'wrap' => array( 'id' => 'seraph_accel_manage', 'data-oninit' => 'seraph_accel.Manager._int.views = ' . @json_encode( $aViews ) . ';seraph_accel.Manager._int.geos = ' . @json_encode( $aGeos ) . ';seraph_accel.Manager._int.OnDataRefreshInit(this,' . ( $adminMsModes[ 'local' ] ? 'false' : 'true' ) . ')' ) )
 	);
 }
 
@@ -1140,7 +1283,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.23.1' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.23.2' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -1398,7 +1541,7 @@ function OnAsyncTask_CacheNextScheduledOp( $args )
 
 			if( $urls === true )
 			{
-				if( CacheOp( $op, $prior, null, $cbIsAborted ) === false )
+				if( CacheOp( $op, $prior, null, null, $cbIsAborted ) === false )
 					break;
 			}
 			else if( CacheOpUrls( true, $urls, $op, $prior, $cbIsAborted ) === false )
@@ -1458,6 +1601,25 @@ function GetStatusData( $siteId )
 	{
 		$loadAvgCont = GetLoadAvg( null );
 		$info[ 'cont' ][ 'loadAvg' ] = ( $loadAvgCont !== null ) ? ( ( string )$loadAvgCont . '%' ) : '-';
+	}
+
+	{
+		$aDbFileTm = array();
+
+		{
+			$svc = Gen::GetArrField( Wp::GetFilters( 'woocommerce_get_geolocation', array( 'WC_Integration_MaxMind_Geolocation', 'get_geolocation' ) ), array( 0, 'f', 0 ) );
+			$aDbFileTm[ 'GeoIP (MaxMind)' ] = $svc ? Images_ProcessSrcEx_FileMTime( $svc -> get_database_service() -> get_database_path() ) : null;
+		}
+
+		{
+			$aDbFileTm[ 'GeoIP (MaxMind-C2IP)' ] = Images_ProcessSrcEx_FileMTime( GetCacheDir() . '/db/mm/c2ip-v1.dat' );
+		}
+
+		$aDbFileTmDisp = array();
+		foreach( $aDbFileTm as $dbId => $dbFileTm )
+			$aDbFileTmDisp[] = sprintf( Plugin::GetPluginString( 'NameToDetails_%1$s%2$s' ), Ui::Tag( 'strong', $dbId ), $dbFileTm ? date_i18n( DateTime::RFC2822, $dbFileTm ) : esc_html_x( 'GeoDbNone', 'admin.Manage_Status', 'seraphinite-accelerator' ) );
+
+		$info[ 'cont' ][ 'extDb' ] = implode( Plugin::GetPluginString( 'ListTokenSep' ), $aDbFileTmDisp );
 	}
 
 	return( $info );
@@ -1581,6 +1743,30 @@ function OnAdminApi_ScheUpdCancel( $args )
 	return( PluginFileValues::Del( 'schu' ) );
 }
 
+function OnAsyncTask_ExtDbUpd( $args )
+{
+	Gen::SetTimeLimit( 1800 );
+	Gen::GarbageCollectorEnable( false );
+
+	do_action( 'woocommerce_geoip_updater', null );
+}
+
+function OnAdminApi_ExtDbUpdBegin( $args )
+{
+	if( !current_user_can( 'manage_options' ) )
+		return( Gen::E_ACCESS_DENIED );
+
+	return( Plugin::AsyncTaskPost( 'ExtDbUpd' ) );
+}
+
+function OnAdminApi_ExtDbUpdCancel( $args )
+{
+	if( !current_user_can( 'manage_options' ) )
+		return( Gen::E_ACCESS_DENIED );
+
+	return( PluginFileValues::Del( 'edbu' ) );
+}
+
 function GetViewDisplayNameById( $viewId )
 {
 	switch( $viewId )
@@ -1635,6 +1821,77 @@ function GetViewsList( $sett, $bActiveOnly = false )
 	}
 
 	return( $aViews );
+}
+
+function GetGeosList( $sett )
+{
+	if( !Gen::GetArrField( $sett, array( 'cache', 'viewsGeo', 'enable' ), false ) )
+		return( array() );
+
+	$aGeos = array( '' => array( 'name' => null ) );
+
+	$aRegionsIp = GetRegion2IPMap();
+
+	$aGrp = Gen::GetArrField( $sett, array( 'cache', 'viewsGeo', 'grps' ), array() );
+
+	$grpIsFirst = true;
+	foreach( $aGrp as $grpId => $grp )
+	{
+		if( !(isset($grp[ 'enable' ])?$grp[ 'enable' ]:null) )
+			continue;
+
+		$viewGeoId = $grpId;
+		if( $grpIsFirst )
+		{
+			$grpItem = Gen::ArrGetByPos( Gen::GetArrField( $grp, array( 'items' ), array() ), 0 );
+			if( ExprConditionsSet_IsTrivial( ExprConditionsSet_Parse( $grpItem ) ) && $aRegionsIp[ $grpItem ] )
+				$viewGeoId = '';
+		}
+
+		$viewGeoName = ( string )(isset($grp[ 'name' ])?$grp[ 'name' ]:'');
+		if( !strlen( $viewGeoName ) )
+			$viewGeoName = $viewGeoId;
+
+		$aGeos[ $viewGeoId ] = array( 'name' => $viewGeoName );
+
+		$grpIsFirst = false;
+	}
+
+	if( !isset( $aGeos[ '' ][ 'name' ] ) )
+	{
+		$ipHost = gethostbyname( Gen::GetArrField( Net::UrlParse( Wp::GetSiteRootUrl() ), array( 'host' ), '' ) );
+		$regId = GetViewGeoId( Gen::GetArrField( $sett, array( 'cache' ), array() ), array(), $ipHost );
+		$aGeos[ '' ][ 'name' ] = $regId;
+
+		unset( $aRegionsIp[ $regId ] );
+	}
+
+	foreach( $aRegionsIp as $regId => $regIP )
+	{
+		$matched = false;
+		foreach( $aGrp as $grpId => $grp )
+		{
+			if( !(isset($grp[ 'enable' ])?$grp[ 'enable' ]:null) )
+				continue;
+
+			foreach( Gen::GetArrField( $grp, array( 'items' ), array() ) as $grpItem )
+			{
+				if( !DoesViewGeoGrpItemMatchEx( ExprConditionsSet_Parse( $grpItem ), $regId ) )
+					continue;
+
+				$matched = true;
+				break;
+			}
+
+			if( $matched )
+				break;
+		}
+
+		if( !$matched )
+			$aGeos[ $regId ] = array( 'name' => $regId );
+	}
+
+	return( $aGeos );
 }
 
 function GetUserDisplayName( $sessId )
@@ -1731,11 +1988,11 @@ function OnAsyncTask_CacheOp( $args )
 		if( !$urls )
 			$urls = array( Wp::GetSiteRootUrl() );
 
-		$res = CacheOpUrls( true, $urls, $op, 0, true, null, Gen::GetArrField( $args, array( 'v' ) ), Gen::GetArrField( $args, array( 'u' ), 0 ) );
+		$res = CacheOpUrls( true, $urls, $op, 0, true, null, Gen::GetArrField( $args, array( 'v' ) ), Gen::GetArrField( $args, array( 'g' ) ), Gen::GetArrField( $args, array( 'u' ), 0 ) );
 		break;
 
 	default:
-		if( ( $res = CacheOp( $op, 100, Gen::GetArrField( $args, array( 'v' ) ) ) ) && $op != 1 )
+		if( ( $res = CacheOp( $op, 100, Gen::GetArrField( $args, array( 'v' ) ), Gen::GetArrField( $args, array( 'g' ) ) ) ) && $op != 1 )
 			Plugin::StateUpdateFlds( array( 'settChangedUpdateCache' => null ) );
 		break;
 	}
@@ -1757,6 +2014,9 @@ function OnAdminApi_CacheOpBegin( $args )
 		else
 			unset( $args[ 'v' ] );
 	}
+
+	if( isset( $args[ 'g' ] ) )
+		$args[ 'g' ] = explode( ',', $args[ 'g' ] );
 
 	if( $args[ 'op' ] == 10 )
 		CacheExt_ClearOnExtRequest( Gen::GetArrField( $args, array( 'type' ), '' ) == 'uri' ? (isset($args[ 'uri' ][ 0 ])?$args[ 'uri' ][ 0 ]:'') : null );
@@ -1851,11 +2111,13 @@ class API
 	const CACHE_OP_DEL = 2;
 	const CACHE_OP_SRVDEL = 10;
 
-	static function OperateCache( $op = API::CACHE_OP_DEL, $obj = null, $viewId = null, $userId = null )
+	static function OperateCache( $op = API::CACHE_OP_DEL, $obj = null, $viewId = null, $userId = null, $geoId = null )
 	{
 		$args = array( 'uri' => ( array )$obj, 'op' => $op, 'type' => $obj ? 'uri' : '' );
 		if( $viewId )
 		    $args[ 'v' ] = $viewId;
+		if( $geoId !== null )
+		    $args[ 'g' ] = $geoId;
 		if( $userId )
 			$args[ 'u' ] = $userId;
 

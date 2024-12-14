@@ -103,14 +103,18 @@ function _Process( $sites, $args )
 		}
 	}
 
+	$siteUriRoot = '';
 	if( !GetContCacheEarlySkipData( $pathOrig, $path, $pathIsDir, $args ) )
 	{
-		$addrSite = GetRequestHost( $_SERVER );
+		$host = GetRequestHost( $_SERVER );
+		$addrSite = $host;
 		$seraph_accel_g_siteId = GetCacheSiteIdAdjustPath( $sites, $addrSite, $siteSubId, $path );
 		if( $seraph_accel_g_siteId === null )
 			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'siteIdUnk' ) );
+		else
+			$siteUriRoot = substr( $addrSite, strlen( $host ) );
 
-		unset( $addrSite );
+		unset( $addrSite, $host );
 	}
 
 	$sett = Plugin::SettGet( Gen::CallFunc( 'seraph_accel_siteSettInlineDetach', array( $seraph_accel_g_siteId ) ) );
@@ -471,7 +475,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.23.2;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.23.3;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -1321,7 +1325,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( (isset($settCache[ 'normAgent' ])?$settCache[ 'normAgent' ]:null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = (isset($_SERVER[ 'HTTP_USER_AGENT' ])?$_SERVER[ 'HTTP_USER_AGENT' ]:'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.2';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.3';
 	}
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )

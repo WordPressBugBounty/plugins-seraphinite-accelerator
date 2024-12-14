@@ -1000,7 +1000,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.2' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.3' );
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
 	{
@@ -1120,7 +1120,7 @@ function CacheGetEnvNginxConf( $sett )
 
 			if( Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) )
 				$confComprRedirBlock .=
-					"\t" . 'if ($file_ai) { rewrite . ' . str_replace( array( '.seraph_accel_gi.', '.ai.' ), array( '$request_filename', '${ai_s}.${ai_f}' ), Net::UrlDeParse( array( 'path' => $siteRootUri . '/', 'query' => Image_MakeOwnRedirUrlArgsEx( '.seraph_accel_gi.', '.ai.' ) ), Net::URLPARSE_F_PRESERVEEMPTIES ) ) . ' last; break; }' . "\n" .
+					"\t" . 'if ($file_ai) { rewrite ^(.*)$ ' . str_replace( array( '.seraph_accel_gi.', '.ai.' ), array( '$1', '${ai_s}.${ai_f}' ), Net::UrlDeParse( array( 'path' => $siteRootUri . '/', 'query' => Image_MakeOwnRedirUrlArgsEx( '.seraph_accel_gi.', '.ai.' ) ), Net::URLPARSE_F_PRESERVEEMPTIES ) ) . '&intrnl=1 last; break; }' . "\n" .
 					'';
 		}
 
@@ -1303,7 +1303,7 @@ function CacheInitEnv( $sett, $init = true )
 
 				if( Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) )
 					$htaccessBlock .=
-						'<IfModule mod_rewrite.c>' . "\n\t" . 'RewriteEngine On' . "\n\t" . 'RewriteCond %{REQUEST_URI}?%{QUERY_STRING} \\.(' . $imgTypesCnvFrom_RegExpEnum . ')\\?(|.*\\&)seraph_accel_ai=([\\w\\-]+)\\.([\\w\\-]+)(\\&.*$|$) [NC]' . "\n\t" . 'RewriteCond "' . $dataPath . '/s/%3/ai/%4.%1" !-f' . "\n\t" . 'RewriteRule . ' . str_replace( array( '.seraph_accel_gi.', '.ai.' ), array( '%{REQUEST_FILENAME}', '%3.%4' ), Net::UrlDeParse( array( 'path' => $siteRootUri . '/', 'query' => Image_MakeOwnRedirUrlArgsEx( '.seraph_accel_gi.', '.ai.' ) ), Net::URLPARSE_F_PRESERVEEMPTIES ) ) . '&%2%5 [L,QSD,END]' . "\n" .
+						'<IfModule mod_rewrite.c>' . "\n\t" . 'RewriteEngine On' . "\n\t" . 'RewriteCond %{THE_REQUEST} (?:\\w+\\s)?([^?]+\\.(' . $imgTypesCnvFrom_RegExpEnum . '))\\?(|.*\\&)seraph_accel_ai=([\\w\\-]+)\\.([\\w\\-]+)(\\&[^\\s]*) [NC]' . "\n\t" . 'RewriteCond "' . $dataPath . '/s/%4/ai/%5.%2" !-f' . "\n\t" . 'RewriteRule . ' . str_replace( array( '.seraph_accel_gi.', '.ai.' ), array( '%1', '%4.%5' ), Net::UrlDeParse( array( 'path' => $siteRootUri . '/', 'query' => Image_MakeOwnRedirUrlArgsEx( '.seraph_accel_gi.', '.ai.' ) ), Net::URLPARSE_F_PRESERVEEMPTIES ) ) . '&intrnl=1&%3%6 [L,QSD,END]' . "\n" .
 						'</IfModule>' . "\n" .
 						'';
 			}

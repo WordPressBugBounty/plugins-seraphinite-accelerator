@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.7
-Stable tag: 2.23.2
+Stable tag: 2.23.3
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,13 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.23.3 =
+
+Fixes:
+
+* Adaptive images: redirection on server with filesystem aliases may not work.
+* Settings are not shown on PHP 8.2.x and higher.
 
 = 2.23.2 =
 

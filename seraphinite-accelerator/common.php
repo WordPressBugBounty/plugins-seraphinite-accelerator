@@ -1199,8 +1199,8 @@ function OnOptGetDef_Sett()
 					'enable' => true,
 					'name' => 'WooCommerce',
 					'cookies' => array(
-						'woocommerce_cart_hash',
-						'DISABLED-wp_woocommerce_session_',
+						'DISABLED.woocommerce_cart_hash',
+						'DISABLED.wp_woocommerce_session_',
 						'yith_wcwl_session_',
 					),
 
@@ -1393,7 +1393,7 @@ function OnOptGetDef_Sett()
 				'thrvAni' => true,
 				'phloxThRspnsv' => true,
 				'phloxThAni' => true,
-				'sldN2Ss' => true,
+				'sldN2Ss' => false,
 				'sldRev' => true,
 				'sldRev_SmthLd' => true,
 				'sldRev7' => true,
@@ -1512,9 +1512,13 @@ function OnOptGetDef_Sett()
 
 				'clk' => array(
 					'delay' => 250,
+
 					'excl' => array(
 						'.//*[contains(concat(" ",normalize-space(@class)," ")," cpel-switcher__lang ")]',
 						'.//*[contains(concat(" ",normalize-space(@class)," ")," cpel-switcher__lang ")]//a',
+
+						'.//*[contains(concat(" ",normalize-space(@class)," ")," n2-ss-slider ")]//*[contains(concat(" ",normalize-space(@class)," ")," nextend-arrow ")]',
+						'.//*[contains(concat(" ",normalize-space(@class)," ")," n2-ss-slider ")]//*[contains(concat(" ",normalize-space(@class)," ")," n2-bullet ")]',
 					),
 
 					'exclDef' => array(
@@ -1595,6 +1599,10 @@ function OnOptGetDef_Sett()
 
 						'src:@/depicter/@', 'body:@\\WDepicter\\W@',
 
+						'src:@/plugins/(?:nextend-|)smart-slider@',
+						'body:@(?:^|\\W)_N2\\s*\\.\\s*r\\s*\\(\\s*[\'"]documentReady[\'"]@',
+						'body:@\\Wthis\\s*\\.\\s*_N2\\s*=\\s*this\\s*\\.\\s*_N2\\W@',
+
 						'src:@\\.github\\.com@',
 
 						'body:@window\\.jetMenuMobileWidgetRenderData@',
@@ -1667,6 +1675,8 @@ function OnOptGetDef_Sett()
 
 						'@depicter@',
 
+						'@\\.n2-ss-@',
+
 						'@\\.show-mobile-header@',
 
 						'@\\.uk-modal@',
@@ -1704,7 +1714,7 @@ function OnOptGetDef_Sett()
 
 					'bdt-slideshow'	=> array( 'enable' => true,		'descr' => 'Airtech Plumber Slider',	'data' => ".seraph-accel-js-lzl-ing .bdt-prime-slider-previous, .seraph-accel-js-lzl-ing .bdt-prime-slider-next {\r\n\tdisplay: none !important;\r\n}\r\n\r\n.seraph-accel-js-lzl-ing .bdt-post-slider-item:first-child {\r\n\tdisplay: unset !important;\r\n}" ),
 
-					'n2-ss-slider'	=> array( 'enable' => true,		'descr' => 'Smart Slider',				'data' => "ss3-force-full-width, ss3-fullpage {\r\n\ttransform: none !important;\r\n\topacity: 1 !important;\r\n\twidth: var(--seraph-accel-client-width) !important;\r\n\tmargin-left: calc((100% - var(--seraph-accel-client-width)) / 2);\r\n}\r\n\r\nss3-fullpage {\r\n\theight: 100vh !important;\r\n}\r\n\r\nbody.seraph-accel-js-lzl-ing .n2-ss-align {\r\n\toverflow: visible !important;\r\n}\r\n\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) .n2-ss-slide-backgrounds [data-public-id][data-lzl-first=\"1\"],\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) [data-slide-public-id][data-lzl-first=\"1\"] {\r\n\ttransform: translate3d(0px, 0px, 0px) !important;\r\n}\r\n\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) .n2-ss-slide:not([data-slide-public-id][data-lzl-first=\"1\"]),\r\n.n2-ss-slider:not(.n2-ss-loaded) .n2-ss-layer.js-lzl-n-ing,\r\n.n2-ss-slider:not(.n2-ss-loaded):not([style*=ss-responsive-scale]) [data-responsiveposition],\r\n.n2-ss-slider:not(.n2-ss-loaded):not([style*=ss-responsive-scale]) [data-responsivesize],\r\n.n2-ss-slider.n2-ss-loaded .n2-ss-layer.js-lzl-ing {\r\n\tvisibility: hidden !important;\r\n}\r\n\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) [data-slide-public-id][data-lzl-first=\"1\"] .n2-ss-layers-container,\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) .n2-ss-slide-backgrounds [data-public-id][data-lzl-first=\"1\"],\r\n.n2-ss-slider:not(.n2-ss-loaded) .n2-ss-slider-controls-advanced {\r\n\topacity: 1 !important;\r\n}\r\n\r\n.n2-ss-slider[data-ss-carousel]:not(.n2-ss-loaded) .n2-ss-layers-container {\r\n\topacity: 1 !important;\r\n\tvisibility: visible !important;\r\n}\r\n\r\n.n2-ss-slider-pane {\r\n\topacity: 1 !important;\r\n\tanimation-name: none !important;\r\n\t--self-side-margin: auto !important;\r\n\t--slide-width: 100% !important;\r\n}\r\n\r\n/*.n2-ss-showcase-slides:not(.n2-ss-showcase-slides--ready) {\r\n\topacity: 1 !important;\r\n\ttransform: none !important;\r\n}*/" ),
+					'n2-ss-slider'	=> array( 'enable' => false,		'descr' => 'Smart Slider',				'data' => "ss3-force-full-width, ss3-fullpage {\r\n\ttransform: none !important;\r\n\topacity: 1 !important;\r\n\twidth: var(--seraph-accel-client-width) !important;\r\n\tmargin-left: calc((100% - var(--seraph-accel-client-width)) / 2);\r\n}\r\n\r\nss3-fullpage {\r\n\theight: 100vh !important;\r\n}\r\n\r\nbody.seraph-accel-js-lzl-ing .n2-ss-align {\r\n\toverflow: visible !important;\r\n}\r\n\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) .n2-ss-slide-backgrounds [data-public-id][data-lzl-first=\"1\"],\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) [data-slide-public-id][data-lzl-first=\"1\"] {\r\n\ttransform: translate3d(0px, 0px, 0px) !important;\r\n}\r\n\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) .n2-ss-slide:not([data-slide-public-id][data-lzl-first=\"1\"]),\r\n.n2-ss-slider:not(.n2-ss-loaded) .n2-ss-layer.js-lzl-n-ing,\r\n.n2-ss-slider:not(.n2-ss-loaded):not([style*=ss-responsive-scale]) [data-responsiveposition],\r\n.n2-ss-slider:not(.n2-ss-loaded):not([style*=ss-responsive-scale]) [data-responsivesize],\r\n.n2-ss-slider.n2-ss-loaded .n2-ss-layer.js-lzl-ing {\r\n\tvisibility: hidden !important;\r\n}\r\n\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) [data-slide-public-id][data-lzl-first=\"1\"] .n2-ss-layers-container,\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) .n2-ss-slide-backgrounds [data-public-id][data-lzl-first=\"1\"],\r\n.n2-ss-slider:not(.n2-ss-loaded) .n2-ss-slider-controls-advanced {\r\n\topacity: 1 !important;\r\n}\r\n\r\n.n2-ss-slider[data-ss-carousel]:not(.n2-ss-loaded) .n2-ss-layers-container {\r\n\topacity: 1 !important;\r\n\tvisibility: visible !important;\r\n}\r\n\r\n.n2-ss-slider-pane {\r\n\topacity: 1 !important;\r\n\tanimation-name: none !important;\r\n\t--self-side-margin: auto !important;\r\n\t--slide-width: 100% !important;\r\n}\r\n\r\n/*.n2-ss-showcase-slides:not(.n2-ss-showcase-slides--ready) {\r\n\topacity: 1 !important;\r\n\ttransform: none !important;\r\n}*/" ),
 
 					'wp-block-ultimate-post-slider'	=> array( 'enable' => true,		'descr' => 'Block Ultimate Post Slider',	'data' => "[class*=wp-block-ultimate-post-post-slider] .ultp-block-items-wrap:not(.slick-initialized) > .ultp-block-item:not(:first-child)\n{\n\tdisplay: none!important;\n}" ),
 
@@ -2413,14 +2423,9 @@ function CacheDscUpdate( $lock, $settCache, $content, $deps, $subParts, $dataPat
 	return( $writeOk ? $dsc : null );
 }
 
-function IsCronEnabled()
-{
-	return( !( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) );
-}
-
 function CacheDoesCronDelayPageLoad()
 {
-	if( !IsCronEnabled() )
+	if( !Wp::IsCronEnabled() )
 		return( false );
 	if( Gen::IsRequestSessionsCanBeClosedForContinueBgWork() )
 		return( false );
@@ -2431,7 +2436,7 @@ function CacheDoCronAndEndRequest()
 {
 	global $seraph_accel_g_prepPrms;
 
-	if( $seraph_accel_g_prepPrms !== null || !IsCronEnabled() || !Gen::GetArrField( Plugin::SettGet(), array( 'cache', 'cron' ), false ) )
+	if( $seraph_accel_g_prepPrms !== null || !Wp::IsCronEnabled() || !Gen::GetArrField( Plugin::SettGet(), array( 'cache', 'cron' ), false ) )
 		return( null );
 
 	if( !Gen::CloseCurRequestSessionForContinueBgWork() )
@@ -3216,7 +3221,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.3 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.4 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -3530,7 +3535,7 @@ function CachePushQueueProcessor( $next = false, $immediately = false, $shortInt
 
 	Plugin::AsyncFastTaskPost( 'QueueProcessItems', null, array( $time ), false, true );
 
-	if( !$next && !IsCronEnabled()  )
+	if( !$next && !Wp::IsCronEnabled()  )
 		return;
 
 	if( $procInterval <= 5 )
@@ -4363,7 +4368,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.3';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.4';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 

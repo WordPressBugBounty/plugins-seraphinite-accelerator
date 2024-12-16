@@ -6319,6 +6319,11 @@ class Wp
 		return( defined( 'DOING_CRON' ) && DOING_CRON );
 	}
 
+	static function IsCronEnabled()
+	{
+		return( !( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) );
+	}
+
 	static function GetHomePath()
 	{
 		if( !function_exists( 'get_home_path' ) )

@@ -475,7 +475,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.23.3;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.23.4;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -1125,7 +1125,7 @@ function CacheSetCurRequestToPrepareAsync( $siteId, $tmp = false, $bgEnabled = f
 	$obj -> cb = function( $obj ) { _CacheSetRequestToPrepareAsyncEx( $obj -> siteId, $obj -> url, $obj -> hdrs, $obj -> tmp ); };
 	add_action( 'muplugins_loaded', array( $obj, 'cb' ) , 0 );
 
-	if( IsCronEnabled() )
+	if( Wp::IsCronEnabled() )
 		add_action( 'wp_loaded', function() { if( Wp::GetFilters( 'init', 'wp_cron' ) ) wp_cron(); exit(); }, -999999 );
 	else
 		add_action( 'muplugins_loaded', function() { exit(); }, 1 );
@@ -1325,7 +1325,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( (isset($settCache[ 'normAgent' ])?$settCache[ 'normAgent' ]:null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = (isset($_SERVER[ 'HTTP_USER_AGENT' ])?$_SERVER[ 'HTTP_USER_AGENT' ]:'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.3';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.4';
 	}
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )

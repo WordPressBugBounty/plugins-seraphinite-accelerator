@@ -156,8 +156,11 @@ function _SettCacheOps( $sett, $fldIdEx, $ns, $bSrv = false )
 function _SettingsPage()
 {
 
+	if( function_exists( 'opcache_invalidate' ) )
+		@opcache_invalidate( __DIR__ . '/options.php', true );
+
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.23.3' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.23.4' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -5050,6 +5053,7 @@ function _SettingsPage()
 												'loc'		=> esc_html_x( 'Local', 'admin.Settings_Advanced_AsyncMode', 'seraphinite-accelerator' ),
 												're_r'	=> esc_html_x( 'ReRoot', 'admin.Settings_Advanced_AsyncMode', 'seraphinite-accelerator' ),
 												're'			=> esc_html_x( 'Re', 'admin.Settings_Advanced_AsyncMode', 'seraphinite-accelerator' ),
+
 											),
 											Gen::GetArrField( $sett, $fldId, '', '/' ), true, array( 'class' => 'inline' ) )
 									) ) );
@@ -5082,7 +5086,7 @@ function _SettingsPage()
 							{
 								$o .= ( Ui::TagOpen( 'td' ) );
 								{
-									$o .= ( Ui::CheckBox( esc_html_x( 'CronEnableChk', 'admin.Settings_Advanced_Cron', 'seraphinite-accelerator' ), 'seraph_accel/cronEnable', IsCronEnabled(), true, array( 'disabled' => $adminMsModes[ 'global' ] ? null : true ) ) );
+									$o .= ( Ui::CheckBox( esc_html_x( 'CronEnableChk', 'admin.Settings_Advanced_Cron', 'seraphinite-accelerator' ), 'seraph_accel/cronEnable', Wp::IsCronEnabled(), true, array( 'disabled' => $adminMsModes[ 'global' ] ? null : true ) ) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) );
 							}
@@ -6089,7 +6093,7 @@ function _OnSaveSettings( $args )
 
 	{
 		$cronEnable = isset( $args[ 'seraph_accel/cronEnable' ] );
-		if( IsCronEnabled() != $cronEnable )
+		if( Wp::IsCronEnabled() != $cronEnable )
 			$hr = Gen::HrAccom( $hr, Php::File_SetDefineVal( Wp::GetConfigFilePath(), 'DISABLE_WP_CRON', !$cronEnable ) );
 	}
 

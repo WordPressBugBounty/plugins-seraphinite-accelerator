@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.7
-Stable tag: 2.23.4
+Stable tag: 2.24
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,25 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.24 =
+
+Improvements:
+
+* Animation of Ultimate.
+* Not buffering excluded URLs.
+* Option to enable skipping arguments separately.
+* Responsive of Ultimate.
+* Self-learning: Ultra-fast processing.
+* Setting exclusions to lazy loading images only after loading scripts.
+* Tabs of WooCommerce.
+* Time to live for allowing server cache.
+* Views of cache depending on geo-location.
+
+Fixes:
+
+* Lazy backgrounds are non applied for pseudo selectors.
+* Multisite: if the plugin is active only on particular sites, it still caches all sites.
 
 = 2.23.4 =
 

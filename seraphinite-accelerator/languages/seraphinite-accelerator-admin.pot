@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.23.4)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.23.4\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.24)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.24\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.23.4)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.23.4\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.24)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.24\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1345,9 +1345,10 @@ msgctxt "admin.Settings_Cache_Srv_Gen"
 msgid "Lbl"
 msgstr ""
 
-# Allow cache
+# Allow cache with time to live %1$s seconds
+#, php-format
 msgctxt "admin.Settings_Cache_Srv"
-msgid "SrvChk"
+msgid "SrvChk_%1$s"
 msgstr ""
 
 # Update cache (if available)
@@ -1409,14 +1410,29 @@ msgctxt "admin.Settings_Exclusions_Args"
 msgid "Lbl"
 msgstr ""
 
-# Exclude all
+# Exclude particular
 msgctxt "admin.Settings_Exclusions_Args"
-msgid "AllExclChk"
+msgid "ExclSpec"
 msgstr ""
 
-# Cache skip all
+# Exclude all
 msgctxt "admin.Settings_Exclusions_Args"
-msgid "AllSkipChk"
+msgid "ExclAll"
+msgstr ""
+
+# Don't skip anything
+msgctxt "admin.Settings_Exclusions_Args"
+msgid "SkipNo"
+msgstr ""
+
+# Skip particular
+msgctxt "admin.Settings_Exclusions_Args"
+msgid "SkipSpec"
+msgstr ""
+
+# Skip all
+msgctxt "admin.Settings_Exclusions_Args"
+msgid "SkipAll"
 msgstr ""
 
 # Agents
@@ -2451,6 +2467,11 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "WprTabsChk"
 msgstr ""
 
+# Tabs of WooCommerce
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "WooTabsChk"
+msgstr ""
+
 # Tabs of Shortcodes Ultimate
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "SuTabsChk"
@@ -3041,9 +3062,16 @@ msgctxt "admin.Settings_Group_Item"
 msgid "LearnLbl"
 msgstr ""
 
-# Fast processing
-msgctxt "admin.Settings_Group_Item_Settings"
-msgid "SklSrchChk"
+msgctxt "admin.Settings_Group_Item_Settings_SklSrch"
+msgid "Std"
+msgstr ""
+
+msgctxt "admin.Settings_Group_Item_Settings_SklSrch"
+msgid "Fast"
+msgstr ""
+
+msgctxt "admin.Settings_Group_Item_Settings_SklSrch"
+msgid "Agg"
 msgstr ""
 
 # Exclusions for pages' structure comparing
@@ -3118,28 +3146,28 @@ msgctxt "admin.Settings_Advanced_Common"
 msgid "OpAgentPostponeChk"
 msgstr ""
 
-# Use %1$s requests for asynchronous tasks execution
+# Use %1$s for asynchronous tasks execution
 #, php-format
 msgctxt "admin.Settings_Advanced_Common"
 msgid "AsyncMode_%1$s"
 msgstr ""
 
-# normal
+# normal requests
 msgctxt "admin.Settings_Advanced_AsyncMode"
 msgid "Normal"
 msgstr ""
 
-# local
+# local requests
 msgctxt "admin.Settings_Advanced_AsyncMode"
 msgid "Local"
 msgstr ""
 
-# internal root
+# internal root requests
 msgctxt "admin.Settings_Advanced_AsyncMode"
 msgid "ReRoot"
 msgstr ""
 
-# internal
+# internal requests
 msgctxt "admin.Settings_Advanced_AsyncMode"
 msgid "Re"
 msgstr ""

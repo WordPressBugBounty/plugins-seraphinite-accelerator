@@ -1000,7 +1000,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.4' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.24' );
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
 	{
@@ -1192,18 +1192,10 @@ function CacheInitEnvDropin( $sett, $init = true )
 	$file = WP_CONTENT_DIR . '/advanced-cache.php';
 	$cont = @file_get_contents( $file );
 
-	if( !$init )
-	{
-		if( $cont && strpos( $cont, '/* seraphinite-accelerator */' ) !== false )
-		{
-			@file_put_contents( $file, '<?php /* Disabled by seraphinite-accelerator */' );
-			_OpCache_Invalidate( $file );
-		}
-
+	if( !$init && ( !$cont || strpos( $cont, '/* seraphinite-accelerator */' ) === false ) )
 		return( Gen::S_OK );
-	}
 
-	$contNew = GetAdvCacheFileContent( $sett );
+	$contNew = GetAdvCacheFileContent( $sett, $init );
 
 	$hr = Gen::S_OK;
 	if( $cont != $contNew )
@@ -1502,43 +1494,66 @@ function _AddSiteIdSites( &$sitesIds, $addrSite, $siteId, $availablePlugins )
 
 }
 
-function GetAdvCacheFileContent( $sett )
+function GetAdvCacheFileContent( $sett, $init = true )
 {
-	$content = '<?php' . "\n";
-	$content .= '/* seraphinite-accelerator */' . "\n";
-
-	$availablePlugins = Plugin::GetAvailablePlugins();
+	$content = '';
 
 	$sitesIds = array();
 	if( Gen::DoesFuncExist( 'get_sites' ) && is_multisite() )
 	{
+		$idPlg = Plugin::GetCurBaseName( false );
+		$idBlog = get_current_blog_id();
 		foreach( get_sites() as $site )
 		{
+			if( !$init && $idBlog == $site -> blog_id )
+				continue;
+
 			switch_to_blog( $site -> blog_id );
 
-			$addrSite = strtolower( Net::GetUrlWithoutProto( Gen::SetLastSlash( Wp::GetSiteRootUrl(), false ) ) );
-			$siteId = GetSiteId( $site );
-			_AddSiteIdSites( $sitesIds, $addrSite, $siteId, $availablePlugins );
+			$availablePlugins = Plugin::GetAvailablePlugins();
 
-			Plugin::SettCacheClear();
-			$settSite = Plugin::SettGet();
-			$content .= 'function _seraph_accel_siteSettInlineDetach_' . $siteId . '(){ return ' . var_export( $settSite, true ) . '; }' . "\n";
+			if( in_array( $idPlg, $availablePlugins ) )
+			{
+				$addrSite = strtolower( Net::GetUrlWithoutProto( Gen::SetLastSlash( Wp::GetSiteRootUrl(), false ) ) );
+				$siteId = GetSiteId( $site );
+				_AddSiteIdSites( $sitesIds, $addrSite, $siteId, $availablePlugins );
+
+				Plugin::SettCacheClear();
+				$settSite = Plugin::SettGet();
+				$content .= 'function _seraph_accel_siteSettInlineDetach_' . $siteId . '(){ return ' . var_export( $settSite, true ) . '; }' . "\n";
+			}
 
 			restore_current_blog();
 		}
 
-		$content .= 'function seraph_accel_siteSettInlineDetach($siteId){ $fn = \'_seraph_accel_siteSettInlineDetach_\' . $siteId; return function_exists($fn) ? call_user_func($fn) : null; }' . "\n";
+		if( $content )
+			$content .= 'function seraph_accel_siteSettInlineDetach($siteId){ $fn = \'_seraph_accel_siteSettInlineDetach_\' . $siteId; return function_exists($fn) ? call_user_func($fn) : null; }' . "\n";
 	}
 	else
 	{
-		$content .= 'function seraph_accel_siteSettInlineDetach($siteId){ return ' . var_export( $sett, true ) . '; }' . "\n";
-		_AddSiteIdSites( $sitesIds, Net::GetUrlWithoutProto( Gen::SetLastSlash( Wp::GetSiteRootUrl(), false ) ), 'm', $availablePlugins );
+		if( $init )
+		{
+			$availablePlugins = Plugin::GetAvailablePlugins();
+
+			$content .= 'function seraph_accel_siteSettInlineDetach($siteId){ return ' . var_export( $sett, true ) . '; }' . "\n";
+			_AddSiteIdSites( $sitesIds, Net::GetUrlWithoutProto( Gen::SetLastSlash( Wp::GetSiteRootUrl(), false ) ), 'm', $availablePlugins );
+		}
 	}
 
-	$content .= '$seraph_accel_sites = ' . var_export( $sitesIds, true ) . ';' . "\n";
+	if( $content )
+	{
+		$content = '<?php' . "\n" . '/* seraphinite-accelerator */' . "\n" . $content;
 
-	$content .= '@include(WP_CONTENT_DIR . \'/plugins/' . Plugin::GetCurBaseName( false ) . '/cache.php\');' . "\n";
-	$content .= '?>';
+		$content .= '$seraph_accel_sites = ' . var_export( $sitesIds, true ) . ';' . "\n";
+
+		$content .= '@include(WP_CONTENT_DIR . \'/plugins/' . Plugin::GetCurBaseName( false ) . '/cache.php\');' . "\n";
+		$content .= '?>';
+	}
+	else
+	{
+		$content .= '<?php /* Disabled by seraphinite-accelerator */';
+	}
+
 	return( $content );
 }
 

@@ -1173,6 +1173,26 @@ class Gen
 		return( count( $a1 ) == count( $a2 ) && !array_diff( $a1, $a2 ) && !array_diff( $a2, $a1 ) );
 	}
 
+	static function ArrContainRecursive( array $aIn, array $a )
+	{
+		foreach( $a as $k => $v )
+		{
+			if( !isset( $aIn[ $k ] ) )
+				return( false );
+
+			$vIn = $aIn[ $k ];
+			if( is_array( $vIn ) && is_array( $v ) )
+			{
+				if( !Gen::ArrContainRecursive( $vIn, $v ) )
+					return( false );
+			}
+			else if( $v !== $vIn )
+				return( false );
+		}
+
+		return( true );
+	}
+
 	static function ArrAdd( array &$array, array $array2 )
 	{
 		array_splice( $array, count( $array ), 0, $array2 );

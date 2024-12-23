@@ -154,6 +154,15 @@ function _Process( $sites, $args )
 		if( $exclStatus )
 		{
 			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => $exclStatus ) );
+
+			if( Gen::StrStartsWith( $exclStatus, 'excl' ) )
+			{
+				_ProcessOutHdrTrace( $sett, true, true, $seraph_accel_g_cacheSkipData[ 0 ], (isset($seraph_accel_g_cacheSkipData[ 1 ])?$seraph_accel_g_cacheSkipData[ 1 ]:null) );
+				if( $seraph_accel_g_prepPrms !== null )
+					ProcessCtlData_Update( (isset($seraph_accel_g_prepPrms[ 'pc' ])?$seraph_accel_g_prepPrms[ 'pc' ]:null), array( 'finish' => true, 'skip' => $exclStatus ), false, false );
+				return( Gen::S_NOTIMPL );
+			}
+
 			return( Gen::S_FALSE );
 		}
 
@@ -421,7 +430,7 @@ function _CacheStdHdrs( $allowExtCache, $ctxCache, $settCache )
 
 	if( $allowExtCache )
 	{
-		@header( 'Cache-Control: public, max-age=0, s-maxage=3600' );
+		@header( 'Cache-Control: public, max-age=0, s-maxage=' . Gen::GetArrField( $settCache, array( 'srvShrdTtl' ), 3600 ) );
 	}
 	else
 	{
@@ -475,7 +484,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.23.4;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.24;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -1325,7 +1334,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( (isset($settCache[ 'normAgent' ])?$settCache[ 'normAgent' ]:null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = (isset($_SERVER[ 'HTTP_USER_AGENT' ])?$_SERVER[ 'HTTP_USER_AGENT' ]:'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.4';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.24';
 	}
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )

@@ -40,7 +40,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.23.4', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.24', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -886,6 +886,13 @@ function _OnContentTest( $buffer )
 	return( $buffer );
 }
 
+function ExtDbUpd()
+{
+	if( !Wp::GetFilters( 'woocommerce_geoip_updater', 'seraph_accel\\_OnUpdateGeoDb' ) )
+		add_action( 'woocommerce_geoip_updater', 'seraph_accel\\_OnUpdateGeoDb' );
+	do_action( 'woocommerce_geoip_updater', null );
+}
+
 function _OnUpdateGeoDb()
 {
 	$svc = Gen::GetArrField( Wp::GetFilters( 'woocommerce_get_geolocation', array( 'WC_Integration_MaxMind_Geolocation', 'get_geolocation' ) ), array( 0, 'f', 0 ) );
@@ -995,7 +1002,7 @@ function _OnUpdateGeoDb()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.23.4' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.24' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1283,7 +1290,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.23.4' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.24' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -1748,7 +1755,7 @@ function OnAsyncTask_ExtDbUpd( $args )
 	Gen::SetTimeLimit( 1800 );
 	Gen::GarbageCollectorEnable( false );
 
-	do_action( 'woocommerce_geoip_updater', null );
+	ExtDbUpd();
 }
 
 function OnAdminApi_ExtDbUpdBegin( $args )
@@ -1860,10 +1867,10 @@ function GetGeosList( $sett )
 	if( !isset( $aGeos[ '' ][ 'name' ] ) )
 	{
 		$ipHost = gethostbyname( Gen::GetArrField( Net::UrlParse( Wp::GetSiteRootUrl() ), array( 'host' ), '' ) );
-		$regId = GetViewGeoId( Gen::GetArrField( $sett, array( 'cache' ), array() ), array(), $ipHost );
+		$regId = GetCountryCodeByIp( Gen::GetArrField( $sett, array( 'cache' ), array() ), $ipHost );
 		$aGeos[ '' ][ 'name' ] = $regId;
 
-		unset( $aRegionsIp[ $regId ] );
+		unset( $aRegionsIp[ $regId ], $ipHost );
 	}
 
 	foreach( $aRegionsIp as $regId => $regIP )

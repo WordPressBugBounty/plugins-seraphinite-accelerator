@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 140;
+const PLUGIN_SETT_VER								= 143;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -819,6 +819,33 @@ function OnOptRead_Sett( $sett, $verFrom )
 		Gen::SetArrField( $sett, array( 'contPr', 'cp', 'grnshftPbAosAni' ), false );
 	}
 
+	if( $verFrom && $verFrom < 141 )
+	{
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'wooTabs' ), false );
+	}
+
+	if( $verFrom && $verFrom < 142 )
+	{
+		if( Gen::GetArrField( $sett, array( 'cache', 'exclArgsAll' ), false ) )
+			Gen::SetArrField( $sett, array( 'cache', 'skipArgsEnable' ), false );
+		else
+		{
+			Gen::SetArrField( $sett, array( 'cache', 'skipArgsEnable' ), true );
+			if( Gen::GetArrField( $sett, array( 'cache', 'skipArgsAll' ), false ) )
+				Gen::SetArrField( $sett, array( 'cache', 'exclArgsAll' ), true );
+		}
+	}
+
+	if( $verFrom && $verFrom < 143 )
+	{
+
+		$grps = Gen::GetArrField( $sett, array( 'contPr', 'grps', 'items' ), array() );
+		$grps[ '@a' ] = Gen::GetArrField( OnOptGetDef_Sett(), array( 'contPr', 'grps', 'items', '@a' ), array() );
+		Gen::SetArrField( $grps, array( '@a', 'enable' ), 0 );
+		Gen::SetArrField( $sett, array( 'contPr', 'grps', 'items' ), $grps );
+
+	}
+
 	return( $sett );
 }
 
@@ -993,8 +1020,8 @@ function OnOptGetDef_Sett()
 				'printfriendly',
 			),
 			'exclCookies' => array(),
-			'exclArgsAll' => true,
 
+			'exclArgsAll' => true,
 			'exclArgs' => array(
 				'aiosp_sitemap_path',
 				'aiosp_sitemap_page',
@@ -1008,6 +1035,7 @@ function OnOptGetDef_Sett()
 				'sitemap_n',
 			),
 
+			'skipArgsEnable' => false,
 			'skipArgsAll' => false,
 			'skipArgs' => array( 'redirect_to', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'story_fbid', 'mibextid', 'gclid', 'wbraid', 'gbraid', '_ga', 'yclid', 'srsltid' ),
 
@@ -1199,7 +1227,7 @@ function OnOptGetDef_Sett()
 					'enable' => true,
 					'name' => 'WooCommerce',
 					'cookies' => array(
-						'DISABLED.woocommerce_cart_hash',
+						'woocommerce_cart_hash',
 						'DISABLED.wp_woocommerce_session_',
 						'yith_wcwl_session_',
 					),
@@ -1453,6 +1481,7 @@ function OnOptGetDef_Sett()
 				'eaelSmpMnu' => true,
 				'wprAniTxt' => true,
 				'wprTabs' => true,
+				'wooTabs' => true,
 				'suTabs' => true,
 				'upbAni' => true,
 				'upbBgImg' => true,
@@ -1684,6 +1713,8 @@ function OnOptGetDef_Sett()
 						'@#cr_floatingtrustbadge@',
 
 						'@(?:^|\\s)br(?:$|[\\s\\.#\\[])@',
+
+						'@(?:^|\\s)svg(?:$|[\\s\\.#\\[])@',
 					),
 					'inl' => true,
 					'int' => true,
@@ -1789,6 +1820,41 @@ function OnOptGetDef_Sett()
 						)
 					),
 
+					'@a' => array(
+						'enable' => 2,
+						'name' => 'Common (advanced)',
+						'urisIncl' => array(),
+						'argsIncl' => array(),
+						'patterns' => array(
+							'.//body[match(concat(" ",normalize-space(@class)," "),"@\\s(page)\\s@")][match(concat(" ",normalize-space(@class)," "),"@\\spage-id-(\\d+)\\s@")]',
+							'.//body[match(concat(" ",normalize-space(@class)," "),"@\\s(single)\\s@")][match(concat(" ",normalize-space(@class)," "),"@\\ssingle-([\\w\\-]+)\\s@")]',
+							'.//body[match(concat(" ",normalize-space(@class)," "),"@\\s(archive)\\s@")][match(concat(" ",normalize-space(@class)," "),"@\\s(post)-type-archive-([\\w\\-]+)\\s@")]',
+							'.//body[match(concat(" ",normalize-space(@class)," "),"@\\s(archive)\\s@")][match(concat(" ",normalize-space(@class)," "),"@\\s(tax)-([\\w\\-]+)\\s@")]',
+							'.//body[match(concat(" ",normalize-space(@class)," "),"@\\s(archive)\\s@")][match(concat(" ",normalize-space(@class)," "),"@\\s(tag)\\s@")]',
+							'.//body[match(concat(" ",normalize-space(@class)," "),"@\\s(archive)\\s@")][match(concat(" ",normalize-space(@class)," "),"@\\s(date)\\s@")]',
+							'.//body[match(concat(" ",normalize-space(@class)," "),"@\\s(home)\\s@")]',
+							'.//body[match(concat(" ",normalize-space(@class)," "),"@\\s(blog)\\s@")]',
+						),
+						'views' => array(),
+
+						'sklSrch' => 'a',
+
+						'sklExcl' => array(
+
+							'.//script', './/style', './/link', './/head',
+							'.//br', './/svg//*',
+
+						),
+
+						'sklCssSelExcl' => array(
+							'r=:@#[\\w\\-]+@',
+
+							'@\\.(?:product_cat|product_tag|category|tag|term|pa|woocommerce-product-attributes-item--attribute|comment-author)[\\-_]([\\w\\-]+)@i',
+							'@[\\.#][\\w\\-]*[\\-_]([\\da-f]+)[\\W_]@i',
+
+						),
+					),
+
 					'@' => array(
 						'enable' => 2,
 						'name' => 'Common',
@@ -1801,13 +1867,14 @@ function OnOptGetDef_Sett()
 
 						'sklExcl' => array(
 
-							'.//br', './/script', './/style', './/link', './/head',
+							'.//script', './/style', './/link', './/head',
+							'.//br',
 							'.//svg[@width="0"][@height="0"]',
 						),
 
 						'sklCssSelExcl' => array(
+							'@\\.(?:product_cat|product_tag|category|tag|term|pa|woocommerce-product-attributes-item--attribute|comment-author)[\\-_]([\\w\\-]+)@i',
 							'@[\\.#][\\w\\-]*[\\-_]([\\da-f]+)[\\W_]@i',
-							'@\\.(?:product_cat|product_tag|category|tag|pa|woocommerce-product-attributes-item--attribute|comment-author)[\\-_]([\\w\\-]+)@i',
 						),
 					),
 
@@ -2465,12 +2532,6 @@ function ApplyContentProcessorForceSett( &$sett, $settContPrOverride )
 	if( !$settContPrOverride )
 		return;
 
-	if( $settContPrOverride === 'LRNSTR' )
-	{
-		$sett[ 'contPr' ] = array( 'enable' => true, 'grps' => Gen::GetArrField( $sett, array( 'contPr', 'grps' ), array() ) );
-		return;
-	}
-
 	if( $settContPrOverride === '1' )
 		return;
 
@@ -2716,6 +2777,8 @@ function GetContCacheEarlySkipData( &$pathOrig = null , &$path = null , &$pathIs
 		$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'cron' ) );
 	else if( defined( 'XMLRPC_REQUEST' ) )
 		$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'xmlrpc' ) );
+	else if( isset( $_REQUEST[ 'seraph_accel_at' ] ) )
+		$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'seraph_accel_at:' . Gen::SanitizeId( $_REQUEST[ 'seraph_accel_at' ] ) ) );
 	else
 	{
 		$pathOrig = ParseContCachePathArgs( $_SERVER, $args );
@@ -2792,42 +2855,98 @@ function _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $cookies, $pa
 
 	if( !empty( $args ) )
 	{
-		if( Gen::GetArrField( $settCache, array( 'exclArgsAll' ), true ) )
-			return( 'exclArgsAll' );
-
-		if( Gen::GetArrField( $settCache, array( 'skipArgsAll' ), false ) )
-			$args = array();
-
-		$exclArgs = Gen::GetArrField( $settCache, array( 'exclArgs' ), array() );
-		$skipArgs = Gen::GetArrField( $settCache, array( 'skipArgs' ), array() );
-		foreach( $args as $argKey => $argVal )
+		if( $adjustArgs )
+			$aArgProcess = &$args;
+		else
 		{
-			$argKeyCmp = strtolower( $argKey );
+			$argsTmp = $args;
+			$aArgProcess = &$argsTmp;
+		}
 
-			foreach( $exclArgs as $a )
-				if( _ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
-					return( 'exclArgs:' . $a );
-
-			foreach( $ctxGrps as $ctxGrp )
+		if( Gen::GetArrField( $settCache, array( 'skipArgsEnable' ), false ) && Gen::GetArrField( $settCache, array( 'skipArgsAll' ), false ) )
+		{
+			if( !Gen::GetArrField( $settCache, array( 'exclArgsAll' ), true ) )
 			{
-				if( !(isset($ctxGrp[ 'enable' ])?$ctxGrp[ 'enable' ]:null) )
-					continue;
+				$exclArgs = Gen::GetArrField( $settCache, array( 'exclArgs' ), array() );
+				foreach( $aArgProcess as $argKey => $argVal )
+				{
+					$argKeyCmp = strtolower( $argKey );
 
-				$ctxArgs = Gen::GetArrField( $ctxGrp, array( 'args' ), array() );
-				foreach( $ctxArgs as $a )
-					if( strpos( $argKeyCmp, $a ) === 0 )
-						return( 'userCtxArgs:' . $a );
+					foreach( $exclArgs as $a )
+						if( _ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
+							return( 'exclArgs:' . $a );
+
+					foreach( $ctxGrps as $ctxGrp )
+					{
+						if( !(isset($ctxGrp[ 'enable' ])?$ctxGrp[ 'enable' ]:null) )
+							continue;
+
+						$ctxArgs = Gen::GetArrField( $ctxGrp, array( 'args' ), array() );
+						foreach( $ctxArgs as $a )
+							if( strpos( $argKeyCmp, $a ) === 0 )
+								return( 'exclUserCtxArgs:' . $a );
+					}
+				}
 			}
 
-			if( $adjustArgs )
-				foreach( $skipArgs as $a )
-					if( _ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
-						unset( $args[ $argKey ] );
+			$aArgProcess = array();
 		}
+		else
+		{
+			if( Gen::GetArrField( $settCache, array( 'exclArgsAll' ), true ) )
+			{
+				if( Gen::GetArrField( $settCache, array( 'skipArgsEnable' ), true ) )
+				{
+					$skipArgs = Gen::GetArrField( $settCache, array( 'skipArgs' ), array() );
+
+					foreach( $aArgProcess as $argKey => $argVal )
+					{
+						$argKeyCmp = strtolower( $argKey );
+
+						foreach( $skipArgs as $a )
+							if( _ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
+								unset( $aArgProcess[ $argKey ] );
+					}
+				}
+
+				if( !empty( $aArgProcess ) )
+					return( 'exclArgsAll' );
+			}
+			else
+			{
+				$exclArgs = Gen::GetArrField( $settCache, array( 'exclArgs' ), array() );
+				$skipArgs = Gen::GetArrField( $settCache, array( 'skipArgsEnable' ), false ) ? Gen::GetArrField( $settCache, array( 'skipArgs' ), array() ) : array();
+				foreach( $aArgProcess as $argKey => $argVal )
+				{
+					$argKeyCmp = strtolower( $argKey );
+
+					foreach( $exclArgs as $a )
+						if( _ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
+							return( 'exclArgs:' . $a );
+
+					foreach( $ctxGrps as $ctxGrp )
+					{
+						if( !(isset($ctxGrp[ 'enable' ])?$ctxGrp[ 'enable' ]:null) )
+							continue;
+
+						$ctxArgs = Gen::GetArrField( $ctxGrp, array( 'args' ), array() );
+						foreach( $ctxArgs as $a )
+							if( strpos( $argKeyCmp, $a ) === 0 )
+								return( 'exclUserCtxArgs:' . $a );
+					}
+
+					foreach( $skipArgs as $a )
+						if( _ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
+							unset( $aArgProcess[ $argKey ] );
+				}
+			}
+		}
+
+		unset( $aArgProcess );
 	}
 
 	if( $uriExcl = CheckPathInUriList( Gen::GetArrField( $settCache, array( 'urisExcl' ), array() ), $path, $pathOrig ) )
-		return( 'urisExcl:' . $uriExcl );
+		return( 'exclUris:' . $uriExcl );
 
 	if( $userAgent )
 		foreach( Gen::GetArrField( $settCache, array( 'exclAgents' ), array() ) as $e )
@@ -3221,7 +3340,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.4 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.24 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -3802,7 +3921,7 @@ function OnAsyncTask_CacheProcessItem( $args )
 
 	if( $itemType == 0 )
 	{
-		$prepArgs = array( 'nonce' => hash_hmac( 'md5', '' . $tmBegin, GetSalt() ), '_tm' => '' . $tmBegin, 'pc' => $data[ 'pc' ], 'p' => $priorOrig );
+		$prepArgs = array( 'nonce' => hash_hmac( 'md5', '' . $tmBegin, GetSalt() ), '_tm' => '' . $tmBegin, 'pc' => $data[ 'pc' ], 'p' => ( int )(isset($data[ 'p' ])?$data[ 'p' ]:null) );
 		if( $priorOrig == -480 )
 			$prepArgs[ 'lrn' ] = (isset($data[ 'l' ])?$data[ 'l' ]:null);
 
@@ -4368,7 +4487,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.23.4';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.24';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -4574,10 +4693,11 @@ function GetCountryCodeByIp( $settCache, &$ip_address )
 function GetRegion2IPMap()
 {
 	$lock = new Lock( GetCacheDir() . '/db/l', false );
-	$aRegionsIp = ( array )@unserialize( _FileReadWithLocker( GetCacheDir() . '/db/mm/c2ip-v1.dat', $lock ) );
+	$data = ( string )_FileReadWithLocker( GetCacheDir() . '/db/mm/c2ip-v1.dat', $lock );
 	unset( $lock );
 
-	return( $aRegionsIp );
+	$aRegionsIp = @unserialize( $data );
+	return( is_array( $aRegionsIp ) ? $aRegionsIp : array() );
 }
 
 function DoesViewGeoGrpItemMatchEx( $aa, $countryCode )

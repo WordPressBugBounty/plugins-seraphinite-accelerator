@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 143;
+const PLUGIN_SETT_VER								= 144;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -846,6 +846,31 @@ function OnOptRead_Sett( $sett, $verFrom )
 
 	}
 
+	if( $verFrom && $verFrom < 144 )
+	{
+		Gen::SetArrField( $sett, array( 'contPr', 'js', 'prvntDblInit' ), false );
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'strmtbUpcTmr' ), false );
+
+		{
+			$grpsExcl = Gen::GetArrField( $sett, array( 'contPr', 'grps', 'items', '@a', 'sklCssSelExcl' ), array() );
+			foreach( array(
+				'r=:@#[\\w\\-]+@' =>
+					'@#([\\w\\-]+)@',
+
+				'@\\.(?:product_cat|product_tag|category|tag|term|pa|woocommerce-product-attributes-item--attribute|comment-author)[\\-_]([\\w\\-]+)@i' =>
+					'@\\.(?:product_cat|product_tag|video_tag|category|categories|tag|term|pa|woocommerce-product-attributes-item--attribute|comment-author)[\\-_]([\\w\\-]+)@i'
+				) as $f => $r )
+				if( ( $i = array_search( $f, $grpsExcl ) ) !== false )
+					$grpsExcl[ $i ] = $r;
+			Gen::SetArrField( $sett, array( 'contPr', 'grps', 'items', '@a', 'sklCssSelExcl' ), $grpsExcl );
+		}
+
+		{
+			if( array_search( '@(?:^|\\s)svg(?:$|[\\s\\.#\\[])@', Gen::GetArrField( OnOptGetDef_Sett(), array( 'contPr', 'css', 'nonCrit', 'autoExcls' ), array() ) ) === false )
+				Gen::SetArrField( $sett, array( 'contPr', 'css', 'nonCrit', 'autoExcls', '+' ), '@(?:^|\\s)svg(?:$|[\\s\\.#\\[])@' );
+		}
+	}
+
 	return( $sett );
 }
 
@@ -1502,6 +1527,7 @@ function OnOptGetDef_Sett()
 				'jqVide' => true,
 				'jqSldNivo' => true,
 				'wooSctrCntDwnTmr' => true,
+				'strmtbUpcTmr' => true,
 				'lottGen' => true,
 				'sprflMenu' => true,
 				'jqJpPlr' => true,
@@ -1536,6 +1562,7 @@ function OnOptGetDef_Sett()
 				'cplxDelay' => false,
 				'preLoadEarly' => false,
 				'loadFast' => false,
+				'prvntDblInit' => true,
 				'aniDelay' => 1000,
 				'scrlDelay' => 500,
 
@@ -1826,6 +1853,7 @@ function OnOptGetDef_Sett()
 						'urisIncl' => array(),
 						'argsIncl' => array(),
 						'patterns' => array(
+							'.//body[match(concat(" ",normalize-space(@class)," "),"@\\s(page)\\s@")][match(concat(" ",normalize-space(@class)," "),"@\\s(parent)-pageid-(\\d+)\\s@")]',
 							'.//body[match(concat(" ",normalize-space(@class)," "),"@\\s(page)\\s@")][match(concat(" ",normalize-space(@class)," "),"@\\spage-id-(\\d+)\\s@")]',
 							'.//body[match(concat(" ",normalize-space(@class)," "),"@\\s(single)\\s@")][match(concat(" ",normalize-space(@class)," "),"@\\ssingle-([\\w\\-]+)\\s@")]',
 							'.//body[match(concat(" ",normalize-space(@class)," "),"@\\s(archive)\\s@")][match(concat(" ",normalize-space(@class)," "),"@\\s(post)-type-archive-([\\w\\-]+)\\s@")]',
@@ -1847,9 +1875,9 @@ function OnOptGetDef_Sett()
 						),
 
 						'sklCssSelExcl' => array(
-							'r=:@#[\\w\\-]+@',
+							'@#([\\w\\-]+)@',
 
-							'@\\.(?:product_cat|product_tag|category|tag|term|pa|woocommerce-product-attributes-item--attribute|comment-author)[\\-_]([\\w\\-]+)@i',
+							'@\\.(?:product_cat|product_tag|video_tag|category|categories|tag|term|pa|woocommerce-product-attributes-item--attribute|comment-author)[\\-_]([\\w\\-]+)@i',
 							'@[\\.#][\\w\\-]*[\\-_]([\\da-f]+)[\\W_]@i',
 
 						),
@@ -3340,7 +3368,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.24 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.24.1 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4487,7 +4515,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.24';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.24.1';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 

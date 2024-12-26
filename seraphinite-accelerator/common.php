@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 144;
+const PLUGIN_SETT_VER								= 145;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -868,6 +868,24 @@ function OnOptRead_Sett( $sett, $verFrom )
 		{
 			if( array_search( '@(?:^|\\s)svg(?:$|[\\s\\.#\\[])@', Gen::GetArrField( OnOptGetDef_Sett(), array( 'contPr', 'css', 'nonCrit', 'autoExcls' ), array() ) ) === false )
 				Gen::SetArrField( $sett, array( 'contPr', 'css', 'nonCrit', 'autoExcls', '+' ), '@(?:^|\\s)svg(?:$|[\\s\\.#\\[])@' );
+		}
+	}
+
+	if( $verFrom && $verFrom < 145 )
+	{
+		{
+			$grpsExcl = Gen::GetArrField( $sett, array( 'contPr', 'grps', 'items', '@a', 'sklCssSelExcl' ), array() );
+			foreach( array(
+				'@#([\\w\\-]+)@' =>
+					'@#([\\w\\-\\%]+)@',
+				) as $f => $r )
+				if( ( $i = array_search( $f, $grpsExcl ) ) !== false )
+					$grpsExcl[ $i ] = $r;
+
+			if( array_search( '@[^[:alnum:]]eb-(?:row|column|text|accordion(?:-item|))-([[:alnum:]]+)[^[:alnum:]\\-_]@i', $grpsExcl ) === false && ( $i = array_search( '@[\\.#][\\w\\-]*[\\-_]([\\da-f]+)[\\W_]@i', $grpsExcl ) ) !== false )
+				array_splice( $grpsExcl, $i, 0, array( '@[^[:alnum:]]eb-(?:row|column|text|accordion(?:-item|))-([[:alnum:]]+)[^[:alnum:]\\-_]@i' ) );
+
+			Gen::SetArrField( $sett, array( 'contPr', 'grps', 'items', '@a', 'sklCssSelExcl' ), $grpsExcl );
 		}
 	}
 
@@ -1875,9 +1893,10 @@ function OnOptGetDef_Sett()
 						),
 
 						'sklCssSelExcl' => array(
-							'@#([\\w\\-]+)@',
+							'@#([\\w\\-\\%]+)@',
 
 							'@\\.(?:product_cat|product_tag|video_tag|category|categories|tag|term|pa|woocommerce-product-attributes-item--attribute|comment-author)[\\-_]([\\w\\-]+)@i',
+							'@[^[:alnum:]]eb-(?:row|column|text|accordion(?:-item|))-([[:alnum:]]+)[^[:alnum:]\\-_]@i',
 							'@[\\.#][\\w\\-]*[\\-_]([\\da-f]+)[\\W_]@i',
 
 						),
@@ -2816,10 +2835,13 @@ function GetContCacheEarlySkipData( &$pathOrig = null , &$path = null , &$pathIs
 			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'robots' ) );
 		else if( strpos( $path, '.htaccess' ) !== false )
 			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'htaccess' ) );
-		else if( strpos( '/' . $path, '/wp-' ) !== false )
-			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'wpUrl' ) );
 		else if( isset( $_SERVER[ 'HTTP_LINGUISE_ORIGINAL_LANGUAGE' ] ) )
 			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'linguiseGetOrig' ) );
+		else if( ( $pos = strpos( '/' . $path, '/wp-' ) ) !== false )
+		{
+			if( !Gen::StrStartsWith( substr( $path, $pos ), basename( WP_CONTENT_DIR ) ) )
+				$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'wpUrl' ) );
+		}
 	}
 
 	return( $seraph_accel_g_cacheSkipData );
@@ -2831,13 +2853,26 @@ function _NormalizeExclPath( &$path )
 		$path = substr( $path, 1 );
 }
 
-function IsUriByPartsExcluded( $settCache, $path, $args )
+function IsUriByPartsExcluded( $settCache, $path, &$query )
 {
-	if( is_string( $args ) )
-		$args = Net::UrlParseQuery( $args );
+	$bDeParseArgs = false;
+	if( is_string( $query ) )
+	{
+		$query = Net::UrlParseQuery( $query );
+		$bDeParseArgs = true;
+	}
 
 	_NormalizeExclPath( $path );
-	return( !!_ContProcGetExclStatus( $settCache, Gen::GetArrField( $settCache, array( 'ctxGrps' ), array() ), null, null, $path, $path, $args ) );
+	$res = !!_ContProcGetExclStatus( $settCache, Gen::GetArrField( $settCache, array( 'ctxGrps' ), array() ), null, null, $path, $path, $query, true );
+
+	if( $bDeParseArgs )
+	{
+		$query = Net::UrlBuildQuery( $query );
+		if( !$query )
+			$query = null;
+	}
+
+	return( $res );
 }
 
 function CheckPathInUriList( $a, $path, $pathOrig = null )
@@ -2878,7 +2913,7 @@ function CheckPathInUriList( $a, $path, $pathOrig = null )
 	return( null );
 }
 
-function _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $cookies, $path, $pathOrig, &$args, $adjustArgs = false )
+function _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $cookies, $path, $pathOrig, &$args, $adjustArgs = false, &$aArgRemove = array() )
 {
 
 	if( !empty( $args ) )
@@ -2917,6 +2952,7 @@ function _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $cookies, $pa
 				}
 			}
 
+			$aArgRemove = array_keys( $aArgProcess );
 			$aArgProcess = array();
 		}
 		else
@@ -2965,7 +3001,10 @@ function _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $cookies, $pa
 
 					foreach( $skipArgs as $a )
 						if( _ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
+						{
+							$aArgRemove[] = $argKey;
 							unset( $aArgProcess[ $argKey ] );
+						}
 				}
 			}
 		}
@@ -3031,12 +3070,13 @@ function ContProcGetExclStatus( $siteId, $settCache, $path, $pathOrig, $pathIsDi
 
 	$varsOut[ 'tmCur' ] = $tmCur;
 	$varsOut[ 'userAgent' ] = $userAgent;
+	$varsOut[ 'aArgRemove' ] = array();
 
 	$ctxGrps = Gen::GetArrField( $settCache, array( 'ctxGrps' ), array() );
 
 	if( $pathIsDir )
 		$path .= '/';
-	$seraph_accel_g_contProcGetExclStatus = _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $_COOKIE, $path, $pathOrig, $args, $adjustArgs );
+	$seraph_accel_g_contProcGetExclStatus = _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $_COOKIE, $path, $pathOrig, $args, $adjustArgs, $varsOut[ 'aArgRemove' ] );
 	if( $seraph_accel_g_contProcGetExclStatus )
 		return( $seraph_accel_g_contProcGetExclStatus );
 
@@ -3368,7 +3408,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.24.1 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.24.2 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4515,7 +4555,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.24.1';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.24.2';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 

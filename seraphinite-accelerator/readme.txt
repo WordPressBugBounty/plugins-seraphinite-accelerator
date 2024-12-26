@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.7
-Stable tag: 2.24.1
+Stable tag: 2.24.2
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,20 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.24.2 =
+
+Improvements:
+
+* Clickable URLs in processing queue.
+* Compatibility with Converter for Media.
+* Removing skipped arguments in processing queue's items.
+* Self-learning: Ultra-fast processing.
+* Setting exclusions to adaptive images only after loading scripts.
+
+Fixes:
+
+* On demand image requests dont work with files under 'wp-content' directory.
 
 = 2.24.1 =
 

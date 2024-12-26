@@ -3401,6 +3401,9 @@ class Net
 
 	static function CurRequestRemoveArgs( &$args, array $aArgRemove )
 	{
+		if( !$aArgRemove )
+			return;
+
 		$requestUri = &$_SERVER[ 'REQUEST_URI' ];
 		$requestUriArgs = Net::UrlExtractArgs( $requestUri );
 
@@ -4994,6 +4997,9 @@ class Wp
 
 	static function RemoteGet( $url, $args = null )
 	{
+		if( !function_exists( 'wp_remote_get' ) )
+			return( null );
+
 		$obj = self::_RemoteGet_Ctx( $url, $args );
 
 		$obj -> setHooks( true );
@@ -5005,6 +5011,9 @@ class Wp
 
 	static function RemotePost( $url, $args = null )
 	{
+		if( !function_exists( 'wp_remote_post' ) )
+			return( null );
+
 		$obj = self::_RemoteGet_Ctx( $url, $args );
 
 		$obj -> setHooks( true );
@@ -5020,6 +5029,9 @@ class Wp
 			return( Wp::RemoteGet( $url, $args ) );
 		if( $method === 'POST' )
 			return( Wp::RemotePost( $url, $args ) );
+
+		if( !function_exists( 'wp_remote_request' ) )
+			return( null );
 
 		$obj = self::_RemoteGet_Ctx( $url, $args );
 

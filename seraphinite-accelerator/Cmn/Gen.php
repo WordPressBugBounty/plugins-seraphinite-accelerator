@@ -285,7 +285,7 @@ class Gen
 
 	static function Unserialize( $data, $defVal = null )
 	{
-		if( !is_serialized( $data ) )
+		if( function_exists( 'is_serialized' ) && !is_serialized( $data ) )
 			return( $defVal );
 
 		$v = @unserialize( $data );

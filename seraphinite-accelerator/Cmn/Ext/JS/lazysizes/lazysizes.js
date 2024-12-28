@@ -394,16 +394,29 @@ function l(window, document, Date) { // Pass in the window Date function also fo
 				beforeExpandVal, defaultExpand, preloadExpand, hFac;
 			var lazyloadElems = lazysizes.elements;
 
-			if((loadMode = lazySizesCfg.loadMode) && isLoading < 8 && (eLlen = lazyloadElems.length)){
-
-				i = 0;
-
+			if((loadMode = lazySizesCfg.loadMode) && isLoading < 8 && (eLlen = lazyloadElems.length))
+			{
 				lowRuns++;
 
-				for(; i < eLlen; i++){
+				var lazyloadElemsProir = []; var iHigh = 0, iMed = 0;
+				for( i = 0; i < eLlen; i++ )
+				{
+					var e = lazyloadElems[ i ];
+					if( !e || e._lzl_lazyRace )
+						continue;
+					
+					switch( e[ _getAttribute ]( "fetchpriority" ) )
+					{
+					case "high":	lazyloadElemsProir.splice( iHigh++, 0, e ); break;
+					case "low":		lazyloadElemsProir.push( e ); break;
+					default:		lazyloadElemsProir.splice( iHigh + iMed++, 0, e ); break;
+					}
+				}
+				eLlen = lazyloadElemsProir.length;
+				lazyloadElems = lazyloadElemsProir;
 
-					if(!lazyloadElems[i] || lazyloadElems[i]._lzl_lazyRace){continue;}
-
+				for( i = 0; i < eLlen; i++ )
+				{
 					if( lazySizesCfg.beforeCheckElem )
 						lazySizesCfg.beforeCheckElem( lazyloadElems[i] );
 

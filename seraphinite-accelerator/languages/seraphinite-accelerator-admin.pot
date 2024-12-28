@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.24.2)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.24.2\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.25)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.25\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.24.2)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.24.2\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.25)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.25\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -961,6 +961,81 @@ msgctxt "admin.Settings_Nav"
 msgid "Title"
 msgstr ""
 
+# Cache
+msgctxt "admin.Settings_Cache"
+msgid "Title"
+msgstr ""
+
+# Revalidation
+msgctxt "admin.Settings_Cache_Revalidate"
+msgid "Title"
+msgstr ""
+
+# Browser cache
+msgctxt "admin.Settings_CacheBrowser"
+msgid "Title"
+msgstr ""
+
+# Server and cloud
+msgctxt "admin.Settings_Cache_Srv"
+msgid "Title"
+msgstr ""
+
+# Exclusions
+msgctxt "admin.Settings_Exclusions"
+msgid "Title"
+msgstr ""
+
+# Different views cache
+msgctxt "admin.Settings_Views"
+msgid "Title"
+msgstr ""
+
+# Users
+msgctxt "admin.Settings_Ctx"
+msgid "Title"
+msgstr ""
+
+# HTML
+msgctxt "admin.Settings_Html"
+msgid "Title"
+msgstr ""
+
+# Images
+msgctxt "admin.Settings_Images"
+msgid "Title"
+msgstr ""
+
+# Videos, frames and content parts
+msgctxt "admin.Settings_Frames"
+msgid "Title"
+msgstr ""
+
+# Scripts
+msgctxt "admin.Settings_Scripts"
+msgid "Title"
+msgstr ""
+
+# Styles
+msgctxt "admin.Settings_Styles"
+msgid "Title"
+msgstr ""
+
+# CDN
+msgctxt "admin.Settings_Cdns"
+msgid "Title"
+msgstr ""
+
+# Content groups
+msgctxt "admin.Settings_Groups"
+msgid "Title"
+msgstr ""
+
+# Advanced
+msgctxt "admin.Settings_Advanced"
+msgid "Title"
+msgstr ""
+
 # <strong>Simple</strong>
 msgctxt "admin.Settings_Nav"
 msgid "SimpleRad"
@@ -989,11 +1064,6 @@ msgstr ""
 # <strong>Content</strong>
 msgctxt "admin.Settings_Nav"
 msgid "ContentRad"
-msgstr ""
-
-# Cache
-msgctxt "admin.Settings_Cache"
-msgid "Title"
 msgstr ""
 
 # General
@@ -1080,11 +1150,6 @@ msgstr ""
 # Regular expressions for header, each on newline
 msgctxt "admin.Settings_Cache_Headers"
 msgid "HdrsPhlr"
-msgstr ""
-
-# Revalidation
-msgctxt "admin.Settings_Cache_Revalidate"
-msgid "Title"
 msgstr ""
 
 # General
@@ -1319,11 +1384,6 @@ msgctxt "admin.Settings_Cache_Revalidate_Sche_Item"
 msgid "PriorHigh"
 msgstr ""
 
-# Browser cache
-msgctxt "admin.Settings_CacheBrowser"
-msgid "Title"
-msgstr ""
-
 # General
 msgctxt "admin.Settings_CacheBrowser_Common"
 msgid "Lbl"
@@ -1333,11 +1393,6 @@ msgstr ""
 #, php-format
 msgctxt "admin.Settings_CacheBrowser_Common"
 msgid "Timeout_%1$s%2$s%3$s"
-msgstr ""
-
-# Server and cloud
-msgctxt "admin.Settings_Cache_Srv"
-msgid "Title"
 msgstr ""
 
 # General
@@ -1388,11 +1443,6 @@ msgstr ""
 #, php-format
 msgctxt "admin.Settings_Cache_Srv_Sucuri"
 msgid "ApiSecret_%1$s"
-msgstr ""
-
-# Exclusions
-msgctxt "admin.Settings_Exclusions"
-msgid "Title"
 msgstr ""
 
 # URI paths
@@ -1463,11 +1513,6 @@ msgstr ""
 # XPath selectors of elements, each on newline
 msgctxt "admin.Settings_Exclusions_Conts"
 msgid "PatternsPhlr"
-msgstr ""
-
-# Different views cache
-msgctxt "admin.Settings_Views"
-msgid "Title"
 msgstr ""
 
 # General
@@ -1602,11 +1647,6 @@ msgctxt "admin.Settings_Views_Item"
 msgid "ArgsLbl"
 msgstr ""
 
-# Users
-msgctxt "admin.Settings_Ctx"
-msgid "Title"
-msgstr ""
-
 # Cache
 msgctxt "admin.Settings_Ctx_Common"
 msgid "Lbl"
@@ -1705,11 +1745,6 @@ msgstr ""
 # Column conditions in related table
 msgctxt "admin.Settings_Ctx_Grp_Tbls"
 msgid "CondLbl"
-msgstr ""
-
-# HTML
-msgctxt "admin.Settings_Html"
-msgid "Title"
 msgstr ""
 
 # General
@@ -1815,11 +1850,6 @@ msgstr ""
 # Storing as attributes
 msgctxt "admin.Settings_Html_Lazy"
 msgid "AsPropChk"
-msgstr ""
-
-# Images
-msgctxt "admin.Settings_Images"
-msgid "Title"
 msgstr ""
 
 # General
@@ -1982,11 +2012,6 @@ msgctxt "admin.Settings_Images_CacheExt"
 msgid "ItemsPhlr"
 msgstr ""
 
-# Videos, frames and content parts
-msgctxt "admin.Settings_Frames"
-msgid "Title"
-msgstr ""
-
 # Lazy load
 msgctxt "admin.Settings_Frames_Lazy"
 msgid "Lbl"
@@ -2007,6 +2032,11 @@ msgctxt "admin.Settings_Frames_Lazy"
 msgid "VimeoChk"
 msgstr ""
 
+# Corrections for lazy loading scripts
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "Lbl"
+msgstr ""
+
 # Background videos of Elementor
 msgctxt "admin.Settings_Frames_Lazy"
 msgid "ElmntrBgChk"
@@ -2015,11 +2045,6 @@ msgstr ""
 # Videos of Feeds for YouTube plugin
 msgctxt "admin.Settings_Frames_Lazy"
 msgid "YouTubeFeedChk"
-msgstr ""
-
-# Corrections for lazy loading scripts
-msgctxt "admin.Settings_Frames_ContParts"
-msgid "Lbl"
 msgstr ""
 
 # Slider of Airtech Plumber theme
@@ -2572,6 +2597,7 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "WooSctrCntDwnTmrChk"
 msgstr ""
 
+# Upcoming Timer from StreamTube
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "StrmtbUpcTmrChk"
 msgstr ""
@@ -2604,11 +2630,6 @@ msgstr ""
 # Animation of Page Builder Blocks of GreenShift
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "GrnshftPbAosAniChk"
-msgstr ""
-
-# Scripts
-msgctxt "admin.Settings_Scripts"
-msgid "Title"
 msgstr ""
 
 # General
@@ -2791,11 +2812,6 @@ msgctxt "admin.Settings_Scripts_Other"
 msgid "Lbl"
 msgstr ""
 
-# Styles
-msgctxt "admin.Settings_Styles"
-msgid "Title"
-msgstr ""
-
 # General
 msgctxt "admin.Settings_Styles_Common"
 msgid "Lbl"
@@ -2946,11 +2962,6 @@ msgctxt "admin.Settings_Styles_Custom"
 msgid "NoJsDlChk"
 msgstr ""
 
-# CDN
-msgctxt "admin.Settings_Cdns"
-msgid "Title"
-msgstr ""
-
 # Enable
 msgctxt "admin.Settings_Cdn_Item"
 msgid "EnabledLbl"
@@ -2979,11 +2990,6 @@ msgstr ""
 # Excludes
 msgctxt "admin.Settings_Cdn_Item"
 msgid "ExclsLbl"
-msgstr ""
-
-# Content groups
-msgctxt "admin.Settings_Groups"
-msgid "Title"
 msgstr ""
 
 # Modes
@@ -3101,11 +3107,6 @@ msgctxt "admin.Settings_Group_Item"
 msgid "SklCssSelExclPhlr"
 msgstr ""
 
-# Advanced
-msgctxt "admin.Settings_Advanced"
-msgid "Title"
-msgstr ""
-
 # General
 msgctxt "admin.Settings_Advanced_Common"
 msgid "Lbl"
@@ -3182,6 +3183,16 @@ msgstr ""
 # internal requests
 msgctxt "admin.Settings_Advanced_AsyncMode"
 msgid "Re"
+msgstr ""
+
+# external Cron
+msgctxt "admin.Settings_Advanced_AsyncMode"
+msgid "ExtCron"
+msgstr ""
+
+#, php-format
+msgctxt "admin.Settings_Advanced_Common"
+msgid "AsyncMode_ExtCronDsc_%1$s%2$s"
 msgstr ""
 
 # Task scheduler (Cron)

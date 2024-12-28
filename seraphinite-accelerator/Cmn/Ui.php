@@ -577,6 +577,29 @@ class Ui
 		return( Ui::Tag( 'div', Ui::Button( Ui::Tag( 'span', null, array( 'class' => 'dashicons dashicons-arrow-down', 'style' => array( 'margin-left' => '-0.1em' ) ) ), false, null, null, 'button', $attrsBtn ) . Ui::Spinner( false, array( 'class' => array( 'ctlSpaceBefore' ), 'style' => array( 'display' => 'none', 'vertical-align' => 'middle' ) ) ), $attrs ) );
 	}
 
+	static function TableCells( array $aCell, $ctx = null, $nCols = 1 )
+	{
+		$o = '';
+
+		$o .= Ui::TagOpen( 'tr' );
+
+		$iCol = 0;
+		foreach( $aCell as $cell )
+		{
+			$o .= Ui::Tag( 'td', call_user_func( $cell, $ctx ) );
+			$iCol++;
+
+			if( $iCol === $nCols )
+			{
+				$iCol = 0;
+				$o .= Ui::TagClose( 'tr' ) . Ui::TagOpen( 'tr' );
+			}
+		}
+
+		$o .= Ui::TagClose( 'tr' );
+		return( $o );
+	}
+
 	static function Tag( $name, $content = null, $attrs = null, $selfClose = false, $prms = null )
 	{
 		if( $content === null )

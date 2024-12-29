@@ -3273,12 +3273,18 @@ class Net
 		return( $args );
 	}
 
-	static function UrlAddArgs( $url, $args )
+	static function UrlAddArgsEx( $url, $args )
 	{
 		$args = Net::UrlBuildQuery( $args );
 		if( $args )
 			$url = $url . '?' . $args;
 		return( $url );
+	}
+
+	static function UrlAddArgs( $url, $args )
+	{
+		$args = array_merge( Net::UrlExtractArgs( $url ), $args );
+		return( Net::UrlAddArgsEx( $url, $args ) );
 	}
 
 	const URLPARSE_F_QUERY					= 1;
@@ -3410,17 +3416,35 @@ class Net
 		$redirect_query_string_args = Net::UrlParseQuery( (isset($_SERVER[ 'REDIRECT_QUERY_STRING' ])?$_SERVER[ 'REDIRECT_QUERY_STRING' ]:'') );
 		$query_string_args = Net::UrlParseQuery( (isset($_SERVER[ 'QUERY_STRING' ])?$_SERVER[ 'QUERY_STRING' ]:'') );
 
-		foreach( $aArgRemove as $argRemove )
+		foreach( $aArgRemove as $argIdx => $argRemove )
 		{
+			if( is_string( $argIdx ) )
+			{
+				if( $argRemove !== null )
+				{
+					$args[ $argIdx ] = $argRemove;
+					if( isset( $_GET[ $argIdx ] ) ) $_GET[ $argIdx ] = $argRemove;
+					if( isset( $_POST[ $argIdx ] ) ) $_POST[ $argIdx ] = $argRemove;
+					$_REQUEST[ $argIdx ] = $argRemove;
+					$requestUriArgs[ $argIdx ] = $argRemove;
+					$redirect_query_string_args[ $argIdx ] = $argRemove;
+					$query_string_args[ $argIdx ] = $argRemove;
+					continue;
+				}
+
+				$argRemove = $argIdx;
+			}
+
 			unset( $args[ $argRemove ] );
 			unset( $_GET[ $argRemove ] );
+			unset( $_POST[ $argRemove ] );
 			unset( $_REQUEST[ $argRemove ] );
 			unset( $requestUriArgs[ $argRemove ] );
 			unset( $redirect_query_string_args[ $argRemove ] );
 			unset( $query_string_args[ $argRemove ] );
 		}
 
-		$requestUri = Net::UrlAddArgs( $requestUri, $requestUriArgs );
+		$requestUri = Net::UrlAddArgsEx( $requestUri, $requestUriArgs );
 
 		$_SERVER[ 'REDIRECT_QUERY_STRING' ] = Net::UrlBuildQuery( $redirect_query_string_args );
 		$_SERVER[ 'QUERY_STRING' ] = Net::UrlBuildQuery( $query_string_args );
@@ -6343,7 +6367,7 @@ class Wp
 
 	static function GetCronUrl( $args = array() )
 	{
-		return( Net::UrlAddArgs( Wp::GetSiteWpRootUrl( 'wp-cron.php' ), $args ) );
+		return( Net::UrlAddArgsEx( Wp::GetSiteWpRootUrl( 'wp-cron.php' ), $args ) );
 	}
 
 	static function IsInRunningCron()

@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 146;
+const PLUGIN_SETT_VER								= 147;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -912,6 +912,29 @@ function OnOptRead_Sett( $sett, $verFrom )
 		}
 	}
 
+	if( $verFrom && $verFrom < 147 )
+	{
+		{
+			$grpsExcl = Gen::GetArrField( $sett, array( 'contPr', 'grps', 'items', '@a', 'sklCssSelExcl' ), array() );
+			foreach( array(
+				'@[\\.#][\\w\\-]*[\\-_]([\\da-f]+)[\\W_]@i' =>
+					'@[\\.#][\\w\\-\\:\\@\\\\]*[\\-_]([\\da-f]+)[\\W_]@i',
+				) as $f => $r )
+				if( ( $i = array_search( $f, $grpsExcl ) ) !== false )
+					$grpsExcl[ $i ] = $r;
+
+			Gen::SetArrField( $sett, array( 'contPr', 'grps', 'items', '@a', 'sklCssSelExcl' ), $grpsExcl );
+		}
+
+		{
+			$autoExcls = Gen::GetArrField( $sett, array( 'contPr', 'css', 'nonCrit', 'autoExcls' ), array() );
+			foreach( array( '@\\.uk-modal@', '@\\.uk-first-column@', '@\\.uk-grid-margin@', '@\\.uk-grid-stack@', '@\\.et_pb_column@', ) as $autoExclsExpr )
+				if( !in_array( $autoExclsExpr, $autoExcls ) )
+					$autoExcls[] = $autoExclsExpr;
+			Gen::SetArrField( $sett, array( 'contPr', 'css', 'nonCrit', 'autoExcls' ), $autoExcls );
+		}
+	}
+
 	return( $sett );
 }
 
@@ -1782,6 +1805,11 @@ function OnOptGetDef_Sett()
 						'@\\.show-mobile-header@',
 
 						'@\\.uk-modal@',
+						'@\\.uk-first-column@',
+						'@\\.uk-grid-margin@',
+						'@\\.uk-grid-stack@',
+
+						'@\\.et_pb_column@',
 
 						'@#cr_floatingtrustbadge@',
 
@@ -1925,7 +1953,7 @@ function OnOptGetDef_Sett()
 
 							'@\\.(?:product_cat|product_tag|video_tag|category|categories|tag|term|label-term|pa|label-attribute-pa|woocommerce-product-attributes-item-|comment-author)[\\-_]([\\w\\-]+)@i',
 							'@[^[:alnum:]]eb-(?:row|column|text|accordion(?:-item|))-([[:alnum:]]+)[^[:alnum:]\\-_]@i',
-							'@[\\.#][\\w\\-]*[\\-_]([\\da-f]+)[\\W_]@i',
+							'@[\\.#][\\w\\-\\:\\@\\\\]*[\\-_]([\\da-f]+)[\\W_]@i',
 
 						),
 					),
@@ -3436,7 +3464,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.25.1 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.25.2 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4626,7 +4654,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.25.1';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.25.2';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -4734,6 +4762,19 @@ function GetCurHdrsToStoreInCache( $settCache )
 	}
 
 	return( $res );
+}
+
+function VirtUriPath2Real( $path, array $aVPth )
+{
+	foreach( $aVPth as $vPth )
+	{
+		$n = 0;
+		$path = @preg_replace( $vPth[ 'f' ], $vPth[ 'r' ], $path, -1, $n );
+		if( $n )
+			break;
+	}
+
+	return( $path );
 }
 
 function _FileWriteTmpAndReplace( $file, $fileTime = null, $data = null, $fileTmp = null, $lock = null )
@@ -4969,6 +5010,13 @@ function DepsDiff( $a, $aNew )
 function DepsAdd( &$a, $type, $oiCi )
 {
 	$a[ $type ][ $oiCi ] = array();
+}
+
+function DepsAddMany( &$a, $aDeps )
+{
+	foreach( $aDeps as $type => $aoiCi )
+		foreach( $aoiCi as $oiCi => $v )
+			DepsAdd( $a, $type, $oiCi );
 }
 
 function DepsRemove( &$a, $aRem )

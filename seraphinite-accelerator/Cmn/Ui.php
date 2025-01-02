@@ -207,6 +207,43 @@ class Ui
 		return( self::InputBox( 'number', $id, $value, $attrs, $addNames ) );
 	}
 
+	static function NavTabs( $id, $items, $value = null, $addNames = false, $attrs = null )
+	{
+		if( !is_array( $attrs ) )
+			$attrs = array();
+		if( !is_array( $items ) )
+			$items = array();
+
+		self::_AddIdName( $attrs, $id, $addNames );
+		Gen::SetArrField( $attrs, 'class.+', 'nav-tab-wrapper' );
+
+		$res = '';
+
+		foreach( $items as $itemVal => $itemText )
+		{
+			$itemAttrs = null;
+			if( is_array( $itemText ) )
+			{
+				$itemAttrs = (isset($itemText[ 1 ])?$itemText[ 1 ]:null);
+				$itemText = (isset($itemText[ 0 ])?$itemText[ 0 ]:null);
+			}
+
+			if( !is_array( $itemAttrs ) )
+				$itemAttrs = array();
+
+			Gen::SetArrField( $itemAttrs, 'class.+', 'nav-tab' );
+			$itemAttrs[ 'onclick' ] = 'seraph_accel.Ui._cb.NavTabs_OnClickItem(this);return false';
+
+			$itemAttrs[ 'value' ] = $itemVal;
+			if( $itemVal == $value )
+				Gen::SetArrField( $itemAttrs, 'class.+', 'nav-tab-active' );
+
+			$res .= self::Tag( 'button', $itemText, $itemAttrs );
+		}
+
+		return( self::Tag( 'nav', $res, $attrs ) );
+	}
+
 	static function LogItem( $severity, $text, $normalizeText = true )
 	{
 		if( gettype( $text ) !== 'string' )
@@ -350,7 +387,7 @@ class Ui
 		$data = trim( substr( $v, $data + 1 ) );
 		$mimeType = (isset($prms[ 0 ])?$prms[ 0 ]:null);
 		$encoding = (isset($prms[ count( $prms ) - 1 ])?$prms[ count( $prms ) - 1 ]:null);
-		return( $encoding == 'base64' ? base64_decode( $data ) : false );
+		return( $encoding == 'base64' ? base64_decode( $data ) : rawurldecode( $data ) );
 	}
 
 	static function SetSrcAttrData( $data, $mimeType )

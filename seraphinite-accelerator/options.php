@@ -164,7 +164,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.25.1' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.25.2' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -181,7 +181,7 @@ function _SettingsPage()
 	{
 		Ui::PostBoxes_MetaboxAdd( 'navigator', esc_html_x( 'Title', 'admin.Settings_Nav', 'seraphinite-accelerator' ) . Ui::Tag( 'span', Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Navigator' ) ) ), Ui::AdminHelpBtnModeBlockHeader ) ), false,
 			'seraph_accel\\_SettingsPage_Navigator',
-			get_defined_vars()
+			get_defined_vars(), 'body', 'ctlInitVisibleBlock ns-nav-simple'
 		);
 
 		Ui::PostBoxes_MetaboxAdd( 'cache', esc_html_x( 'Title', 'admin.Settings_Cache', 'seraphinite-accelerator' ) . Ui::Tag( 'span', Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Cache' ) ) ), Ui::AdminHelpBtnModeBlockHeader ) ), true,
@@ -292,6 +292,15 @@ function _SettingsPage()
 			{
 				extract( $callbacks_args );
 
+				echo( Ui::NavTabs( null, array(
+					'simple'	=> Wp::safe_html_x( 'SimpleRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ),
+					'cache'		=> Wp::safe_html_x( 'CacheRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ),
+					'vars'		=> Wp::safe_html_x( 'VarsRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ),
+					'scripts'	=> Wp::safe_html_x( 'ScriptsRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ),
+					'content'	=> Wp::safe_html_x( 'ContentRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ),
+					'other'		=> Wp::safe_html_x( 'OtherRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ),
+				), 'simple', false, array( 'class' => 'ctlSpaceVAfter', 'data-oninit' => 'jQuery(this).on("change",function(){var ctlEnum=jQuery(this);seraph_accel.Ui.ComboShowDependedItems(ctlEnum.get(0),ctlEnum.closest("#navigator").parent().get(0),"ns-nav")})' ) ) );
+
 				echo( Ui::TagOpen( 'form', array( 'id' => 'seraph-accel-form', 'method' => 'post', 'onsubmit' => 'return seraph_accel.Ui.Apply(this);' ) ) );
 
 			},
@@ -320,33 +329,7 @@ function _SettingsPage_Navigator( $callbacks_args, $box )
 
 	$o = '';
 
-	$o .= ( Ui::TagOpen( 'p' ) );
-	{
-		$fldId = 'settScopeView';
-
-		$o .= ( Ui::SettBlock_ItemSubTbl_Begin( array( 'data-oninit' => 'jQuery(this).find("input[type=\"radio\"]").on("change",function(){var ctlEnum=jQuery(this).closest("table");seraph_accel.Ui.ComboShowDependedItems(ctlEnum.get(0),ctlEnum.closest("#navigator").parent().get(0),"ns-nav")})' ) ) );
-		{
-			$o .= ( Ui::TagOpen( 'tr' ) );
-			{
-				$o .= ( Ui::Tag( 'td', Ui::RadioBox( Wp::safe_html_x( 'SimpleRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, 'simple', true ) ) );
-				$o .= ( Ui::Tag( 'td', Ui::RadioBox( Wp::safe_html_x( 'CacheRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, 'cache' ) ) );
-				$o .= ( Ui::Tag( 'td', Ui::RadioBox( Wp::safe_html_x( 'ScriptsRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, 'scripts' ) ) );
-				$o .= ( Ui::Tag( 'td', Ui::RadioBox( Wp::safe_html_x( 'OtherRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, 'other' ) ) );
-			}
-			$o .= ( Ui::TagClose( 'tr' ) );
-
-			$o .= ( Ui::TagOpen( 'tr' ) );
-			{
-				$o .= ( Ui::Tag( 'td' ) );
-				$o .= ( Ui::Tag( 'td', Ui::RadioBox( Wp::safe_html_x( 'VarsRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, 'vars' ) ) );
-				$o .= ( Ui::Tag( 'td', Ui::RadioBox( Wp::safe_html_x( 'ContentRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, 'content' ) ) );
-				$o .= ( Ui::Tag( 'td' ) );
-			}
-			$o .= ( Ui::TagClose( 'tr' ) );
-		}
-		$o .= ( Ui::SettBlock_ItemSubTbl_End() );
-	}
-	$o .= ( Ui::TagClose( 'p' ) );
+	$o .= ( Ui::Tag( 'p', esc_html_x( 'Descr', 'admin.Settings_Nav', 'seraphinite-accelerator' ) ) );
 
 	echo( $o );
 }
@@ -5633,6 +5616,39 @@ function _OnSaveSettings( $args )
 		$svc = Gen::GetArrField( Wp::GetFilters( 'woocommerce_get_geolocation', array( 'WC_Integration_MaxMind_Geolocation', 'get_geolocation' ) ), array( 0, 'f', 0 ) );
 		$dbFile = $svc ? $svc -> get_database_service() -> get_database_path() : null;
 		Gen::SetArrField( $sett, 'cache/viewsGeo/fileMmDb', $dbFile, '/' );
+	}
+
+	{
+		$ctxVPathMap = new AnyObj();
+		$ctxVPathMap -> a = array();
+		if( Gen::DoesFuncExist( '\\HMWP_Models_Rewrite::setRewriteRules' ) )
+		{
+			$ctxVPathMap -> cbRulesHmwp =
+				function( $ctxVPathMap, $a )
+				{
+					foreach( $a as $aI )
+						$ctxVPathMap -> a[] = array( 'f' => '`^/' . $aI[ 'from' ] . '`', 'r' => $aI[ 'to' ] );
+					return( $a );
+				}
+			;
+
+			add_filter( 'hmwp_umrewrites', array( $ctxVPathMap, 'cbRulesHmwp' ), 99999, 1 );
+			add_filter( 'hmwp_rewrites', array( $ctxVPathMap, 'cbRulesHmwp' ), 99999, 1 );
+
+			$HMWP = new \HMWP_Models_Rewrite();
+			$HMWP -> setRewriteRules();
+			unset( $HMWP );
+
+			remove_filter( 'hmwp_rewrites', array( $ctxVPathMap, 'cbRulesHmwp' ), 99999 );
+			remove_filter( 'hmwp_umrewrites', array( $ctxVPathMap, 'cbRulesHmwp' ), 99999 );
+		}
+
+		if( $ctxVPathMap -> a )
+			Gen::SetArrField( $sett, 'cache/_vPth', $ctxVPathMap -> a, '/' );
+		else
+			Gen::UnsetArrField( $sett, 'cache/_vPth', '/' );
+
+		unset( $ctxVPathMap );
 	}
 
 	$hr = ApplySettings( $sett );

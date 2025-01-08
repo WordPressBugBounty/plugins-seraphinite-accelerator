@@ -27,7 +27,8 @@ function GetContentProcessCtxEx( $serverArgs, $sett, $siteId, $siteUrl, $siteRoo
 		'debug' => (isset($sett[ 'debugInfo' ])?$sett[ 'debugInfo' ]:null),
 		'jsMinSuffix' => $scriptDebug ? '' : '.min',
 		'userAgent' => strtolower( isset( $_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] ) ? $_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] : (isset($serverArgs[ 'HTTP_USER_AGENT' ])?$serverArgs[ 'HTTP_USER_AGENT' ]:null) ),
-		'mode' => 'full',
+		'mode' => ( 1 | 2 | 4 ),
+		'modeReq' => 0,
 		'aAttrImg' => array(),
 
 	);

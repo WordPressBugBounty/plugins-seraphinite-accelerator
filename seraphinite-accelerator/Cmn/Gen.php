@@ -597,7 +597,7 @@ class Gen
 
 	static function GetFileDir( $filepath, $saveLastSep = false, $levels = 1 )
 	{
-		if( !$levels || gettype( $filepath ) !== 'string' )
+		if( !$levels || !is_string( $filepath ) )
 			return( $filepath );
 
 		$sepPos = 0;
@@ -639,6 +639,24 @@ class Gen
 			return( '' );
 
 		return( substr( $filepath, 0, $sepPos + ( $saveLastSep ? 1 : 0 ) ) );
+	}
+
+	static function DoesFileDirExist( $filePath, $filePathRoot = null )
+	{
+		for( ;; )
+		{
+			$filePath = Gen::GetFileDir( $filePath );
+			if( !strlen( $filePath ) )
+				break;
+
+			if( $filePathRoot && strlen( $filePathRoot ) >= strlen( $filePath ) )
+				break;
+
+			if( @file_exists( $filePath ) )
+				return( true );
+		}
+
+		return( false );
 	}
 
 	static function GetNormalizedPath( $path )
@@ -2552,7 +2570,7 @@ class ArrayOnFiles implements \Iterator, \ArrayAccess, \Countable
 		return( $res );
 	}
 
-	function splice( $offset = null, $length = null )
+	function splice( $offset = null, $length = null, &$resUpd = null )
 	{
 		$res = array();
 		$offset = ( int )$offset;
@@ -2585,7 +2603,7 @@ class ArrayOnFiles implements \Iterator, \ArrayAccess, \Countable
 			$offset = 0;
 		}
 
-		$this -> _ChunksUpdate();
+		$resUpd = $this -> _ChunksUpdate();
 		$this -> _UnloadUnusedChunks();
 		return( $res );
 	}
@@ -3913,7 +3931,7 @@ class HtmlNd
 				$val[] = $valClass;
 
 		foreach( $valClassesRemove as $valClassRemove )
-			if( ( $i = array_search( $valClassRemove, $val ) ) !== false )
+			while( ( $i = array_search( $valClassRemove, $val ) ) !== false )
 				unset( $val[ $i ] );
 
 		$val = implode( ' ', $val );

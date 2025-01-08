@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 147;
+const PLUGIN_SETT_VER								= 148;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -935,6 +935,16 @@ function OnOptRead_Sett( $sett, $verFrom )
 		}
 	}
 
+	if( $verFrom && $verFrom < 148 )
+	{
+		if( strlen( trim( Gen::GetArrField( $sett, array( 'cache', 'nginx', 'fastCgiDir' ), '' ) ) ) )
+			Gen::SetArrField( $sett, array( 'cache', 'nginx', 'method' ), 'direct' );
+		else
+			Gen::SetArrField( $sett, array( 'cache', 'nginx', 'method' ), '3rdp' );
+
+		Gen::SetArrField( $sett, array( 'cache', 'fastTmpOpt' ), false );
+	}
+
 	return( $sett );
 }
 
@@ -967,6 +977,11 @@ function OnAsyncTasksGetFile()
 function OnAsyncTasksGetPushUrlFile()
 {
 	return( Gen::GetArrField( Plugin::SettGetGlobal(), array( 'asyncUseCron' ), true ) ? 'wp-cron.php' : 'index.php' );
+}
+
+function OnAsyncTasksUseCmptNbr()
+{
+	return( Gen::GetArrField( Plugin::SettGetGlobal(), array( 'asyncUseCmptNbr' ), false ) );
 }
 
 function OnAsyncTasksPushGetMode( $settGlob = null )
@@ -1006,6 +1021,9 @@ function OnOptGetDef_Sett()
 			'srv' => true,
 			'srvClr' => true,
 			'nginx' => array(
+				'method'=> '3rdp',
+				'url' => '',
+				'urlAll' => '',
 				'fastCgiDir' => '',
 				'fastCgiLevels' => '1:2',
 			),
@@ -1021,6 +1039,7 @@ function OnOptGetDef_Sett()
 			'lazyInvInitTmp' => true,
 			'lazyInvForcedTmp' => false,
 			'lazyInvTmp' => false,
+			'fastTmpOpt' => true,
 
 			'updPost' => true,
 			'updPostDelay' => 0,
@@ -1735,6 +1754,7 @@ function OnOptGetDef_Sett()
 						'src:@\\.typekit\\.net@',
 						'body:@\\WTypekit\\.load\\(@',
 
+						'body:@\\Wdocument\\s*\\.\\s*querySelector\\s*\\(\\s*"\\.jdgm-rev-widg"\\s*\\)@',
 					),
 
 					'timeout' => array(
@@ -1850,7 +1870,7 @@ function OnOptGetDef_Sett()
 
 					'wp-block-ultimate-post-slider'	=> array( 'enable' => true,		'descr' => 'Block Ultimate Post Slider',	'data' => "[class*=wp-block-ultimate-post-post-slider] .ultp-block-items-wrap:not(.slick-initialized) > .ultp-block-item:not(:first-child)\n{\n\tdisplay: none!important;\n}" ),
 
-					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader, .pix-page-loading-bg, .pix-loading-circ-path, .mesh-loader {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}" ),
+					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader, .pix-page-loading-bg, .pix-loading-circ-path, .mesh-loader, .lqd-preloader-wrap {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}" ),
 
 					'elementor-vis'		=> array( 'enable' => false, 'descr' => 'Elementor (visibility and animation)', 'data' => "body.seraph-accel-js-lzl-ing-ani .elementor-invisible {\r\n\tvisibility: visible !important;\r\n}\r\n\r\n.elementor-element[data-settings*=\"animation\\\"\"] {\r\n\tanimation-name: none !important;\r\n}" ),
 
@@ -2051,6 +2071,8 @@ function OnOptGetDef_Sett()
 		),
 
 		'test' => array(
+			'optDelay' => false,
+			'optDelayTimeout' => 15000,
 			'contDelay' => false,
 			'contDelayTimeout' => 5000,
 			'contExtra' => false,
@@ -2074,6 +2096,7 @@ function OnOptGetDef_Sett()
 
 		'asyncUseCron' => true,
 		'asyncMode' => '',
+		'asyncUseCmptNbr' => false,
 	) );
 }
 
@@ -2495,7 +2518,43 @@ function _ContentCw( &$dsc, $data, $type, $settCache, $dataPath )
 		return( false );
 
 	$dsc[ 'p' ][] = $oiC[ 'id' ];
-	return( true );
+	return( $oiC[ 'id' ] );
+}
+
+function ReadSce( $dataPath, $settCache, $id, $type )
+{
+	$dataComprs = Gen::GetArrField( $settCache, array( 'dataCompr' ), array() );
+	if( empty( $dataComprs ) )
+		$dataComprs[] = '';
+
+	if( $type != 'html' )
+	{
+		if( $type != 'css' && $type != 'js' )
+			$dataComprs = array( '' );
+		else if( !in_array( '', $dataComprs, true ) )
+			$dataComprs[] = '';
+	}
+
+	$oiCf = _GetCcf( $settCache, $id, '', $dataPath, time(), $type, $dataComprs );
+	if( !$oiCf )
+		return( null );
+
+	$oiCd = _GetCfc( $oiCf );
+	if( $oiCd === false || !CacheCvs( strlen( $oiCd ), GetCacheCos( $id ) ) )
+		return( null );
+
+	switch( $oiCf[ 'fmt' ] )
+	{
+	case '.gz':				$oiCd = @gzdecode( $oiCd ); break;
+	case '.deflu':		$oiCd = @gzinflate( $oiCd . "\x03\0" ); break;
+	case '.br':				$oiCd = Gen::CallFunc( 'brotli_uncompress', array( $oiCd ), false ); break;
+	case '.brua':		$oiCd = Gen::CallFunc( 'brotli_uncompress', array( "\x6b\x00" . $oiCd . "\x03" ), false ); break;
+	}
+
+	if( $oiCd === false )
+		return( null );
+
+	return( $oiCd );
 }
 
 function CacheReadDsc( $filePath )
@@ -2503,7 +2562,7 @@ function CacheReadDsc( $filePath )
 	return( @unserialize( @file_get_contents( $filePath ) ) );
 }
 
-function CacheDscUpdate( $lock, $settCache, $content, $deps, $subParts, $dataPath, $tmp = false, $origContHash = null, $learnId = null )
+function CacheDscUpdate( $lock, $settCache, $content, $deps, $subParts, $dataPath, $tmp = false, $tmpCont = null, $origContHash = null, $learnId = null )
 {
 	global $seraph_accel_g_dscFile;
 	global $seraph_accel_g_dscFilePending;
@@ -2512,7 +2571,7 @@ function CacheDscUpdate( $lock, $settCache, $content, $deps, $subParts, $dataPat
 
 	$writeOk = true;
 
-		$writeOk = _ContentCw( $dsc, $content, 'html', $settCache, $dataPath );
+		$writeOk = !!_ContentCw( $dsc, $content, 'html', $settCache, $dataPath );
 
 	$dsc[ 'c' ] = pack( 'V', crc32( $content ) );
 	$dsc[ 'a' ] = hash( 'adler32', $content, true );
@@ -2531,7 +2590,7 @@ function CacheDscUpdate( $lock, $settCache, $content, $deps, $subParts, $dataPat
 			$dsc[ 'b' ] = $dscOld[ 'b' ];
 
 		{
-			if( !$tmp && $dscOld && (isset($dscOld[ 't' ])?$dscOld[ 't' ]:null) )
+			if( !$tmp && $dscOld && isset( $dscOld[ 't' ] ) )
 				$hdrs = (isset($dscOld[ 'hd' ])?$dscOld[ 'hd' ]:null);
 			else
 				$hdrs = GetCurHdrsToStoreInCache( $settCache );
@@ -2570,10 +2629,17 @@ function CacheDscUpdate( $lock, $settCache, $content, $deps, $subParts, $dataPat
 				Gen::LastErrDsc_Set( LocId::Pack( 'FileRenameErr_%1$s%2$s', 'Common', array( $dscFileNew, $seraph_accel_g_dscFile ) ) );
 				$writeOk = false;
 			}
-			else if( !$tmp && $dscOld && (isset($dscOld[ 't' ])?$dscOld[ 't' ]:null) )
-				if( $oiCi = Gen::GetArrField( $dscOld, array( 'p', 0 ) ) )
+			else if( !$tmp && $dscOld && isset( $dscOld[ 't' ] ) )
+			{
+				if( is_string( $dscOld[ 't' ] ) )
+					$oiCi = $dscOld[ 't' ];
+				else
+					$oiCi = Gen::GetArrField( $dscOld, array( 'p', 0 ) );
+
+				if( $oiCi )
 					foreach( glob( $dataPath . '/' . $oiCi . '.html*', GLOB_NOSORT ) as $file )
 						@unlink( $file );
+			}
 		}
 
 		if( !$writeOk )
@@ -3464,7 +3530,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.25.2 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -3968,13 +4034,38 @@ class ProcessQueueItemCtx
 		$this -> dirQueue = GetCacheDir() . '/q/' . $this -> siteId;
 	}
 
+	static function AdjustRequestUrl( $url, $tmStamp, array $prepArgs )
+	{
+		return( Net::UrlAddArgs( $url, array( 'seraph_accel_prep' => @base64_encode( @json_encode( array_merge( $prepArgs, array( 'nonce' => hash_hmac( 'md5', '' . $tmStamp, GetSalt() ), '_tm' => '' . $tmStamp ) ) ) ) ) ) );
+	}
+
+	static function MakeRequest( $asyncMode, $url, $hdrs, $timeout = 0 )
+	{
+
+		$prms = array( 'local' => $asyncMode == 'loc', 'redirection' => 0, 'timeout' => $timeout, 'sslverify' => false, 'headers' => $hdrs );
+
+		if( !$timeout )
+		{
+			if( OnAsyncTasksUseCmptNbr() )
+				$prms[ 'timeout' ] = 5;
+			else
+			{
+
+				$prms[ 'timeout' ] = 0.01;
+				$prms[ 'blocking' ] = false;
+			}
+		}
+
+		return( Wp::RemoteGet( $url, $prms ) );
+	}
+
 	function PrepareRequest()
 	{
-		$prepArgs = array( 'nonce' => hash_hmac( 'md5', '' . $this -> item[ 't' ], GetSalt() ), '_tm' => '' . $this -> item[ 't' ], 'pc' => $this -> data[ 'pc' ], 'p' => ( int )(isset($this -> data[ 'p' ])?$this -> data[ 'p' ]:null) );
+		$prepArgs = array( 'pc' => $this -> data[ 'pc' ], 'p' => ( int )(isset($this -> data[ 'p' ])?$this -> data[ 'p' ]:null) );
 		if( ( int )(isset($this -> item[ 'p' ])?$this -> item[ 'p' ]:null) == -480 )
 			$prepArgs[ 'lrn' ] = (isset($this -> data[ 'l' ])?$this -> data[ 'l' ]:null);
 
-		$this -> url = Net::UrlAddArgs( (isset($this -> data[ 'u' ])?$this -> data[ 'u' ]:null), array( 'seraph_accel_prep' => @base64_encode( @json_encode( $prepArgs ) ) ) );
+		$this -> url = ProcessQueueItemCtx::AdjustRequestUrl( (isset($this -> data[ 'u' ])?$this -> data[ 'u' ]:null), $this -> item[ 't' ], $prepArgs );
 
 		$this -> hdrs = (isset($this -> data[ 'h' ])?$this -> data[ 'h' ]:null);
 		if( !is_array( $this -> hdrs ) )
@@ -4301,8 +4392,7 @@ function OnAsyncTask_CacheProcessItem( $args )
 		$ctx -> PrepareRequest();
 
 		{
-
-				$ctx -> requestRes = Wp::RemoteGet( $ctx -> url, array( 'local' => $asyncMode == 'loc', 'redirection' => 0, 'timeout' => 30, 'sslverify' => false, 'headers' => $ctx -> hdrsForRequest ) );
+			$ctx -> requestRes = ProcessQueueItemCtx::MakeRequest( $asyncMode, $ctx -> url, $ctx -> hdrsForRequest, 30 );
 
 			$ctx -> hr = Net::GetHrFromWpRemoteGet( $ctx -> requestRes, true );
 			$ctx -> httpCode = Net::GetResponseCodeFromHr( $ctx -> hr );
@@ -4325,7 +4415,7 @@ function OnAsyncTask_CacheProcessItem( $args )
 			ProcessCtlData_Update( (isset($seraph_accel_g_prepPrms[ 'pc' ])?$seraph_accel_g_prepPrms[ 'pc' ]:null), array( 'stage' => 'images' ) );
 
 			$file = (isset($ctx -> data[ 'u' ])?$ctx -> data[ 'u' ]:null);
-			Images_ProcessSrc_ConvertAll( Gen::GetArrField( $sett, array( 'contPr', 'img' ), array() ), null, $file, Images_ProcessSrcEx_FileMTime( $file ), false );
+			Images_ProcessSrc_ConvertAll( $ctxProcess, Gen::GetArrField( $sett, array( 'contPr', 'img' ), array() ), null, $file, Images_ProcessSrcEx_FileMTime( $file ), false );
 		}
 		else if( $itemType == 20 )
 		{
@@ -4654,7 +4744,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.25.2';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 

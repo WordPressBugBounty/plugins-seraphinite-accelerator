@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.7
-Stable tag: 2.25.2
+Stable tag: 2.26
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,22 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.26 =
+
+Improvements:
+
+* Compatible non-blocking requests.
+* Extended checking that file is not found.
+* Fast content optimization in temporary cache.
+* NGINX cache clearing method.
+* Processing disabled 'If-Modified-Since' request for images alternative redirection.
+* Support for 'WP Hide & Security Enhancer' plugin.
+
+Fixes:
+
+* Possible indexing of internal requests.
+* Warning about lazy loading for JetPack of 13.4.2 version and higher.
 
 = 2.25.2 =
 

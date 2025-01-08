@@ -135,134 +135,177 @@ function CacheExt_Clear( $url = null )
 			LogWrite( 'O2Switch: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
-	if( $dir = trim( Gen::GetArrField( $sett, array( 'cache', 'nginx', 'fastCgiDir' ), '' ) ) )
+	if( $method = trim( Gen::GetArrField( $sett, array( 'cache', 'nginx', 'method' ), '' ) ) )
 	{
-		$logInfo = '';
-
-		if( $url )
+		if( $method == 'get_purge' )
 		{
-			foreach( _CacheExt_Nginx_GetCacheFiles( _CacheExt_Nginx_GetUrlKey( $url ), $dir, Gen::GetArrField( $sett, array( 'cache', 'nginx', 'fastCgiLevels' ), '' ) ) as $cache )
-			{
-				if( !@is_file( $cache ) )
-					continue;
+			$logInfo = '';
 
-				@unlink( $cache );
-
-				if( $logInfo )
-					$logInfo .= ', ';
-				$logInfo .= '\'' . $cache . '\'';
-			}
-
-			$logInfo = 'File(s) for URL \'' . $url . '\' deleted: ' . $logInfo;
-		}
-		else
-		{
-			_CacheExt_Nginx_ClearAll( $dir );
-			$logInfo = 'Directory \'' . $dir . '\' cleared';
-		}
-
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
-			LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
-	}
-
-	else if( Gen::DoesFuncExist( '\\NginxChampuru::get_instance' ) && Gen::DoesFuncExist( '\\NginxChampuru::get_cache_dir' ) && Gen::DoesFuncExist( '\\NginxChampuru::get_cache_key' ) && Gen::DoesFuncExist( '\\NginxChampuru::get_cache' ) )
-	{
-		$logInfo = '';
-
-		if( $instance = \NginxChampuru::get_instance() )
-		{
 			if( $url )
 			{
-				add_filter( 'nginxchampuru_get_reverse_proxy_key', 'seraph_accel\\_CacheExt_Nginx_GetUrlKey', 99999 );
+				$urlRequest = Gen::SetLastSlash( Gen::GetArrField( $sett, array( 'cache', 'nginx', 'url' ), '' ), false );
+				if( !$urlRequest )
+					$urlRequest = Net::UrlDeParse( Net::UrlParse( Wp::GetSiteRootUrl() ), 0, array( PHP_URL_PATH, PHP_URL_QUERY, PHP_URL_FRAGMENT ) ) . '/purge';
 
-				foreach( ( array )$instance -> get_cache( $instance -> get_cache_key( $url ), $url ) as $cache )
+				if( $urlComps = Net::UrlParse( $url ) )
 				{
-					if( !@is_file( $cache ) )
-						continue;
-
-					@unlink( $cache );
-
-					if( $logInfo )
-						$logInfo .= ', ';
-					$logInfo .= '\'' . $cache . '\'';
+					$urlRequest .= Net::UrlDeParse( $urlComps, 0, array( PHP_URL_SCHEME, PHP_URL_USER, PHP_URL_PASS, PHP_URL_HOST, PHP_URL_PORT, PHP_URL_FRAGMENT ) );
+					$requestRes = Wp::RemoteGet( $urlRequest, array( 'timeout' => 5, 'sslverify' => false, 'redirection' => 5 ) );
 				}
+				else
+					$requestRes = Gen::E_INVALIDARG;
 
-				$logInfo = 'NginxChampuru: File(s) for URL \'' . $url . '\' deleted: ' . $logInfo;
+				$logInfo = _CacheExt_GetResponseResString( $requestRes );
 			}
-			else if( $dir = $instance -> get_cache_dir() )
+			else if( $urlRequestAll = Gen::GetArrField( $sett, array( 'cache', 'nginx', 'urlAll' ), '' ) )
+			{
+				$requestRes = Wp::RemoteGet( $urlRequestAll, array( 'timeout' => 5, 'sslverify' => false, 'redirection' => 5 ) );
+				$logInfo = _CacheExt_GetResponseResString( $requestRes );
+			}
+			else if( $dir = trim( Gen::GetArrField( $sett, array( 'cache', 'nginx', 'fastCgiDir' ), '' ) ) )
 			{
 				_CacheExt_Nginx_ClearAll( $dir );
-				$logInfo = 'NginxChampuru: Directory \'' . $dir . '\' cleared';
+				$logInfo = 'Directory \'' . $dir . '\' cleared';
 			}
-			else
-				$logInfo = 'NginxChampuru: void';
+
+			if( $requestRes !== null && (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+				LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 		}
-		else
-			$logInfo = 'NginxChampuru: no instance';
-
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
-			LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
-	}
-
-	else if( Gen::DoesFuncExist( '\\NginxCache::purge_zone_once' ) )
-	{
-
-		$logInfo = '';
-
-		if( $dir = trim( get_option( 'nginx_cache_path' ) ) )
+		else if( $method == 'direct' )
 		{
-			if( $url )
+			if( $dir = trim( Gen::GetArrField( $sett, array( 'cache', 'nginx', 'fastCgiDir' ), '' ) ) )
 			{
-				foreach( _CacheExt_Nginx_GetCacheFiles( _CacheExt_Nginx_GetUrlKey( $url ), $dir ) as $cache )
+				$logInfo = '';
+
+				if( $url )
 				{
-					if( !@is_file( $cache ) )
-						continue;
+					foreach( _CacheExt_Nginx_GetCacheFiles( _CacheExt_Nginx_GetUrlKey( $url ), $dir, Gen::GetArrField( $sett, array( 'cache', 'nginx', 'fastCgiLevels' ), '' ) ) as $cache )
+					{
+						if( !@is_file( $cache ) )
+							continue;
 
-					@unlink( $cache );
+						@unlink( $cache );
 
-					if( $logInfo )
-						$logInfo .= ', ';
-					$logInfo .= '\'' . $cache . '\'';
+						if( $logInfo )
+							$logInfo .= ', ';
+						$logInfo .= '\'' . $cache . '\'';
+					}
+
+					$logInfo = 'File(s) for URL \'' . $url . '\' deleted: ' . $logInfo;
+				}
+				else
+				{
+					_CacheExt_Nginx_ClearAll( $dir );
+					$logInfo = 'Directory \'' . $dir . '\' cleared';
 				}
 
-				$logInfo = 'NginxCache: File(s) for URL \'' . $url . '\' deleted: ' . $logInfo;
-			}
-			else
-			{
-				_CacheExt_Nginx_ClearAll( $dir );
-				$logInfo = 'NginxCache: Directory \'' . $dir . '\' cleared';
+				if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+					LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 			}
 		}
-		else
-			$logInfo = 'NginxCache: no dir';
-
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
-			LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
-	}
-
-	else if( Gen::DoesFuncExist( '\\Purger::purge_all' ) && Gen::DoesFuncExist( '\\Purger::purge_url' ) )
-	{
-		$logInfo = '';
-
-		global $nginx_purger;
-		if( $nginx_purger )
+		else if( $method == '3rdp' )
 		{
-			if( $url )
+
+			if( Gen::DoesFuncExist( '\\NginxChampuru::get_instance' ) && Gen::DoesFuncExist( '\\NginxChampuru::get_cache_dir' ) && Gen::DoesFuncExist( '\\NginxChampuru::get_cache_key' ) && Gen::DoesFuncExist( '\\NginxChampuru::get_cache' ) )
 			{
-				$nginx_purger -> purge_url( $url );
-				$logInfo = 'Purger: URL \'' . $url . '\' purged';
+				$logInfo = '';
+
+				if( $instance = \NginxChampuru::get_instance() )
+				{
+					if( $url )
+					{
+						add_filter( 'nginxchampuru_get_reverse_proxy_key', 'seraph_accel\\_CacheExt_Nginx_GetUrlKey', 99999 );
+
+						foreach( ( array )$instance -> get_cache( $instance -> get_cache_key( $url ), $url ) as $cache )
+						{
+							if( !@is_file( $cache ) )
+								continue;
+
+							@unlink( $cache );
+
+							if( $logInfo )
+								$logInfo .= ', ';
+							$logInfo .= '\'' . $cache . '\'';
+						}
+
+						$logInfo = 'NginxChampuru: File(s) for URL \'' . $url . '\' deleted: ' . $logInfo;
+					}
+					else if( $dir = $instance -> get_cache_dir() )
+					{
+						_CacheExt_Nginx_ClearAll( $dir );
+						$logInfo = 'NginxChampuru: Directory \'' . $dir . '\' cleared';
+					}
+					else
+						$logInfo = 'NginxChampuru: void';
+				}
+				else
+					$logInfo = 'NginxChampuru: no instance';
+
+				if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+					LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 			}
-			else
+
+			else if( Gen::DoesFuncExist( '\\NginxCache::purge_zone_once' ) )
 			{
-				$nginx_purger -> purge_all();
-				$logInfo = 'Purger: Purged all';
+
+				$logInfo = '';
+
+				if( $dir = trim( get_option( 'nginx_cache_path' ) ) )
+				{
+					if( $url )
+					{
+						foreach( _CacheExt_Nginx_GetCacheFiles( _CacheExt_Nginx_GetUrlKey( $url ), $dir ) as $cache )
+						{
+							if( !@is_file( $cache ) )
+								continue;
+
+							@unlink( $cache );
+
+							if( $logInfo )
+								$logInfo .= ', ';
+							$logInfo .= '\'' . $cache . '\'';
+						}
+
+						$logInfo = 'NginxCache: File(s) for URL \'' . $url . '\' deleted: ' . $logInfo;
+					}
+					else
+					{
+						_CacheExt_Nginx_ClearAll( $dir );
+						$logInfo = 'NginxCache: Directory \'' . $dir . '\' cleared';
+					}
+				}
+				else
+					$logInfo = 'NginxCache: no dir';
+
+				if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+					LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
+			}
+
+			else if( Gen::DoesFuncExist( '\\Purger::purge_all' ) && Gen::DoesFuncExist( '\\Purger::purge_url' ) )
+			{
+				$logInfo = '';
+
+				global $nginx_purger;
+				if( $nginx_purger )
+				{
+					if( $url )
+					{
+						$nginx_purger -> purge_url( $url );
+						$logInfo = 'Purger: URL \'' . $url . '\' purged';
+					}
+					else
+					{
+						$nginx_purger -> purge_all();
+						$logInfo = 'Purger: Purged all';
+					}
+				}
+				else
+					$logInfo = 'Purger: no instance';
+
+				if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+					LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 			}
 		}
-		else
-			$logInfo = 'Purger: no instance';
-
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
-			LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
 	if( Gen::DoesFuncExist( '\\CF\\WordPress\\Hooks::purgeCacheEverything' ) )

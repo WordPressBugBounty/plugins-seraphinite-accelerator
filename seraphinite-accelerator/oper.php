@@ -354,10 +354,15 @@ class DscLockUpdater
 
 function _CacheOp_Clear_Dsc_MarkExistedParts( &$datasDel, $dsc, $aTypes )
 {
+	{
+		$aChunks = Gen::GetArrField( $dsc, array( 'p' ), array() );
+		if( isset( $dsc[ 't' ] ) && is_string( $dsc[ 't' ] ) )
+			$aChunks[] = $dsc[ 't' ];
 
-	foreach( Gen::GetArrField( $dsc, array( 'p' ), array() ) as $oiCi )
-		foreach( $aTypes as $type )
-			unset( $datasDel[ $type ][ $oiCi ] );
+		foreach( $aChunks as $oiCi )
+			foreach( $aTypes as $type )
+				unset( $datasDel[ $type ][ $oiCi ] );
+	}
 
 	foreach( Gen::GetArrField( $dsc, array( 's' ), array() ) as $childType => $children )
 		foreach( $children as $childId )
@@ -1000,7 +1005,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.25.2' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26' );
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
 	{

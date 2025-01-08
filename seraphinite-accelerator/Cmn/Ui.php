@@ -221,6 +221,9 @@ class Ui
 
 		foreach( $items as $itemVal => $itemText )
 		{
+			if( $itemText === null )
+				continue;
+
 			$itemAttrs = null;
 			if( is_array( $itemText ) )
 			{

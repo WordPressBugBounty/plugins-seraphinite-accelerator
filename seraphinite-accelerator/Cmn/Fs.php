@@ -10,7 +10,7 @@ class Fs
 	const MimeTypeDef		= '';
 	const BufSizeDef		= 4096;
 
-	static function StreamOutFileContent( $fileName, $mimeType = Fs::MimeTypeDef, $bHeadOnly = false, $bufSize = Fs::BufSizeDef, $asAttachment = false, $nTtl = 0 )
+	static function StreamOutFileContent( $fileName, $mimeType = Fs::MimeTypeDef, $bHeadOnly = false, $bufSize = Fs::BufSizeDef, $asAttachment = false, $nTtl = 0, $bNotMdf = true )
 	{
 		$size = @filesize( $fileName );
 		$time = @filemtime( $fileName );
@@ -64,7 +64,7 @@ class Fs
 		if( $asAttachment )
 			header( 'Content-Disposition: attachment;filename="' . basename( $fileName ) . '"' );
 
-		if( isset( $_SERVER[ 'HTTP_IF_MODIFIED_SINCE' ] ) )
+		if( $bNotMdf && isset( $_SERVER[ 'HTTP_IF_MODIFIED_SINCE' ] ) )
 		{
 			if( strtotime( preg_replace( '@;.*$@', '', $_SERVER[ 'HTTP_IF_MODIFIED_SINCE' ] ) ) == $time )
 			{

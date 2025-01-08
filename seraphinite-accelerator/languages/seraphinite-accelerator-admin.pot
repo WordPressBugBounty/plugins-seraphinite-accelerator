@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.25.2)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.25.2\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.26)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.26\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.25.2)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.25.2\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.26)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.26\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1051,21 +1051,12 @@ msgctxt "admin.Settings_Nav"
 msgid "VarsRad"
 msgstr ""
 
-# <strong>Scripts and styles</strong>
-msgctxt "admin.Settings_Nav"
-msgid "ScriptsRad"
-msgstr ""
-
-# <strong>Content</strong>
-msgctxt "admin.Settings_Nav"
-msgid "ContentRad"
-msgstr ""
-
-# <strong>CDN and advanced</strong>
+# <strong>CDN, groups and advanced</strong>
 msgctxt "admin.Settings_Nav"
 msgid "OtherRad"
 msgstr ""
 
+# The product is designed as an automatic WordPress optimization engine and it starts working just after installation. But sometimes it still needed to be fine-tuned or troubleshot on particular sites.
 msgctxt "admin.Settings_Nav"
 msgid "Descr"
 msgstr ""
@@ -1179,6 +1170,11 @@ msgstr ""
 # Temporary cache not optimized content after auto-revalidation
 msgctxt "admin.Settings_Cache_Common"
 msgid "LazyInvTmpChk"
+msgstr ""
+
+# Fast content optimization in temporary cache
+msgctxt "admin.Settings_Cache_Common"
+msgid "FastTmpOptChk"
 msgstr ""
 
 # Posts
@@ -1418,6 +1414,38 @@ msgstr ""
 # NGINX
 msgctxt "admin.Settings_Cache_Srv_Nginx"
 msgid "Lbl"
+msgstr ""
+
+# No
+msgctxt "admin.Settings_Cache_Srv_Nginx_Method"
+msgid "None"
+msgstr ""
+
+# By 3rd party plugins
+msgctxt "admin.Settings_Cache_Srv_Nginx_Method"
+msgid "3rdParty"
+msgstr ""
+
+# GET request
+msgctxt "admin.Settings_Cache_Srv_Nginx_Method"
+msgid "GetPurge"
+msgstr ""
+
+# Direct
+msgctxt "admin.Settings_Cache_Srv_Nginx_Method"
+msgid "Direct"
+msgstr ""
+
+# URL for GET request: %1$s
+#, php-format
+msgctxt "admin.Settings_Cache_Srv_Nginx"
+msgid "Url_%1$s"
+msgstr ""
+
+# URL for GET request (all clearing): %1$s
+#, php-format
+msgctxt "admin.Settings_Cache_Srv_Nginx"
+msgid "UrlAll_%1$s"
 msgstr ""
 
 # Cache directory: %1$s
@@ -3194,6 +3222,10 @@ msgctxt "admin.Settings_Advanced_AsyncMode"
 msgid "ExtCron"
 msgstr ""
 
+msgctxt "admin.Settings_Advanced_Common"
+msgid "AsyncUseCmptNbrChk"
+msgstr ""
+
 # Using external Cron requires additional setup. Please, read related %1$sdocumentation%2$s.
 #, php-format
 msgctxt "admin.Settings_Advanced_Common"
@@ -3286,13 +3318,19 @@ msgctxt "admin.Settings_Advanced_Test"
 msgid "Lbl"
 msgstr ""
 
+# Content optimization delay of %1$s second(s)
+#, php-format
+msgctxt "admin.Settings_Advanced_Test"
+msgid "TestOptDelayChk_%1$s"
+msgstr ""
+
 # Content generation delay of %1$s second(s)
 #, php-format
 msgctxt "admin.Settings_Advanced_Test"
 msgid "TestContDelayChk_%1$s"
 msgstr ""
 
-# Add random invisible content of %1$s KB size
+# Add random invisible content with timestamp of %1$s KB size
 #, php-format
 msgctxt "admin.Settings_Advanced_Test"
 msgid "TestContExtraChk_%1$s"

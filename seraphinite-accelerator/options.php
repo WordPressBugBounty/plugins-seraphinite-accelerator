@@ -164,7 +164,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.25.2' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.26' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -295,9 +295,8 @@ function _SettingsPage()
 				echo( Ui::NavTabs( null, array(
 					'simple'	=> Wp::safe_html_x( 'SimpleRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ),
 					'cache'		=> Wp::safe_html_x( 'CacheRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ),
-					'vars'		=> Wp::safe_html_x( 'VarsRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ),
-					'scripts'	=> Wp::safe_html_x( 'ScriptsRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ),
-					'content'	=> Wp::safe_html_x( 'ContentRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ),
+					'vars'		=> $adminMsModes[ 'local' ] ? Wp::safe_html_x( 'VarsRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ) : null,
+
 					'other'		=> Wp::safe_html_x( 'OtherRad', 'admin.Settings_Nav', 'seraphinite-accelerator' ),
 				), 'simple', false, array( 'class' => 'ctlSpaceVAfter', 'data-oninit' => 'jQuery(this).on("change",function(){var ctlEnum=jQuery(this);seraph_accel.Ui.ComboShowDependedItems(ctlEnum.get(0),ctlEnum.closest("#navigator").parent().get(0),"ns-nav")})' ) ) );
 
@@ -589,6 +588,17 @@ function _SettingsPage_Revalidate( $callbacks_args, $box )
 								{
 									$fldId = 'cache/lazyInvTmp';
 									$o .= ( Ui::CheckBox( esc_html_x( 'LazyInvTmpChk', 'admin.Settings_Cache_Common', 'seraphinite-accelerator' ) . Ui::AdminBtnsBlock( array( Plugin::AdminBtnsBlock_GetPaidContent( $isPaidLockedContent ) ), Ui::AdminHelpBtnModeChkRad ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, true, '/' ), true ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr', array( 'style' => array( 'display' => 'none' ) ) ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/fastTmpOpt';
+									$o .= ( Ui::CheckBox( esc_html_x( 'FastTmpOptChk', 'admin.Settings_Cache_Common', 'seraphinite-accelerator' ) . Ui::AdminBtnsBlock( array( Plugin::AdminBtnsBlock_GetPaidContent( $isPaidLockedContent ) ), Ui::AdminHelpBtnModeChkRad ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) );
 							}
@@ -1085,6 +1095,47 @@ function _SettingsPage_Server( $callbacks_args, $box )
 					{
 						$o .= ( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'std ctlMaxSizeX' ) ) );
 						{
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/nginx/method';
+									$o .= ( Ui::ComboBox(
+										'seraph_accel/' . $fldId,
+										array(
+											''				=> esc_html_x( 'None', 'admin.Settings_Cache_Srv_Nginx_Method', 'seraphinite-accelerator' ),
+											'3rdp'			=> esc_html_x( '3rdParty', 'admin.Settings_Cache_Srv_Nginx_Method', 'seraphinite-accelerator' ),
+											'get_purge'		=> esc_html_x( 'GetPurge', 'admin.Settings_Cache_Srv_Nginx_Method', 'seraphinite-accelerator' ),
+											'direct'		=> esc_html_x( 'Direct', 'admin.Settings_Cache_Srv_Nginx_Method', 'seraphinite-accelerator' ),
+										),
+										Gen::GetArrField( $sett, $fldId, '', '/' ), true, array( 'class1' => 'ctlMaxSizeX' ) ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/nginx/url';
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'Url_%1$s', 'admin.Settings_Cache_Srv_Nginx', 'seraphinite-accelerator' ), Ui::TextBox( 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, '', '/' ), array( 'placeholder' => Net::UrlDeParse( Net::UrlParse( Wp::GetSiteRootUrl() ), 0, array( PHP_URL_PATH, PHP_URL_QUERY, PHP_URL_FRAGMENT ) ) . '/purge', 'style' => array( 'width' => '100%' ) ), true ) ), false, array( 'class' => 'ctlMaxSizeX' ) ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/nginx/urlAll';
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'UrlAll_%1$s', 'admin.Settings_Cache_Srv_Nginx', 'seraphinite-accelerator' ), Ui::TextBox( 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, '', '/' ), array( 'style' => array( 'width' => '100%' ) ), true ) ), false, array( 'class' => 'ctlMaxSizeX' ) ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
 							$o .= ( Ui::TagOpen( 'tr' ) );
 							{
 								$o .= ( Ui::TagOpen( 'td' ) );
@@ -4621,6 +4672,12 @@ function _SettingsPage_Advanced( $callbacks_args, $box )
 								),
 								Gen::GetArrField( $sett, $fldId, '', '/' ), true, array( 'class' => 'inline', 'data-oninit' => 'jQuery(this).change()', 'onchange' => 'seraph_accel.Ui.ComboShowDependedItems( this, this.parentNode.parentNode )' ) )
 						) ) );
+
+						{
+							$fldId = 'asyncUseCmptNbr';
+							$o .= ( Ui::Tag( 'p', Ui::CheckBox( esc_html_x( 'AsyncUseCmptNbrChk', 'admin.Settings_Advanced_Common', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ), array( 'class' => array( 'ns-', 'ns-loc' ), 'style' => array( 'padding-left' => '1.5em', 'display' => 'none' ) ) ) );
+						}
+
 						$o .= ( Ui::Tag( 'p', vsprintf( _x( 'AsyncMode_ExtCronDsc_%1$s%2$s', 'admin.Settings_Advanced_Common', 'seraphinite-accelerator' ), Ui::Link( array( '', '' ), Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Advanced_ExtCron' ) ) ), array( 'class' => 'description ns-ec', 'style' => array( 'padding-left' => '1.5em', 'display' => 'none' ) ) ) );
 					}
 					$o .= ( Ui::TagClose( 'td' ) );
@@ -4825,6 +4882,20 @@ function _SettingsPage_Advanced( $callbacks_args, $box )
 				{
 					$o .= ( Ui::TagOpen( 'td' ) );
 					{
+						$fldId = 'test/optDelay';
+						$fldIdEx = 'test/optDelayTimeout';
+						$o .= ( Ui::CheckBox( sprintf( esc_html_x( 'TestOptDelayChk_%1$s', 'admin.Settings_Advanced_Test', 'seraphinite-accelerator' ),
+							Ui::NumberBox( 'seraph_accel/' . $fldIdEx, Gen::GetArrField( $sett, $fldIdEx, 0, '/' ) / 1000, array( 'min' => 0, 'placeholder' => '0', 'style' => array( 'width' => '4em' ) ), true )
+						), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+					}
+					$o .= ( Ui::TagClose( 'td' ) );
+				}
+				$o .= ( Ui::TagClose( 'tr' ) );
+
+				$o .= ( Ui::TagOpen( 'tr' ) );
+				{
+					$o .= ( Ui::TagOpen( 'td' ) );
+					{
 						$fldId = 'test/contDelay';
 						$fldIdEx = 'test/contDelayTimeout';
 						$o .= ( Ui::CheckBox( sprintf( esc_html_x( 'TestContDelayChk_%1$s', 'admin.Settings_Advanced_Test', 'seraphinite-accelerator' ),
@@ -4890,6 +4961,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'cache/opAgentPostpone';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 
 		{ $fldId = 'asyncUseCron';							Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'asyncUseCmptNbr';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'asyncMode';								Gen::SetArrField( $sett, $fldId, Gen::SanitizeId( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 
 		{
@@ -4926,6 +4998,9 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'cache/srv';								Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/srvShrdTtl';						Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/srvClr';							Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'cache/nginx/method';					Gen::SetArrField( $sett, $fldId, Gen::SanitizeId( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
+		{ $fldId = 'cache/nginx/url';						Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
+		{ $fldId = 'cache/nginx/urlAll';					Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
 		{ $fldId = 'cache/nginx/fastCgiDir';				Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
 		{ $fldId = 'cache/nginx/fastCgiLevels';				Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
 		{ $fldId = 'cache/sucuri/apiKey';					Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
@@ -4937,6 +5012,8 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'cache/lazyInvInitTmp';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/lazyInvForcedTmp';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/lazyInvTmp';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'cache/fastTmpOpt';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+
 		{ $fldId = 'cache/updPost';							Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/updPostDelay';					Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/updPostOp';						Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
@@ -5591,6 +5668,8 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'cacheBr/enable';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cacheBr/timeout';						Gen::SetArrField( $sett, $fldId, _GetTimeoutVal( 'seraph_accel/' . $fldId, $args ), '/' ); }
 
+		{ $fldId = 'test/optDelay';							Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'test/optDelayTimeout';					Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ) * 1000, '/' ); }
 		{ $fldId = 'test/contDelay';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'test/contDelayTimeout';					Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ) * 1000, '/' ); }
 		{ $fldId = 'test/contExtra';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
@@ -5619,8 +5698,10 @@ function _OnSaveSettings( $args )
 	}
 
 	{
+
 		$ctxVPathMap = new AnyObj();
 		$ctxVPathMap -> a = array();
+
 		if( Gen::DoesFuncExist( '\\HMWP_Models_Rewrite::setRewriteRules' ) )
 		{
 			$ctxVPathMap -> cbRulesHmwp =
@@ -5641,6 +5722,46 @@ function _OnSaveSettings( $args )
 
 			remove_filter( 'hmwp_rewrites', array( $ctxVPathMap, 'cbRulesHmwp' ), 99999 );
 			remove_filter( 'hmwp_umrewrites', array( $ctxVPathMap, 'cbRulesHmwp' ), 99999 );
+		}
+
+		if( defined( 'WPH_PATH' ) )
+		{
+			$ctxProcess = GetContentProcessCtx( $_SERVER, $sett );
+
+			try
+			{
+				global $wph;
+
+				$aValPrev = array();
+				foreach( array( 'server_htaccess_config', 'server_web_config', 'server_nginx_config' ) as $vName )
+					$aValPrev[ $vName ] = Gen::GetArrField( $wph, array( $vName ) );
+
+				$wph -> server_htaccess_config = TRUE;
+				$wph -> server_web_config = FALSE;
+				$wph -> server_nginx_config = FALSE;
+
+				include_once( WPH_PATH . '/include/class.rewrite-process.php' );
+				$rewrite_process = new \WPH_Rewrite_Process( TRUE );
+
+				foreach( $rewrite_process -> _rewrite_data_mod_rewrite as $rule )
+				{
+					$rule = trim( $rule );
+					if( !Gen::StrStartsWith( $rule, 'RewriteRule ^' ) )
+						continue;
+
+					$rule = explode( ' ', substr( $rule, 13 ) );
+					if( count( $rule ) < 2 )
+						continue;
+
+					$ctxVPathMap -> a[] = array( 'f' => '`^' . $ctxProcess[ 'siteRootUri' ] . '/' . $rule[ 0 ] . '`', 'r' => $rule[ 1 ] );
+				}
+
+				foreach( $aValPrev as $vName => $v )
+					Gen::SetArrField( $wph, array( $vName ), $v );
+			}
+			catch( \Exception $e ) {}
+
+			unset( $ctxProcess, $aValPrev, $rewrite_process );
 		}
 
 		if( $ctxVPathMap -> a )

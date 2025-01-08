@@ -76,9 +76,12 @@ class Img
 
 	static function GetInfoFromData( $data, $ext = false )
 	{
+		if( !is_string( $data ) )
+			return( null );
+
 		$infoEx = $ext ? array() : null;
 
-		if( gettype( $data ) == 'string' && @preg_match( '@<svg[>\\s]@i', $data ) && @preg_match( '@</svg>@i', $data ) )
+		if( @preg_match( '@<svg[>\\s]@i', $data ) && @preg_match( '@</svg>@i', $data ) )
 		{
 			$info = array( 'mime' => 'image/svg+xml', 'cx' => null, 'cy' => null );
 

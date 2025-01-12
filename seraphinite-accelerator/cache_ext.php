@@ -862,5 +862,45 @@ function CacheExt_Clear( $url = null )
 		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
 			LogWrite( 'Pantheon Cache: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
+
+	if( ( Gen::DoesFuncExist( '\\Servebolt\\Optimizer\\CachePurge\\WordPressCachePurge\\WordPressCachePurge::purgeAll' ) ) )
+	{
+		$logInfo = '';
+
+		if( $url )
+		{
+			if( Gen::DoesFuncExist( '\\Servebolt\\Optimizer\\CachePurge\\WordPressCachePurge\\WordPressCachePurge::purgeByUrl' ) )
+			{
+				try
+				{
+					\Servebolt\Optimizer\CachePurge\WordPressCachePurge\WordPressCachePurge::purgeByUrl( $url, false );
+
+					$logInfo = 'URL \'' . $url . '\' purged';
+				}
+				catch( \Exception $e )
+				{
+					$logInfo = $ex -> getMessage();
+				}
+			}
+			else
+				$logInfo = 'Invalid state';
+		}
+		else
+		{
+			try
+			{
+				\Servebolt\Optimizer\CachePurge\WordPressCachePurge\WordPressCachePurge::purgeAll();
+
+				$logInfo = 'Purged all';
+			}
+			catch( \Exception $e )
+			{
+				$logInfo = $ex -> getMessage();
+			}
+		}
+
+		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+			LogWrite( 'Servebolt Cache: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
+	}
 }
 

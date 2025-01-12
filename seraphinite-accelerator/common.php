@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 148;
+const PLUGIN_SETT_VER								= 150;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -945,6 +945,28 @@ function OnOptRead_Sett( $sett, $verFrom )
 		Gen::SetArrField( $sett, array( 'cache', 'fastTmpOpt' ), false );
 	}
 
+	if( $verFrom && $verFrom < 149 )
+	{
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'hrrCntDwnTmr' ), false );
+	}
+
+	if( $verFrom && $verFrom < 150 )
+	{
+		{
+			$grpsExcl = Gen::GetArrField( $sett, array( 'contPr', 'grps', 'items', '@a', 'sklCssSelExcl' ), array() );
+			foreach( array(
+				'@\\.(?:product_cat|product_tag|video_tag|category|categories|tag|term|label-term|pa|label-attribute-pa|woocommerce-product-attributes-item-|comment-author)[\\-_]([\\w\\-]+)@i' =>
+					'@\\.(?:category|categories|tag|term|label-term|pa|label-attribute-pa|woocommerce-product-attributes-item-|comment-author|(?\'ENUM_TAXONOMIES_NOTBUILTIN\')|(?\'ENUM_POSTTYPES_NOTBUILTINVIEWABLESPEC\'))[\\-_]([\\w\\-]+)@i'
+				) as $f => $r )
+				if( ( $i = array_search( $f, $grpsExcl ) ) !== false )
+					$grpsExcl[ $i ] = $r;
+			Gen::SetArrField( $sett, array( 'contPr', 'grps', 'items', '@a', 'sklCssSelExcl' ), $grpsExcl );
+		}
+
+		Gen::SetArrField( $sett, array( 'cache', 'lazyInvFr' ), false );
+		Gen::SetArrField( $sett, array( 'cache', 'timeoutFrCln' ), 60 * 60 );
+	}
+
 	return( $sett );
 }
 
@@ -1040,6 +1062,7 @@ function OnOptGetDef_Sett()
 			'lazyInvForcedTmp' => false,
 			'lazyInvTmp' => false,
 			'fastTmpOpt' => true,
+			'lazyInvFr' => true,
 
 			'updPost' => true,
 			'updPostDelay' => 0,
@@ -1103,6 +1126,7 @@ function OnOptGetDef_Sett()
 			'timeout' => 7 * 24 * 60,
 			'timeoutFr' => 60,
 			'timeoutCln' => 182 * 24 * 60,
+			'timeoutFrCln' => 60 * 60,
 			'ctxTimeoutCln' => 15 * 24 * 60,
 			'autoClnPeriod' => 24 * 60,
 			'useTimeoutClnForWpNonce' => true,
@@ -1394,6 +1418,11 @@ function OnOptGetDef_Sett()
 			'timeout' => 30 * 24 * 60,
 		),
 
+		'cacheData' => array(
+			'items' => array(
+			),
+		),
+
 		'contPr' => array(
 			'enable' => true,
 			'normalize' => 1|2,
@@ -1616,6 +1645,7 @@ function OnOptGetDef_Sett()
 				'jqSldNivo' => true,
 				'wooSctrCntDwnTmr' => true,
 				'strmtbUpcTmr' => true,
+				'hrrCntDwnTmr' => true,
 				'lottGen' => true,
 				'sprflMenu' => true,
 				'jqJpPlr' => true,
@@ -1725,6 +1755,8 @@ function OnOptGetDef_Sett()
 						'.//button[contains(concat(" ",normalize-space(@class)," ")," e-n-menu-toggle ")]',
 
 						'.//img[contains(concat(" ",normalize-space(@class)," ")," swiper-slide-image ")]',
+
+						'.//*[contains(concat(" ",normalize-space(@class)," ")," e-click ")]',
 					),
 				),
 
@@ -1774,6 +1806,8 @@ function OnOptGetDef_Sett()
 						'src:@\\.cookiebot\\.com@',
 
 						'id:@^cookieyes$@',
+
+						'src:@\\.elfsight\\.com/platform/@',
 					),
 				),
 
@@ -1971,7 +2005,7 @@ function OnOptGetDef_Sett()
 						'sklCssSelExcl' => array(
 							'@#([\\w\\-\\%]+)@',
 
-							'@\\.(?:product_cat|product_tag|video_tag|category|categories|tag|term|label-term|pa|label-attribute-pa|woocommerce-product-attributes-item-|comment-author)[\\-_]([\\w\\-]+)@i',
+							'@\\.(?:category|categories|tag|term|label-term|pa|label-attribute-pa|woocommerce-product-attributes-item-|comment-author|(?\'ENUM_TAXONOMIES_NOTBUILTIN\')|(?\'ENUM_POSTTYPES_NOTBUILTINVIEWABLESPEC\'))[\\-_]([\\w\\-]+)@i',
 							'@[^[:alnum:]]eb-(?:row|column|text|accordion(?:-item|))-([[:alnum:]]+)[^[:alnum:]\\-_]@i',
 							'@[\\.#][\\w\\-\\:\\@\\\\]*[\\-_]([\\da-f]+)[\\W_]@i',
 
@@ -2566,12 +2600,17 @@ function CacheDscUpdate( $lock, $settCache, $content, $deps, $subParts, $dataPat
 {
 	global $seraph_accel_g_dscFile;
 	global $seraph_accel_g_dscFilePending;
+	global $seraph_accel_g_simpCacheMode;
+
+	$contentType = 'html';
+	if( is_string( $seraph_accel_g_simpCacheMode ) && Gen::StrStartsWith( ( string )$seraph_accel_g_simpCacheMode, 'data:' ) )
+		$contentType = substr( $seraph_accel_g_simpCacheMode, 5 );
 
 	$dsc = array( 'p' => array() );
 
 	$writeOk = true;
 
-		$writeOk = !!_ContentCw( $dsc, $content, 'html', $settCache, $dataPath );
+		$writeOk = !!_ContentCw( $dsc, $content, $contentType, $settCache, $dataPath );
 
 	$dsc[ 'c' ] = pack( 'V', crc32( $content ) );
 	$dsc[ 'a' ] = hash( 'adler32', $content, true );
@@ -3427,6 +3466,7 @@ function ContProcGetSkipStatus( $content )
 {
 	global $seraph_accel_g_contProcGetSkipStatus;
 	global $seraph_accel_g_sRedirLocation;
+	global $seraph_accel_g_simpCacheMode;
 
 	if( $seraph_accel_g_contProcGetSkipStatus !== null )
 		return( $seraph_accel_g_contProcGetSkipStatus );
@@ -3463,7 +3503,7 @@ function ContProcGetSkipStatus( $content )
 	if( is_feed() )
 		return( $seraph_accel_g_contProcGetSkipStatus = 'feed' );
 
-	if( Gen::StrPosArr( $content, array( '</body>', '</BODY>' ) ) === false && Gen::StrPosArr( $content, array( '</head>', '</HEAD>' ) ) === false )
+	if( $seraph_accel_g_simpCacheMode === null && Gen::StrPosArr( $content, array( '</body>', '</BODY>' ) ) === false && Gen::StrPosArr( $content, array( '</head>', '</HEAD>' ) ) === false )
 		return( $seraph_accel_g_contProcGetSkipStatus = 'noHdrOrBody' );
 
 	return( $seraph_accel_g_contProcGetSkipStatus = false );
@@ -3530,7 +3570,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.1 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4744,7 +4784,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.1';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 

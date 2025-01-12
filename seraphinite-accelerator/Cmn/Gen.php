@@ -583,7 +583,7 @@ class Gen
 	{
 		if( !$withPath )
 		{
-			$filepath = basename( $filepath );
+			$filepath = Gen::StrEndsWith( $filepath, array( '/', '\\' ) ) ? '' : basename( $filepath );
 			if( !$nameOnly )
 				return( $filepath );
 		}
@@ -1064,7 +1064,7 @@ class Gen
 		return( false );
 	}
 
-	static function StrEndsWith( string $haystack, string $needle )
+	static function StrEndsWith( string $haystack, $needle )
 	{
 		if( is_string( $needle ) )
 		{

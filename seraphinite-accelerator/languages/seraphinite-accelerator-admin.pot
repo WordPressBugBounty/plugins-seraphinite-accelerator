@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.26)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.26\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.26.1)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.26.1\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.26)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.26\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.26.1)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.26.1\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -976,6 +976,11 @@ msgctxt "admin.Settings_CacheBrowser"
 msgid "Title"
 msgstr ""
 
+# Non-HTML content cache
+msgctxt "admin.Settings_CacheData"
+msgid "Title"
+msgstr ""
+
 # Server and cloud
 msgctxt "admin.Settings_Cache_Srv"
 msgid "Title"
@@ -1292,12 +1297,6 @@ msgctxt "admin.Settings_Cache_Common"
 msgid "Timeout_%1$s%2$s%3$s"
 msgstr ""
 
-# Time to live for fresh parts: %1$s second(s)
-#, php-format
-msgctxt "admin.Settings_Cache_Common"
-msgid "TimeoutFragments_%1$s"
-msgstr ""
-
 # Time to live for cleanup: %3$s days, %2$s hours, and %1$s minutes
 #, php-format
 msgctxt "admin.Settings_Cache_Common"
@@ -1313,6 +1312,17 @@ msgstr ""
 #, php-format
 msgctxt "admin.Settings_Cache_Common"
 msgid "AutoClnPeriod_%1$s%2$s%3$s"
+msgstr ""
+
+# Always fresh parts
+msgctxt "admin.Settings_Html_Fresh"
+msgid "Lbl"
+msgstr ""
+
+# Time to live: %1$s second(s)
+#, php-format
+msgctxt "admin.Settings_Cache_Common"
+msgid "TimeoutFragments_%1$s"
 msgstr ""
 
 # Schedule
@@ -1392,6 +1402,32 @@ msgstr ""
 # Time to live: %3$s days, %2$s hours, and %1$s minutes
 #, php-format
 msgctxt "admin.Settings_CacheBrowser_Common"
+msgid "Timeout_%1$s%2$s%3$s"
+msgstr ""
+
+# Enable
+msgctxt "admin.Settings_CacheData_Item"
+msgid "EnabledLbl"
+msgstr ""
+
+# Pattern
+msgctxt "admin.Settings_CacheData_Item"
+msgid "PatternLbl"
+msgstr ""
+
+# Regular expression for request URI
+msgctxt "admin.Settings_CacheData_Item"
+msgid "PatternPhlr"
+msgstr ""
+
+# Revalidation
+msgctxt "admin.Settings_CacheData_Item"
+msgid "RevalidationLbl"
+msgstr ""
+
+# Time to live: %3$s days, %2$s hours, and %1$s minutes
+#, php-format
+msgctxt "admin.Settings_CacheData_Item"
 msgid "Timeout_%1$s%2$s%3$s"
 msgstr ""
 
@@ -1852,11 +1888,6 @@ msgstr ""
 # String or regular expression
 msgctxt "admin.Settings_Html_Rpl"
 msgid "FindExprPhlr"
-msgstr ""
-
-# Always fresh parts
-msgctxt "admin.Settings_Html_Fresh"
-msgid "Lbl"
 msgstr ""
 
 # Smooth appearing
@@ -2634,6 +2665,11 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "StrmtbUpcTmrChk"
 msgstr ""
 
+# Hurry Scarcity and Urgency Countdown Timer
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "HrrCntDwnTmrChk"
+msgstr ""
+
 # Lottie generic
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "LottGenChk"
@@ -3222,6 +3258,7 @@ msgctxt "admin.Settings_Advanced_AsyncMode"
 msgid "ExtCron"
 msgstr ""
 
+# Compatible non-blocking requests
 msgctxt "admin.Settings_Advanced_Common"
 msgid "AsyncUseCmptNbrChk"
 msgstr ""

@@ -158,7 +158,6 @@ class Fs
 		'avi'     => 'video/x-msvideo',
 		'avif'    => 'image/avif',
 		'bcpio'   => 'application/x-bcpio',
-		'bin'     => 'application/octet-stream',
 		'bmp'     => 'image/bmp',
 		'bz2'     => 'application/x-bzip2',
 		'cdf'     => 'application/x-netcdf',
@@ -333,12 +332,14 @@ class Fs
 		'xht'     => 'application/xhtml+xml',
 		'xhtml'   => 'application/xhtml+xml',
 		'xls'     => 'application/vnd.ms-excel',
-		'xml'     => 'text/xml',
 		'xpm'     => 'image/x-xpixmap',
 		'xsl'     => 'text/xml',
 		'xwd'     => 'image/x-xwindowdump',
 		'xyz'     => 'chemical/x-xyz',
 		'zip'     => 'application/zip',
+
+		'bin'     => 'application/octet-stream',
+		'xml'     => 'text/xml',
 	);
 
 	static $mime_types_rev = array(
@@ -359,6 +360,8 @@ class Fs
 
 		'application/font-woff2'					=> 'woff2',
 		'application/x-font-woff2'					=> 'woff2',
+
+		'application/octet-stream'					=> 'bin',
 	);
 
 	static function GetMimeContentType( $filename )
@@ -391,13 +394,13 @@ class Fs
 		}
 	}
 
-	static function GetFileTypeFromMimeContentType( $mimeType )
+	static function GetFileTypeFromMimeContentType( $mimeType, $def = null )
 	{
 		static $aMimeRev = null;
-		if( !$aMimeRev )
+		if( $aMimeRev === null )
 			$aMimeRev = array_merge( self::$mime_types_rev, array_flip( self::$mime_types ) );
 
-		return( (isset($aMimeRev[ $mimeType ])?$aMimeRev[ $mimeType ]:null) );
+		return( (isset($aMimeRev[ $mimeType ])?$aMimeRev[ $mimeType ]:$def) );
 	}
 }
 

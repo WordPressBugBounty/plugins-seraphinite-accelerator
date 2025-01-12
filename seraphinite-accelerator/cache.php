@@ -48,6 +48,7 @@ function _Process( $sites, $args )
 	global $seraph_accel_g_cacheSkipData;
 	global $seraph_accel_g_siteId;
 	global $seraph_accel_g_cacheCtxSkip;
+	global $seraph_accel_g_simpCacheMode;
 
 	if( isset( $_SERVER[ 'HTTP_X_SERAPH_ACCEL_TEST' ] ) )
 	{
@@ -120,15 +121,21 @@ function _Process( $sites, $args )
 	$sett = Plugin::SettGet( Gen::CallFunc( 'seraph_accel_siteSettInlineDetach', array( $seraph_accel_g_siteId ) ) );
 	$settCache = Gen::GetArrField( $sett, array( 'cache' ), array() );
 
-	if( $bFragments = isset( $_REQUEST[ 'seraph_accel_gf' ] ) )
+	$timeoutCln = Gen::GetArrField( $settCache, array( 'timeoutCln' ), 0 ) * 60;
+	$timeout = Gen::GetArrField( $settCache, array( 'timeout' ), 0 ) * 60;
+
+	if( isset( $_REQUEST[ 'seraph_accel_gf' ] ) )
 	{
 		@header( 'X-Robots-Tag: noindex' );
 
-		$timeoutFragments = ( int )(isset($settCache[ 'timeoutFr' ])?$settCache[ 'timeoutFr' ]:null);
+		$seraph_accel_g_simpCacheMode = 'fragments:' . Gen::SanitizeId( $_REQUEST[ 'seraph_accel_gf' ] );
+
+		$timeoutCln = Gen::GetArrField( $settCache, array( 'timeoutFrCln' ), 0 );
+		$timeout = Gen::GetArrField( $settCache, array( 'timeoutFr' ), 0 );
 
 	}
 
-	if( !$bFragments && Gen::GetArrField( $settCache, array( 'ctxSkip' ), false ) )
+	if( $seraph_accel_g_simpCacheMode === null && Gen::GetArrField( $settCache, array( 'ctxSkip' ), false ) )
 		$seraph_accel_g_cacheCtxSkip = true;
 
 	$idSubPart = Gen::SanitizeId( (isset($_REQUEST[ 'seraph_accel_gp' ])?$_REQUEST[ 'seraph_accel_gp' ]:null), null );
@@ -177,6 +184,47 @@ function _Process( $sites, $args )
 		unset( $varsOut, $exclStatus, $aArgRemove );
 	}
 
+	{
+		foreach( Gen::GetArrField( $settCache, array( 'data', 'items' ), array() ) as $itemData )
+		{
+			if( !(isset($itemData[ 'enable' ])?$itemData[ 'enable' ]:null) )
+				continue;
+
+			$found = false;
+			foreach( ExprConditionsSet_Parse( (isset($itemData[ 'pattern' ])?$itemData[ 'pattern' ]:'') ) as $e )
+			{
+				$val = false;
+				if( IsStrRegExp( $e[ 'expr' ] ) )
+				{
+					if( @preg_match( $e[ 'expr' ], $_SERVER[ 'REQUEST_URI' ] ) )
+						$val = true;
+				}
+				else if( strpos( $_SERVER[ 'REQUEST_URI' ], $e[ 'expr' ] ) !== false )
+					$val = true;
+
+				if( !ExprConditionsSet_ItemOp( $e, $val ) )
+				{
+					$found = false;
+					break;
+				}
+
+				$found = true;
+			}
+
+			if( !$found )
+				continue;
+
+			$seraph_accel_g_simpCacheMode = 'data:' . Fs::GetFileTypeFromMimeContentType( (isset($itemData[ 'mime' ])?$itemData[ 'mime' ]:''), 'bin' );
+
+			$timeoutCln = Gen::GetArrField( $itemData, array( 'timeoutCln' ), 0 );
+			$timeout = Gen::GetArrField( $itemData, array( 'timeout' ), 0 );
+
+			break;
+		}
+
+		unset( $itemData, $found, $val );
+	}
+
 	global $seraph_accel_g_dscFile;
 	global $seraph_accel_g_dscFilePending;
 	global $seraph_accel_g_dataPath;
@@ -217,10 +265,20 @@ function _Process( $sites, $args )
 	}
 
 	$objectId = '@';
+	$objectType = 'html';
 	if( $pathIsDir )
 		$objectId .= 'd';
-	if( $bFragments )
-		$objectId .= 'f';
+	if( is_string( $seraph_accel_g_simpCacheMode ) )
+	{
+		if( Gen::StrStartsWith( $seraph_accel_g_simpCacheMode, 'fragments' ) )
+			$objectId .= 'f';
+		else if( Gen::StrStartsWith( $seraph_accel_g_simpCacheMode, 'data:' ) )
+		{
+
+			$objectType = substr( $seraph_accel_g_simpCacheMode, 5 );
+		}
+	}
+
 	if( !empty( $args ) )
 	{
 		$argsCumulative = '';
@@ -236,13 +294,11 @@ function _Process( $sites, $args )
 	$seraph_accel_g_dscFile = $ctxsPath . '/' . $ctxPathId . '/o';
 	if( $path )
 		$seraph_accel_g_dscFile .= '/' . $path;
-	$seraph_accel_g_dscFile .= '/' . $objectId . '.html.dat';
+	$seraph_accel_g_dscFile .= '/' . $objectId . '.' . $objectType . '.dat';
 
 	$seraph_accel_g_dscFilePending = $seraph_accel_g_dscFile . '.p';
 
-	if( $bFragments )
-		$seraph_accel_g_dscFilePending .= 'p';
-	else if( $seraph_accel_g_prepPrms !== null )
+	if( $seraph_accel_g_prepPrms !== null )
 	{
 		$seraph_accel_g_dscFilePending .= 'p';
         $seraph_accel_g_noFo = true;
@@ -256,8 +312,6 @@ function _Process( $sites, $args )
 
 	$httpCacheControl = strtolower( (isset($_SERVER[ 'HTTP_CACHE_CONTROL' ])?$_SERVER[ 'HTTP_CACHE_CONTROL' ]:null) );
 
-	$timeoutCln = Gen::GetArrField( $settCache, array( 'timeoutCln' ), 0 ) * 60;
-	$timeout = $bFragments ? $timeoutFragments : Gen::GetArrField( $settCache, array( 'timeout' ), 0 ) * 60;
 	if( $timeoutCln && $timeout > $timeoutCln )
 		$timeout = $timeoutCln;
 
@@ -293,8 +347,13 @@ function _Process( $sites, $args )
 				return( Gen::S_OK );
 			}
 
-			$seraph_accel_g_cacheSkipData = array( $bFragments ? 'revalidated-fragments' : 'revalidating', array( 'reason' => 'initial', 'dscFile' => substr( $seraph_accel_g_dscFile, strlen( $cacheRootPath ) ) ) );
-			return( $bFragments ? Gen::S_IO_PENDING : Gen::S_FALSE );
+			if( $seraph_accel_g_simpCacheMode === null )
+			{
+				$seraph_accel_g_cacheSkipData = array( 'revalidating', array( 'reason' => 'initial', 'dscFile' => substr( $seraph_accel_g_dscFile, strlen( $cacheRootPath ) ) ) );
+				return( Gen::S_FALSE );
+			}
+
+			return( Gen::S_IO_PENDING );
 		}
 		else
 		{
@@ -350,8 +409,13 @@ function _Process( $sites, $args )
 					{
 						if( !( $dsc && isset( $dsc[ 't' ] ) ) && $seraph_accel_g_prepPrms === null )
 						{
-							$seraph_accel_g_cacheSkipData = array( $bFragments ? 'revalidated-fragments' : 'revalidating', array( 'reason' => $reason, 'dscFile' => substr( $seraph_accel_g_dscFile, strlen( $cacheRootPath ) ) ) );
-							return( $bFragments ? Gen::S_IO_PENDING : Gen::S_FALSE );
+							if( $seraph_accel_g_simpCacheMode === null )
+							{
+								$seraph_accel_g_cacheSkipData = array( 'revalidating', array( 'reason' => $reason, 'dscFile' => substr( $seraph_accel_g_dscFile, strlen( $cacheRootPath ) ) ) );
+								return( Gen::S_FALSE );
+							}
+
+							return( Gen::S_IO_PENDING );
 						}
 					}
 				}
@@ -374,7 +438,7 @@ function _Process( $sites, $args )
 		else
 		{
 
-			$hr = _ProcessOutCachedData( !$bFragments, null, $sett, $settCache, $dsc, $dscFileTm, $tmCur, $isCip ? ( $bFragments ? 'revalidating-fragments' : 'revalidating' ) : ( $isCip === false ? ( $bFragments ? 'revalidating-fragments-begin' : 'revalidating-begin' ) : 'cache' ), $reason, true );
+			$hr = _ProcessOutCachedData( $seraph_accel_g_simpCacheMode === null, null, $sett, $settCache, $dsc, $dscFileTm, $tmCur, $isCip ? 'revalidating' : ( $isCip === false ? 'revalidating-begin' : 'cache' ), $reason, true );
 			if( Gen::HrFail( $hr ) )
 				return( $hr );
 
@@ -399,8 +463,13 @@ function _Process( $sites, $args )
 
 			$lock -> Release();
 
-			$seraph_accel_g_cacheSkipData = array( $bFragments ? 'revalidated-fragments' : 'revalidating', array( 'reason' => $reasonOutputErr, 'dscFile' => substr( $seraph_accel_g_dscFile, strlen( $cacheRootPath ) ) ) );
-			return( $bFragments ? Gen::S_IO_PENDING : Gen::S_FALSE );
+			if( $seraph_accel_g_simpCacheMode === null )
+			{
+				$seraph_accel_g_cacheSkipData = array( 'revalidating', array( 'reason' => $reasonOutputErr, 'dscFile' => substr( $seraph_accel_g_dscFile, strlen( $cacheRootPath ) ) ) );
+				return( Gen::S_FALSE );
+			}
+
+			return( Gen::S_IO_PENDING );
 		}
 	}
 	else
@@ -490,7 +559,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.26;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.26.1;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -506,6 +575,10 @@ function _ProcessOutCachedData( $allowExtCache, $objSubType, $sett, $settCache, 
 	global $seraph_accel_g_dscFilePending;
 	global $seraph_accel_g_dataPath;
 	global $seraph_accel_g_ctxCache;
+	global $seraph_accel_g_simpCacheMode;
+
+	if( $objSubType === null && is_string( $seraph_accel_g_simpCacheMode ) && Gen::StrStartsWith( ( string )$seraph_accel_g_simpCacheMode, 'data:' ) )
+		$objSubType = substr( $seraph_accel_g_simpCacheMode, 5 );
 
 	$bNotMdf = false;
 
@@ -632,12 +705,16 @@ function _ProcessOutCachedData( $allowExtCache, $objSubType, $sett, $settCache, 
 	{
 		switch( $objSubType )
 		{
-		case 'css':		$objSubType = 'text/css'; break;
-		case 'js':		$objSubType = 'application/javascript'; break;
-		default:		$objSubType = 'text/html'; break;
+		case 'css':		$objSubType = 'text/css; charset=UTF-8'; break;
+		case 'js':		$objSubType = 'application/javascript; charset=UTF-8'; break;
+		case 'json':	$objSubType = 'application/json; charset=UTF-8'; break;
+		case 'xml':		$objSubType = 'text/xml; charset=UTF-8'; break;
+		case 'txt':		$objSubType = 'text/plain; charset=UTF-8'; break;
+		case 'bin':		$objSubType = 'application/octet-stream'; break;
+		default:		$objSubType = 'text/html; charset=UTF-8'; break;
 		}
 
-		@header( 'Content-Type: ' . $objSubType . '; charset=UTF-8' );
+		@header( 'Content-Type: ' . $objSubType );
 	}
 
 	if( (isset($settCache[ 'chkNotMdfSince' ])?$settCache[ 'chkNotMdfSince' ]:null) )
@@ -1102,6 +1179,8 @@ function _CacheSetRequestToPrepareAsyncEx( $siteId, $url, $hdrs, $tmp = false )
 
 function CacheSetCurRequestToPrepareAsync( $siteId, $tmp = false, $bgEnabled = false, $early = true )
 {
+	global $seraph_accel_g_simpCacheMode;
+
 	$obj = new AnyObj();
 	$obj -> url = GetCurRequestUrl();
 
@@ -1109,7 +1188,10 @@ function CacheSetCurRequestToPrepareAsync( $siteId, $tmp = false, $bgEnabled = f
 	if( isset( $_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] ) )
 		$obj -> hdrs[ 'User-Agent' ] = $_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ];
 
-	if( !$bgEnabled && $siteId && !$tmp )
+	if( Gen::StrStartsWith( ( string )$seraph_accel_g_simpCacheMode, 'fragments' ) )
+		$obj -> url = Net::UrlAddArgs( $obj -> url, array( 'seraph_accel_gf' => substr( $seraph_accel_g_simpCacheMode, 10 ) ) );
+
+	if( !$bgEnabled && $siteId && !$tmp && $seraph_accel_g_simpCacheMode === null )
 	{
 		Gen::MakeDir( $fileTempQueue = GetCacheDir() . '/qt', true );
 		if( $fileTempQueue = tempnam( $fileTempQueue, '' ) )
@@ -1198,6 +1280,7 @@ function _CbContentFinishSkip( $content )
 	global $seraph_accel_g_cacheObjSubs;
 	global $seraph_accel_g_siteId;
 	global $seraph_accel_g_prepCont;
+	global $seraph_accel_g_simpCacheMode;
 
 	$sett = Plugin::SettGet();
 	$settCache = Gen::GetArrField( $sett, array( 'cache' ), array() );
@@ -1218,7 +1301,7 @@ function _CbContentFinishSkip( $content )
 		if( $dsc = CacheReadDsc( $seraph_accel_g_dscFile ) )
 		{
 			$dscFileTm = @filemtime( $seraph_accel_g_dscFile );
-			_ProcessOutCachedData( $seraph_accel_g_prepCont != 'fragments', null, $sett, $settCache, $dsc, $dscFileTm, $dscFileTm, $seraph_accel_g_prepCont == 'fragments' ? 'revalidated-fragments' : 'revalidated', 'notChanged', false, $content );
+			_ProcessOutCachedData( $seraph_accel_g_simpCacheMode === null, null, $sett, $settCache, $dsc, $dscFileTm, $dscFileTm, 'revalidated', 'notChanged', false, $content );
 		}
 		else
 			_ProcessOutHdrTrace( $sett, true, true, 'skipped', array( 'reason' => 'brokenDsc' ), $seraph_accel_g_dscFile );
@@ -1254,6 +1337,7 @@ function _CbContentFinish( $content )
 	global $seraph_accel_g_prepOrigContHash;
 	global $seraph_accel_g_prepOrigCont;
 	global $seraph_accel_g_prepLearnId;
+	global $seraph_accel_g_simpCacheMode;
 
 	$sett = Plugin::SettGet();
 	$settCache = Gen::GetArrField( $sett, array( 'cache' ), array() );
@@ -1293,7 +1377,7 @@ function _CbContentFinish( $content )
 			if( $dsc = CacheReadDsc( $seraph_accel_g_dscFile ) )
 			{
 				$dscFileTm = @filemtime( $seraph_accel_g_dscFile );
-				_ProcessOutCachedData( $seraph_accel_g_prepCont != 'fragments', null, $sett, $settCache, $dsc, $dscFileTm, $dscFileTm, $seraph_accel_g_prepCont == 'fragments' ? 'revalidated-fragments' : 'revalidated', 'notChanged', false, $content );
+				_ProcessOutCachedData( $seraph_accel_g_simpCacheMode === null, null, $sett, $settCache, $dsc, $dscFileTm, $dscFileTm, 'revalidated', 'notChanged', false, $content );
 			}
 			else
 				_ProcessOutHdrTrace( $sett, true, true, 'skipped', array( 'reason' => 'brokenDsc' ), $seraph_accel_g_dscFile );
@@ -1334,7 +1418,7 @@ function _CbContentFinish( $content )
 
 	$content = '';
 	$dscFileTm = @filemtime( $seraph_accel_g_dscFile );
-	_ProcessOutCachedData( $seraph_accel_g_prepCont != 'fragments', null, $sett, $settCache, $dsc, $dscFileTm, $dscFileTm, $seraph_accel_g_prepCont == 'fragments' ? 'revalidated-fragments' : 'revalidated', null, false, $content );
+	_ProcessOutCachedData( $seraph_accel_g_simpCacheMode === null, null, $sett, $settCache, $dsc, $dscFileTm, $dscFileTm, 'revalidated', null, false, $content );
 	return( $content );
 }
 
@@ -1347,7 +1431,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( (isset($settCache[ 'normAgent' ])?$settCache[ 'normAgent' ]:null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = (isset($_SERVER[ 'HTTP_USER_AGENT' ])?$_SERVER[ 'HTTP_USER_AGENT' ]:'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.1';
 	}
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )

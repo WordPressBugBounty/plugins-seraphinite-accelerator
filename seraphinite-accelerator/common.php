@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 150;
+const PLUGIN_SETT_VER								= 151;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -967,7 +967,38 @@ function OnOptRead_Sett( $sett, $verFrom )
 		Gen::SetArrField( $sett, array( 'cache', 'timeoutFrCln' ), 60 * 60 );
 	}
 
+	if( $verFrom && $verFrom < 151 )
+	{
+		{
+			$grpsExcl = Gen::GetArrField( $sett, array( 'contPr', 'grps', 'items', '@a', 'sklCssSelExcl' ), array() );
+			_UpdTokensArr( $grpsExcl, array( '@\\.kbx-((?\'POST_SLUG\'))@' => 0 ) );
+			Gen::SetArrField( $sett, array( 'contPr', 'grps', 'items', '@a', 'sklCssSelExcl' ), $grpsExcl );
+		}
+	}
+
 	return( $sett );
+}
+
+function _UpdTokensArr( &$a, $aItem )
+{
+	foreach( $aItem as $item => $action )
+	{
+		if( $action === true )
+		{
+			if( !in_array( $item, $a ) )
+				$a[] = $item;
+		}
+		else if( is_integer( $action ) )
+		{
+			if( !in_array( $item, $a ) )
+				array_splice( $a, $action, 0, array( $item ) );
+		}
+		else if( is_string( $action ) )
+		{
+			if( ( $i = array_search( $item, $a ) ) !== false )
+				$a[ $i ] = $action;
+		}
+	}
 }
 
 function Op_DepItems_MigrateFromOld( $dependItems )
@@ -1438,6 +1469,7 @@ function OnOptGetDef_Sett()
 					'@\\[et-ajax\\]@i',
 				),
 				'items' => array(
+					'.//img/@loading',
 					'.//link[@rel="preload"][@as="font"][not(self::node()[@seraph-accel-crit="1"])]',
 				),
 			),
@@ -1693,6 +1725,8 @@ function OnOptGetDef_Sett()
 
 						'.//*[contains(concat(" ",normalize-space(@class)," ")," n2-ss-slider ")]//*[contains(concat(" ",normalize-space(@class)," ")," nextend-arrow ")]',
 						'.//*[contains(concat(" ",normalize-space(@class)," ")," n2-ss-slider ")]//*[contains(concat(" ",normalize-space(@class)," ")," n2-bullet ")]',
+
+						'.//a[contains(concat(" ",normalize-space(@class)," ")," woocommerce-loop-product__link ")]',
 					),
 
 					'exclDef' => array(
@@ -2003,6 +2037,7 @@ function OnOptGetDef_Sett()
 						),
 
 						'sklCssSelExcl' => array(
+							'@\\.kbx-((?\'POST_SLUG\'))@',
 							'@#([\\w\\-\\%]+)@',
 
 							'@\\.(?:category|categories|tag|term|label-term|pa|label-attribute-pa|woocommerce-product-attributes-item-|comment-author|(?\'ENUM_TAXONOMIES_NOTBUILTIN\')|(?\'ENUM_POSTTYPES_NOTBUILTINVIEWABLESPEC\'))[\\-_]([\\w\\-]+)@i',
@@ -3570,7 +3605,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.1 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.2 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4784,7 +4819,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.1';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.2';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 

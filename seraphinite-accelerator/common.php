@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 151;
+const PLUGIN_SETT_VER								= 152;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -976,6 +976,27 @@ function OnOptRead_Sett( $sett, $verFrom )
 		}
 	}
 
+	if( $verFrom && $verFrom < 152 )
+	{
+		{
+			$grpsExcl = Gen::GetArrField( $sett, array( 'contPr', 'grps', 'items', '@a', 'sklCssSelExcl' ), array() );
+			_UpdTokensArr( $grpsExcl, array(
+				'@\\.kbx-((?\'POST_SLUG\'))@' =>
+					"r=pslg:@\\.(?:[\\-\\w]+[\\-\\_]|)((?'POST_SLUG'))[\\-\\_\\W]@i",
+
+				'@\\.(?:category|categories|tag|term|label-term|pa|label-attribute-pa|woocommerce-product-attributes-item-|comment-author|(?\'ENUM_TAXONOMIES_NOTBUILTIN\')|(?\'ENUM_POSTTYPES_NOTBUILTINVIEWABLESPEC\'))[\\-_]([\\w\\-]+)@i' =>
+					"@\\.(?:[\\-\\w]+[\\-\\_]|)(?:category|categories|tag|term|comment-author|(?'ENUM_TAXONOMIES_NOTBUILTIN'))[\\-\\_]([\\w\\-]+)@i",
+
+				"@\\.(?:[\\-\\w]+[\\-\\_]|)(?:post|page|attachment|(?'ENUM_POSTTYPES_NOTBUILTINVIEWABLESPEC'))[\\-\\_]([\\w\\-]+)@i" =>
+					array( "@\\.(?:[\\-\\w]+[\\-\\_]|)(?:category|categories|tag|term|comment-author|(?'ENUM_TAXONOMIES_NOTBUILTIN'))[\\-\\_]([\\w\\-]+)@i", 1 ),
+
+				"r=txnm:@\\.(?:[\\-\\w]+[\\-\\_]|)(category|(?'ENUM_TAXONOMIES_NOTBUILTIN'))[\\-\\_\\W]@i" =>
+					array( "@\\.(?:[\\-\\w]+[\\-\\_]|)(?:category|categories|tag|term|comment-author|(?'ENUM_TAXONOMIES_NOTBUILTIN'))[\\-\\_]([\\w\\-]+)@i", 1 ),
+			) );
+			Gen::SetArrField( $sett, array( 'contPr', 'grps', 'items', '@a', 'sklCssSelExcl' ), $grpsExcl );
+		}
+	}
+
 	return( $sett );
 }
 
@@ -997,6 +1018,15 @@ function _UpdTokensArr( &$a, $aItem )
 		{
 			if( ( $i = array_search( $item, $a ) ) !== false )
 				$a[ $i ] = $action;
+		}
+		else if( is_array( $action ) )
+		{
+			if( !in_array( $item, $a ) )
+			{
+				if( ( $i = array_search( $action[ 0 ], $a ) ) !== false )
+					array_splice( $a, $i + $action[ 1 ], 0, array( $item ) );
+
+			}
 		}
 	}
 }
@@ -1035,6 +1065,12 @@ function OnAsyncTasksGetPushUrlFile()
 function OnAsyncTasksUseCmptNbr()
 {
 	return( Gen::GetArrField( Plugin::SettGetGlobal(), array( 'asyncUseCmptNbr' ), false ) );
+}
+
+function OnAsyncTasksSetNeededHdrs( $aSrv, $aHdr )
+{
+	CacheExt_Clear_CopyHdrs( $aSrv );
+	return( array_merge( Net::GetRequestHeaders( $aSrv, true, false, CacheExt_Clear_CopyHdrsArr() ), $aHdr ) );
 }
 
 function OnAsyncTasksPushGetMode( $settGlob = null )
@@ -1475,6 +1511,16 @@ function OnOptGetDef_Sett()
 			),
 			'rpl' => array(
 				'items' => array(
+					array(
+						'enable' => true,
+						'expr' => '@<link\\s+rel="stylesheet"[^>]+(consent-original-href-_)=[^>]+>@',
+						'data' => 'href'
+					),
+					array(
+						'enable' => true,
+						'expr' => '@<body[^>]+(cm-manage-google-fonts)[^>]+>@',
+						'data' => ''
+					)
 				),
 			),
 
@@ -1938,7 +1984,7 @@ function OnOptGetDef_Sett()
 
 					'wp-block-ultimate-post-slider'	=> array( 'enable' => true,		'descr' => 'Block Ultimate Post Slider',	'data' => "[class*=wp-block-ultimate-post-post-slider] .ultp-block-items-wrap:not(.slick-initialized) > .ultp-block-item:not(:first-child)\n{\n\tdisplay: none!important;\n}" ),
 
-					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader, .pix-page-loading-bg, .pix-loading-circ-path, .mesh-loader, .lqd-preloader-wrap {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}" ),
+					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader, .pix-page-loading-bg, .pix-loading-circ-path, .mesh-loader, .lqd-preloader-wrap, .rey-sitePreloader {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}" ),
 
 					'elementor-vis'		=> array( 'enable' => false, 'descr' => 'Elementor (visibility and animation)', 'data' => "body.seraph-accel-js-lzl-ing-ani .elementor-invisible {\r\n\tvisibility: visible !important;\r\n}\r\n\r\n.elementor-element[data-settings*=\"animation\\\"\"] {\r\n\tanimation-name: none !important;\r\n}" ),
 
@@ -2037,12 +2083,16 @@ function OnOptGetDef_Sett()
 						),
 
 						'sklCssSelExcl' => array(
-							'@\\.kbx-((?\'POST_SLUG\'))@',
-							'@#([\\w\\-\\%]+)@',
+							"r=pslg:@\\.(?:[\\-\\w]+[\\-\\_]|)((?'POST_SLUG'))[\\-\\_\\W]@i",
+							"@#([\\w\\-\\%]+)@",
 
-							'@\\.(?:category|categories|tag|term|label-term|pa|label-attribute-pa|woocommerce-product-attributes-item-|comment-author|(?\'ENUM_TAXONOMIES_NOTBUILTIN\')|(?\'ENUM_POSTTYPES_NOTBUILTINVIEWABLESPEC\'))[\\-_]([\\w\\-]+)@i',
-							'@[^[:alnum:]]eb-(?:row|column|text|accordion(?:-item|))-([[:alnum:]]+)[^[:alnum:]\\-_]@i',
-							'@[\\.#][\\w\\-\\:\\@\\\\]*[\\-_]([\\da-f]+)[\\W_]@i',
+							"@\\.(?:[\\-\\w]+[\\-\\_]|)(?:category|categories|tag|term|comment-author|(?'ENUM_TAXONOMIES_NOTBUILTIN'))[\\-\\_]([\\w\\-]+)@i",
+							"r=txnm:@\\.(?:[\\-\\w]+[\\-\\_]|)(category|(?'ENUM_TAXONOMIES_NOTBUILTIN'))[\\-\\_\\W]@i",
+							"@\\.(?:[\\-\\w]+[\\-\\_]|)(?:post|page|attachment|(?'ENUM_POSTTYPES_NOTBUILTINVIEWABLESPEC'))[\\-\\_]([\\w\\-]+)@i",
+
+							"@[^[:alnum:]]eb-(?:row|column|text|accordion(?:-item|))-([[:alnum:]]+)[^[:alnum:]\\-_]@i",
+
+							"@[\\.#][\\w\\-\\:\\@\\\\]*[\\-_]([\\da-f]+)[\\W_]@i",
 
 						),
 					),
@@ -3605,7 +3655,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.2 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.3 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4117,7 +4167,7 @@ class ProcessQueueItemCtx
 	static function MakeRequest( $asyncMode, $url, $hdrs, $timeout = 0 )
 	{
 
-		$prms = array( 'local' => $asyncMode == 'loc', 'redirection' => 0, 'timeout' => $timeout, 'sslverify' => false, 'headers' => $hdrs );
+		$prms = array( 'redirection' => 0, 'timeout' => $timeout, 'sslverify' => false, 'headers' => $hdrs );
 
 		if( !$timeout )
 		{
@@ -4129,6 +4179,12 @@ class ProcessQueueItemCtx
 				$prms[ 'timeout' ] = 0.01;
 				$prms[ 'blocking' ] = false;
 			}
+		}
+
+		if( $asyncMode == 'loc' )
+		{
+			$prms[ 'local' ] = true;
+			$prms[ 'headers' ] = array_merge( OnAsyncTasksSetNeededHdrs( $_SERVER, array() ), ( array )$hdrs );
 		}
 
 		return( Wp::RemoteGet( $url, $prms ) );
@@ -4819,7 +4875,7 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.2';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.3';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 

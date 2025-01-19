@@ -3200,7 +3200,7 @@ class Net
 		return( $host );
 	}
 
-	static function GetRequestHeaders( $serverArgs = null, $bAssoc = true, $bNorm = false )
+	static function GetRequestHeaders( $serverArgs = null, $bAssoc = true, $bNorm = false, array $aIncl = array(), array $aExcl = array() )
 	{
 		if( $serverArgs === null )
 			$serverArgs = $_SERVER;
@@ -3209,6 +3209,12 @@ class Net
 		foreach( $serverArgs as $key => $value )
 		{
 			if( strpos( $key, 'HTTP_' ) !== 0 )
+				continue;
+
+			if( $aIncl && !in_array( $key, $aIncl ) )
+				continue;
+
+			if( $aExcl && in_array( $key, $aExcl ) )
 				continue;
 
 			$header = str_replace( ' ', '-', ucwords( str_replace( '_', ' ', strtolower( substr( $key, 5 ) ) ) ) );
@@ -3466,6 +3472,61 @@ class Net
 
 		$_SERVER[ 'REDIRECT_QUERY_STRING' ] = Net::UrlBuildQuery( $redirect_query_string_args );
 		$_SERVER[ 'QUERY_STRING' ] = Net::UrlBuildQuery( $query_string_args );
+	}
+
+	static function RemoteRequest( $method, $url, $args = null )
+	{
+		$requestRes = array( 'method' => $method, 'url' => $url, 'response' => array( 'code' => 0, 'message' => '' ), 'headers' => array(), 'body' => '' );
+
+		if( !isset( $args[ 'provider' ] ) )
+			$args[ 'provider' ] = 'CURL';
+		if( !isset( $args[ 'useragent' ] ) )
+			$args[ 'useragent' ] = 'seraph-accel-Agent/2.26.3';
+		if( !isset( $args[ 'timeout' ] ) )
+			$args[ 'timeout' ] = 5;
+
+		if( $args[ 'provider' ] !== 'CURL' )
+			return( Gen::E_UNSUPPORTED );
+
+		if( !function_exists( 'curl_init' ) || !function_exists( 'curl_exec' ) )
+			return( Gen::E_UNSUPPORTED );
+
+		$hCurl = curl_init( $url );
+		curl_setopt( $hCurl, CURLOPT_RETURNTRANSFER, true );
+		curl_setopt( $hCurl, CURLOPT_SSL_VERIFYHOST, 2 );
+		curl_setopt( $hCurl, CURLOPT_SSL_VERIFYPEER, false );
+		if( $method === 'POST' )
+			curl_setopt( $hCurl, CURLOPT_POST, true );
+		curl_setopt( $hCurl, CURLOPT_USERAGENT, $args[ 'useragent' ] );
+		if( isset( $args[ 'referer' ] ) )
+			curl_setopt( $hCurl, CURLOPT_REFERER, $args[ 'referer' ] );
+		curl_setopt( $hCurl, CURLOPT_TIMEOUT, $args[ 'timeout' ] );
+		curl_setopt( $hCurl, CURLOPT_MAXREDIRS, 2 );
+		curl_setopt( $hCurl, CURLOPT_FOLLOWLOCATION, true );
+
+		if( $method === 'POST' && isset( $args[ 'data' ] ) )
+		{
+			$requestRes[ 'data_sent' ] = $args[ 'data' ];
+			curl_setopt( $hCurl, CURLOPT_POSTFIELDS, $args[ 'data' ] );
+		}
+
+		{
+			$aHdrPlain = array();
+			if( isset( $args[ 'headers' ] ) )
+			{
+				$requestRes[ 'headers_sent' ] = $args[ 'headers' ];
+				foreach( $args[ 'headers' ] as $name => $value )
+					$aHdrPlain[] = $name . ': ' . $value;
+			}
+
+			curl_setopt( $hCurl, CURLOPT_HTTPHEADER, $aHdrPlain );
+		}
+
+		$requestRes[ 'body' ] = curl_exec( $hCurl );
+		$requestRes[ 'response' ][ 'code' ] = curl_getinfo( $hCurl, CURLINFO_HTTP_CODE );
+		curl_close( $hCurl );
+
+		return( $requestRes );
 	}
 }
 
@@ -4961,7 +5022,7 @@ class Wp
 		return( null );
 	}
 
-	static private function _RemoteGet_Ctx( &$url, &$args )
+	static private function _RemoteGet_Ctx( &$url, &$args, $method )
 	{
 		if( $args === null )
 			$args = array();
@@ -4980,6 +5041,7 @@ class Wp
 		}
 
 		$obj = new AnyObj();
+		$obj -> method = $method;
 
 		$obj -> _cbRequestBefore =
 			function( $obj, $url, $p1, $p2, $p3, &$options )
@@ -4991,7 +5053,8 @@ class Wp
 		$obj -> _cbRequestsBeforeParse =
 			function( $obj, &$response, $url, $headers, $data, $type, $options )
 			{
-				$obj -> method = $type;
+				if( $type )
+					$obj -> method = $type;
 
 				$obj -> headers_sent = ( array )$headers;
 				if( isset( $options[ 'useragent' ] ) )
@@ -5022,6 +5085,8 @@ class Wp
 				if( is_wp_error( $res ) )
 				{
 					$res -> add_data( $url, 'url' );
+					if( isset( $obj -> method ) )
+						$res -> add_data( $obj -> method, 'method' );
 					return( $res );
 				}
 
@@ -5042,7 +5107,7 @@ class Wp
 		if( !function_exists( 'wp_remote_get' ) )
 			return( null );
 
-		$obj = self::_RemoteGet_Ctx( $url, $args );
+		$obj = self::_RemoteGet_Ctx( $url, $args, 'GET' );
 
 		$obj -> setHooks( true );
 		$res = wp_remote_get( $url, $args );
@@ -5056,7 +5121,7 @@ class Wp
 		if( !function_exists( 'wp_remote_post' ) )
 			return( null );
 
-		$obj = self::_RemoteGet_Ctx( $url, $args );
+		$obj = self::_RemoteGet_Ctx( $url, $args, 'POST' );
 
 		$obj -> setHooks( true );
 		$res = wp_remote_post( $url, $args );
@@ -5075,7 +5140,7 @@ class Wp
 		if( !function_exists( 'wp_remote_request' ) )
 			return( null );
 
-		$obj = self::_RemoteGet_Ctx( $url, $args );
+		$obj = self::_RemoteGet_Ctx( $url, $args, $method );
 
 		$args[ 'method' ] = $method;
 

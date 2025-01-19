@@ -559,7 +559,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.26.2;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.26.3;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -692,8 +692,8 @@ function _ProcessOutCachedData( $allowExtCache, $objSubType, $sett, $settCache, 
 			@ini_set( 'brotli.output_compression', 'Off' );
 		}
 
-		if( (isset($settCache[ 'cntLen' ])?$settCache[ 'cntLen' ]:null) && $ctxData[ 'sizeRaw' ] !== null )
-		    @header( 'Content-Length: '. $ctxData[ 'sizeRaw' ] );
+		if( (isset($settCache[ 'cntLen' ])?$settCache[ 'cntLen' ]:null) && $ctxData[ 'contentLen' ] !== null )
+		    @header( 'Content-Length: '. $ctxData[ 'contentLen' ] );
 
 		if( $encoding )
 			@header( 'Content-Encoding: ' . $encoding );
@@ -867,6 +867,7 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 	$recompress = $ctxData[ 'recompress' ];
 
 	$size = 0;
+	$contentLen = 0;
 	$sizeRaw = 0;
 	$content = '';
 
@@ -882,6 +883,8 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 
 				return( null );
 			}
+
+			$sizeRaw += strlen( $oiCd );
 
 			switch( $fmt )
 			{
@@ -907,7 +910,7 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 
 				return( null );
 			}
-			$sizeRaw += $oiCfs;
+			$contentLen += $oiCfs;
 		}
 
 	if( !$recompress )
@@ -916,24 +919,26 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 		{
 		case 'deflate':
 			if( $fmt == '.deflu' )
-				$sizeRaw += 2;
+				$contentLen += 2;
 			break;
 
 		case 'compress':
 			if( $fmt == '.deflu' )
-				$sizeRaw += 2 + 2 + 4;
+				$contentLen += 2 + 2 + 4;
 			break;
 
 		case 'gzip':
 			if( $fmt == '.deflu' )
-				$sizeRaw += 10 + 2 + 4 + 4;
+				$contentLen += 10 + 2 + 4 + 4;
 			break;
 
 		case 'br':
 			if( $fmt == '.brua' )
-				$sizeRaw += 2 + 1;
+				$contentLen += 2 + 1;
 			break;
 		}
+
+		$sizeRaw = $contentLen;
 	}
 	else
 	{
@@ -951,10 +956,11 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 			return( null );
 		}
 
-		$sizeRaw = strlen( $content );
+		$contentLen = strlen( $content );
 	}
 
 	$ctxData[ 'content' ] = $content;
+	$ctxData[ 'contentLen' ] = $contentLen;
 	$ctxData[ 'size' ] = $size;
 	$ctxData[ 'sizeRaw' ] = $sizeRaw;
 	$ctxData[ 'crc32' ] = $dsc[ 'c' ];
@@ -1431,7 +1437,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( (isset($settCache[ 'normAgent' ])?$settCache[ 'normAgent' ]:null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = (isset($_SERVER[ 'HTTP_USER_AGENT' ])?$_SERVER[ 'HTTP_USER_AGENT' ]:'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.2';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.3';
 	}
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )

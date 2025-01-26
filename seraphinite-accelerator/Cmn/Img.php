@@ -32,6 +32,7 @@ class Img
 
 	static function GetInfoFromFile( $file, $ext = false )
 	{
+
 		$data = @file_get_contents( $file );
 		return( $data !== false ? Img::GetInfoFromData( $data, $ext ) : null );
 	}

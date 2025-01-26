@@ -626,7 +626,14 @@ class Ui
 		$iCol = 0;
 		foreach( $aCell as $cell )
 		{
-			$o .= Ui::Tag( 'td', call_user_func( $cell, $ctx ) );
+			$cell = call_user_func( $cell, $ctx );
+			if( is_array( $cell ) )
+			{
+				$o .= Ui::Tag( 'th', $cell[ 0 ] );
+				$cell = $cell[ 1 ];
+			}
+
+			$o .= Ui::Tag( 'td', $cell );
 			$iCol++;
 
 			if( $iCol === $nCols )

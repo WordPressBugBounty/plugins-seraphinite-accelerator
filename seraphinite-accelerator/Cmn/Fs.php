@@ -200,7 +200,7 @@ class Fs
 		'jpe'     => 'image/jpeg',
 		'jpeg'    => 'image/jpeg',
 		'jpg'     => 'image/jpeg',
-		'js'      => 'application/x-javascript',
+		'js'      => 'application/javascript',
 		'json'    => 'application/json',
 		'kar'     => 'audio/midi',
 		'kil'     => 'application/x-killustrator',
@@ -362,6 +362,9 @@ class Fs
 		'application/x-font-woff2'					=> 'woff2',
 
 		'application/octet-stream'					=> 'bin',
+
+		'application/x-javascript'					=> 'js',
+		'text/javascript'							=> 'js',
 	);
 
 	static function GetMimeContentType( $filename )

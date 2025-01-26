@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 152;
+const PLUGIN_SETT_VER								= 153;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1195,6 +1195,7 @@ function OnOptGetDef_Sett()
 			'timeoutCln' => 182 * 24 * 60,
 			'timeoutFrCln' => 60 * 60,
 			'ctxTimeoutCln' => 15 * 24 * 60,
+			'extObjTimeoutCln' => 7 * 24 * 60,
 			'autoClnPeriod' => 24 * 60,
 			'useTimeoutClnForWpNonce' => true,
 
@@ -1506,6 +1507,7 @@ function OnOptGetDef_Sett()
 				),
 				'items' => array(
 					'.//img/@loading',
+					'.//iframe/@loading',
 					'.//link[@rel="preload"][@as="font"][not(self::node()[@seraph-accel-crit="1"])]',
 				),
 			),
@@ -1600,7 +1602,10 @@ function OnOptGetDef_Sett()
 			),
 
 			'frm' => array(
-				'excl' => array(),
+				'excl' => array(
+					'ajs:.//*[contains(concat(" ",normalize-space(@class)," ")," wprm-recipe-video ")]/iframe',
+					'ajs:.//iframe[contains(@src,"/maps")]',
+				),
 				'lazy' => array(
 					'enable' => true,
 					'own' => true,
@@ -1742,7 +1747,8 @@ function OnOptGetDef_Sett()
 				'groupExcls' => array(
 					'src:@stripe@',
 					'src:@\\.hsforms\\.net\\W@',
-					'src:@//cdnjs\\.cloudflare\\.com/ajax/libs/bodymovin/[\\d\\.]+/lottie\\.@'
+					'src:@//cdnjs\\.cloudflare\\.com/ajax/libs/bodymovin/[\\d\\.]+/lottie\\.@',
+					'src:@/plugins/zippy-form/public/js/flatpickr\\.@',
 				),
 
 				'min' => false,
@@ -1935,6 +1941,8 @@ function OnOptGetDef_Sett()
 						'@depicter@',
 
 						'@\\.n2-ss-@',
+
+						'@\\.slick-dots@',
 
 						'@\\.show-mobile-header@',
 
@@ -3655,7 +3663,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.4 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.5 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4870,12 +4878,47 @@ function CacheQueueDelete( $siteId )
 	return( $res );
 }
 
-function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $timeout = 30, $rememberServerState = true )
+function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCmn = true, $timeout = 30, $rememberServerState = true )
 {
+	$extCacheId = null;
+	if( $ctxProcess !== null )
+	{
+		$extCacheId = md5( $url );
+		$file = null;
+		$cont = null;
+
+		$lock = new Lock( Gen::GetFileDir( $ctxProcess[ 'dataPath' ] ) . '/eo/l', false );
+		if( $lock -> Acquire() )
+		{
+			foreach( glob( Gen::GetFileDir( $lock -> GetFileName() ) . '/' . $extCacheId . '.*', GLOB_NOSORT ) as $file )
+				break;
+
+			if( $file && ( $tmFile = @filemtime( $file ) ) !== false )
+			{
+				if( $tmFile > time() )
+					$cont = @file_get_contents( $file );
+				else
+					@unlink( $file );
+			}
+
+			$lock -> Release();
+		}
+
+		if( is_string( $cont ) && Gen::GetFileExt( $file ) == 'gz' && is_string( $cont = @gzdecode( $cont ) ) )
+			$file = Gen::GetFileName( $file, true, true );
+
+		if( is_string( $cont ) )
+		{
+			$contMimeType = Fs::GetMimeContentType( $file );
+			return( $cont );
+		}
+
+		unset( $file, $cont );
+	}
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.4';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.5';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -4896,12 +4939,53 @@ function GetExtContents( $url, &$contMimeType = null, $userAgentCmn = true, $tim
 	}
 
 	$contMimeType = ( string )wp_remote_retrieve_header( $res, 'content-type' );
+	$cont = wp_remote_retrieve_body( $res );
 
 	if( ( $nPos = strpos( $contMimeType, ';' ) ) !== false )
 		$contMimeType = substr( $contMimeType, 0, $nPos );
 	$contMimeType = trim( $contMimeType );
 
-	return( wp_remote_retrieve_body( $res ) );
+	if( $extCacheId !== null )
+	{
+
+		$contCacheTtl = Gen::ParseProps( ( string )wp_remote_retrieve_header( $res, 'cache-control' ), ',' );
+		if( isset( $contCacheTtl[ 'no-cache' ] ) || isset( $contCacheTtl[ 'no-store' ] ) )
+			$contCacheTtl = 5 * 60;
+		else if( isset( $contCacheTtl[ 's-maxage' ] ) )
+			$contCacheTtl = ( int )$contCacheTtl[ 's-maxage' ] - ( int )wp_remote_retrieve_header( $res, 'age' );
+		else if( isset( $contCacheTtl[ 'max-age' ] ) )
+			$contCacheTtl = ( int )$contCacheTtl[ 'max-age' ] - ( int )wp_remote_retrieve_header( $res, 'age' );
+		else
+		{
+			if( $contCacheTtl = ( string )wp_remote_retrieve_header( $res, 'expires' ) )
+			{
+				if( $sDate = ( string )wp_remote_retrieve_header( $res, 'date' ) )
+					$contCacheTtl = Net::GetTimeFromHdrVal( $contCacheTtl ) - Net::GetTimeFromHdrVal( $sDate );
+				else
+					$contCacheTtl = Net::GetTimeFromHdrVal( $contCacheTtl ) - time();
+			}
+			else
+				$contCacheTtl = 60 * 60 * 24;
+		}
+
+		if( $contCacheTtl > 0 && ( $fileType = Fs::GetFileTypeFromMimeContentType( $contMimeType ) ) )
+		{
+			$contCache = $cont;
+			if( in_array( $fileType, array( 'css', 'js', 'html', 'txt' ) ) && function_exists( 'gzencode' ) )
+			{
+				$contCache = @gzencode( $contCache, 9 );
+				if( $contCache === false )
+					$contCache = $cont;
+				else
+					$fileType .= '.gz';
+			}
+
+			_FileWriteTmpAndReplace( Gen::GetFileDir( $lock -> GetFileName() ) . '/' . $extCacheId . '.' . $fileType, time() + $contCacheTtl, $contCache, null, $lock );
+			unset( $contCache );
+		}
+	}
+
+	return( $cont );
 }
 
 function Images_ProcessSrcEx_FileMTime( $file )
@@ -5013,6 +5097,8 @@ function _FileWriteTmpAndReplace( $file, $fileTime = null, $data = null, $fileTm
 		{
 			if( $fileTime === null || @touch( $fileTmp, $fileTime ) )
 			{
+				if( @file_exists( $file ) )
+					@unlink( $file );
 
 				if( @rename( $fileTmp, $file ) )
 				{

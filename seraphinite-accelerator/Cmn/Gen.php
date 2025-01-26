@@ -1770,7 +1770,12 @@ class Gen
 	static function ParseProps( $props, $sep = ';', $sepVal = '=', $aDefs = null )
 	{
 		$a = array();
-		foreach( explode( ( string )$sep, trim( ( string )$props, $sep ) ) as $p )
+
+		$props = trim( ( string )$props, " \n\r\t\v\x00" . $sep );
+		if( !strlen( $props ) )
+			return( $a );
+
+		foreach( explode( ( string )$sep, $props ) as $p )
 		{
 			if( $sepVal === null )
 			{
@@ -3481,7 +3486,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'useragent' ] ) )
-			$args[ 'useragent' ] = 'seraph-accel-Agent/2.26.4';
+			$args[ 'useragent' ] = 'seraph-accel-Agent/2.26.5';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -3527,6 +3532,11 @@ class Net
 		curl_close( $hCurl );
 
 		return( $requestRes );
+	}
+
+	static function GetTimeFromHdrVal( $v )
+	{
+		return( strtotime( preg_replace( '@;.*$@', '', $v ) ) );
 	}
 }
 

@@ -40,7 +40,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.26.4', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.26.5', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -148,7 +148,7 @@ function _InitCatchDataUpdate( $level )
 			add_action( 'pre_post_update', 'seraph_accel\\_OnPostUpdated', 99999 );
 			add_action( 'post_updated', 'seraph_accel\\_OnPostUpdatedEx', 99999, 3 );
 			add_action( 'before_delete_post', 'seraph_accel\\_OnPostDeleting', 0 );
-			add_action( 'wp_update_comment_count', 'seraph_accel\\_OnCommentUpdateCount', 99999, 1 );
+			add_action( 'wp_update_comment_count', 'seraph_accel\\_OnCommentUpdateCount', 99999, 3 );
 			add_filter( 'wp_update_comment_data', 'seraph_accel\\_OnCommentBeforeUpdate', 99999, 2 );
 
 		}
@@ -396,17 +396,16 @@ function _OnPostMetaUpdated( $postId, $metaKey, $metaValue )
 
 	global $seraph_accel_g_postUpdated;
 
-	$seraph_accel_g_postUpdated[ $postId ] = false;
+	$seraph_accel_g_postUpdated[ $postId ][ 'v' ] = false;
+	$seraph_accel_g_postUpdated[ $postId ][ 'r' ][ 'metas' ][ $metaKey ] = true;
 
-	if( Gen::GetArrField( $sett, array( 'debug' ), false ) )
-
-		LogWrite( '_OnPostMetaUpdated(): ' . @json_encode( array( 'metaKey' => $metaKey, 'metaValue' => $metaValue, 'postId' => $postId, 'REQUEST_URI' => (isset($_SERVER[ 'REQUEST_METHOD' ])?$_SERVER[ 'REQUEST_METHOD' ]:null) . ':' . (isset($_SERVER[ 'REQUEST_URI' ])?$_SERVER[ 'REQUEST_URI' ]:null), 'REQUEST_ARGS' => $_REQUEST ) ) );
 }
 
-function _OnCommentUpdateCount( $postId )
+function _OnCommentUpdateCount( $postId, $new, $old )
 {
 	global $seraph_accel_g_postUpdatedSync;
-	$seraph_accel_g_postUpdatedSync[ $postId ] = false;
+	$seraph_accel_g_postUpdatedSync[ $postId ][ 'v' ] = false;
+	$seraph_accel_g_postUpdatedSync[ $postId ][ 'r' ][ 'comments' ] = $new;
 }
 
 function _OnCommentBeforeUpdate( $data, $dataOld )
@@ -417,22 +416,29 @@ function _OnCommentBeforeUpdate( $data, $dataOld )
 
 	$postIdPrev = (isset($dataOld[ 'comment_post_ID' ])?$dataOld[ 'comment_post_ID' ]:null);
 	if( $postIdPrev && $postId !== $postIdPrev )
-		$seraph_accel_g_postUpdatedSync[ $postIdPrev ] = false;
+	{
+		$seraph_accel_g_postUpdatedSync[ $postIdPrev ][ 'v' ] = false;
+
+	}
 
 	if( (isset($data[ 'comment_approved' ])?$data[ 'comment_approved' ]:null) == 1 )
-		$seraph_accel_g_postUpdatedSync[ $postId ] = false;
+	{
+		$seraph_accel_g_postUpdatedSync[ $postId ][ 'v' ] = false;
+
+	}
 
 	return( $data );
 }
 
 function _OnPostStatusUpdate( $new_status, $old_status, $post )
 {
-	if( !$post )
+	if( !$post || $new_status == $old_status )
 		return;
 
 	global $seraph_accel_g_postUpdated;
 
-	$seraph_accel_g_postUpdated[ $post -> ID ] = false;
+	$seraph_accel_g_postUpdated[ $post -> ID ][ 'v' ] = false;
+	$seraph_accel_g_postUpdated[ $post -> ID ][ 'r' ][ 'status' ] = $new_status;
 
 }
 
@@ -459,7 +465,7 @@ function _OnPostTermsBeforeAdd( $postId, $tt_id, $taxonomy )
 		$seraph_accel_g_aPostTermsUpdating[ $postId ] = $url;
 	}
 
-	$seraph_accel_g_postUpdated[ $postId ] = true;
+	$seraph_accel_g_postUpdated[ $postId ][ 'v' ] = true;
 }
 
 function _OnPostTermsBeforeDelete( $postId, $tt_ids, $taxonomy )
@@ -479,7 +485,7 @@ function _OnPostTermsBeforeDelete( $postId, $tt_ids, $taxonomy )
 		$seraph_accel_g_aDelUrls[ $url ][ 'postId' ] = $postId;
 		$seraph_accel_g_aDelUrls[ $url ][ 'termsDel' ] = $taxonomy . ':' . implode( ',', $tt_ids );
 	}
-	$seraph_accel_g_postUpdated[ $postId ] = true;
+	$seraph_accel_g_postUpdated[ $postId ][ 'v' ] = true;
 }
 
 function _OnPostTermsAfterDelete( $postId, $tt_ids, $taxonomy )
@@ -523,14 +529,15 @@ function _OnPostTermsAfterUpdate( $postId, $terms, $tt_ids, $taxonomy, $append, 
 
 	if( $url = get_permalink( $post ) )
 		unset( $seraph_accel_g_aDelUrls[ $url ][ 'termsUpd' ] );
-	$seraph_accel_g_postUpdated[ $postId ] = true;
+	$seraph_accel_g_postUpdated[ $postId ][ 'v' ] = true;
+	$seraph_accel_g_postUpdated[ $postId ][ 'r' ][ 'terms' ][ $taxonomy ] = $tt_ids;
 }
 
 function _OnPostUpdated( $postId )
 {
 	global $seraph_accel_g_postUpdated;
 
-	$seraph_accel_g_postUpdated[ $postId ] = false;
+	$seraph_accel_g_postUpdated[ $postId ][ 'v' ] = false;
 
 }
 
@@ -544,7 +551,7 @@ function _OnPostUpdatedEx( $postId, $post, $postBefore )
 
 	if( CacheOp_IsPostVisible( $post ) )
 	{
-		$seraph_accel_g_postUpdated[ $postId ] = true;
+		$seraph_accel_g_postUpdated[ $postId ][ 'v' ] = true;
 
 		if( CacheOp_IsPostVisible( $postBefore ) )
 		{
@@ -555,6 +562,9 @@ function _OnPostUpdatedEx( $postId, $post, $postBefore )
 				$seraph_accel_g_aDelUrls[ $urlOld ][ 'postId' ] = $postId;
 				$seraph_accel_g_aDelUrls[ $urlOld ][ 'postUpdated' ] = $post -> post_name != $postBefore -> post_name ? 'slug' : ( $post -> post_parent != $postBefore -> post_parent ? 'parent' : 'other' );
 			}
+
+			foreach( array_diff_assoc( ( array )$post, ( array )$postBefore ) as $k => $v )
+				$seraph_accel_g_postUpdated[ $postId ][ 'r' ][ 'attributes' ][ $k ] = true;
 		}
 	}
 	else if( CacheOp_IsPostVisible( $postBefore ) )
@@ -564,7 +574,7 @@ function _OnPostUpdatedEx( $postId, $post, $postBefore )
 			$seraph_accel_g_aDelUrls[ $url ][ 'postId' ] = $postId;
 			$seraph_accel_g_aDelUrls[ $url ][ 'postUpdated' ] = 'hidden';
 		}
-		$seraph_accel_g_postUpdated[ $postId ] = true;
+		$seraph_accel_g_postUpdated[ $postId ][ 'v' ] = true;
 	}
 }
 
@@ -575,7 +585,34 @@ function _OnPostDeleting( $postId )
 		return;
 
 	if( CacheOp_IsPostVisible( $post ) )
-		CacheOpPost( $postId, true, 5 );
+		CacheOpPost( $postId, 'delete', 5 );
+}
+
+function _OnCheckUpdatePost_FinalizeArr( $ctx, &$a )
+{
+	if( !is_array( $a ) )
+		return;
+
+	if( !isset( $ctx -> sRequest ) )
+	{
+		$ctx -> sRequest = (isset($_SERVER[ 'REQUEST_URI' ])?$_SERVER[ 'REQUEST_URI' ]:'');
+		$aArg = array_merge( Net::UrlExtractArgs( $ctx -> sRequest ), $_REQUEST );
+
+		if( strpos( $ctx -> sRequest, '/admin-ajax.' ) !== false )
+			$aArg = array_filter( $_REQUEST, function( $k ) { return( in_array( $k, array( 'action' ) ) ); }, ARRAY_FILTER_USE_KEY );
+
+		$ctx -> sRequest = Net::UrlAddArgs( (isset($_SERVER[ 'REQUEST_URI' ])?$_SERVER[ 'REQUEST_URI' ]:''), $aArg );
+		$ctx -> sRequest = (isset($_SERVER[ 'REQUEST_METHOD' ])?$_SERVER[ 'REQUEST_METHOD' ]:'GET') . ' ' . $ctx -> sRequest;
+	}
+
+	foreach( $a as $postId => &$postIdVal )
+	{
+		foreach( array( 'metas', 'attributes' ) as $fld )
+			if( isset( $postIdVal[ 'r' ][ $fld ] ) )
+				$postIdVal[ 'r' ][ $fld ] = array_keys( $postIdVal[ 'r' ][ $fld ] );
+
+		$postIdVal[ 'r' ][ 'initiator' ] = $ctx -> sRequest;
+	}
 }
 
 function _OnCheckUpdatePost()
@@ -604,6 +641,11 @@ function _OnCheckUpdatePost()
 		}
 	}
 
+	$ctx = new AnyObj();
+	_OnCheckUpdatePost_FinalizeArr( $ctx, $seraph_accel_g_postUpdatedSync );
+	_OnCheckUpdatePost_FinalizeArr( $ctx, $seraph_accel_g_postUpdated );
+	unset( $ctx );
+
 	if( $seraph_accel_g_postUpdatedSync )
 	{
 		if( !is_admin() )
@@ -622,6 +664,15 @@ function _CheckUpdatePostProcess( $aPostUpdated, $proc = null, $cbIsAborted = fa
 {
 	foreach( $aPostUpdated as $postId => $postIdVal )
 	{
+		$reason = null;
+		if( is_array( $postIdVal ) )
+		{
+			$reason = (isset($postIdVal[ 'r' ])?$postIdVal[ 'r' ]:null);
+			if( is_array( $reason ) )
+				$reason = @json_encode( $reason );
+			$postIdVal = (isset($postIdVal[ 'v' ])?$postIdVal[ 'v' ]:false);
+		}
+
 		if( !$postIdVal )
 		{
 			$post = get_post( $postId );
@@ -629,7 +680,7 @@ function _CheckUpdatePostProcess( $aPostUpdated, $proc = null, $cbIsAborted = fa
 				$postIdVal = true;
 		}
 
-		if( $postIdVal && CacheOpPost( $postId, false, 5, $proc, $cbIsAborted, 30 ) === false )
+		if( $postIdVal && CacheOpPost( $postId, $reason, 5, $proc, $cbIsAborted, 30 ) === false )
 			return( false );
 	}
 }
@@ -1002,7 +1053,7 @@ function _OnUpdateGeoDb()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.26.4' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.26.5' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1105,65 +1156,7 @@ function _ManagePage()
 
 				echo( Ui::TagOpen( 'div', array( 'class' => 'blck' ) ) );
 				{
-					$info = GetStatData( $siteId, get_option( 'seraph_accel_status' ) );
-
-					echo( Ui::SettBlock_Begin( array( 'class' => 'compact' ) ) );
-					{
-						echo( Ui::SettBlock_Item_Begin( esc_html_x( 'ObjCountLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ) ) );
-						{
-							echo( Ui::Label( $info[ 'objCount' ], false, array( 'data-id-cont' => 'objCount' ) ) );
-						}
-						echo( Ui::SettBlock_Item_End() );
-
-						echo( Ui::SettBlock_Item_Begin( esc_html_x( 'JsCountLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ) .  Ui::AdminBtnsBlock( array( Plugin::AdminBtnsBlock_GetPaidContent( $isPaidLockedContent ) ), Ui::AdminHelpBtnModeText ), array( 'style' => array( 'display' => 'none' ) ) ) );
-						{
-							echo( Ui::Label( $info[ 'jsCount' ], false, array( 'data-id-cont' => 'jsCount' ) ) );
-						}
-						echo( Ui::SettBlock_Item_End() );
-
-						echo( Ui::SettBlock_Item_Begin( esc_html_x( 'CssCountLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ) .  Ui::AdminBtnsBlock( array( Plugin::AdminBtnsBlock_GetPaidContent( $isPaidLockedContent ) ), Ui::AdminHelpBtnModeText ), array( 'style' => array( 'display' => 'none' ) ) ) );
-						{
-							echo( Ui::Label( $info[ 'cssCount' ], false, array( 'data-id-cont' => 'cssCount' ) ) );
-						}
-						echo( Ui::SettBlock_Item_End() );
-
-						echo( Ui::SettBlock_Item_Begin( esc_html_x( 'ImgCountLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ) .  Ui::AdminBtnsBlock( array( Plugin::AdminBtnsBlock_GetPaidContent( $isPaidLockedContent ) ), Ui::AdminHelpBtnModeText ), array( 'style' => array( 'display' => 'none' ) ) ) );
-						{
-							echo( Ui::Label( $info[ 'imgCount' ], false, array( 'data-id-cont' => 'imgCount' ) ) );
-						}
-						echo( Ui::SettBlock_Item_End() );
-
-						echo( Ui::SettBlock_Item_Begin( esc_html_x( 'LrnCountLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ) ) );
-						{
-							echo( Ui::Label( $info[ 'lrnCount' ], false, array( 'data-id-cont' => 'lrnCount' ) ) );
-						}
-						echo( Ui::SettBlock_Item_End() );
-
-						echo( Ui::SettBlock_Item_Begin( esc_html_x( 'LrnSpaceLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ) ) );
-						{
-							echo( Ui::Label( $info[ 'lrnSpace' ], false, array( 'data-id-cont' => 'lrnSpace' ) ) );
-						}
-						echo( Ui::SettBlock_Item_End() );
-
-						echo( Ui::SettBlock_Item_Begin( esc_html_x( 'UsedSpaceLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ) ) );
-						{
-							echo( Ui::Label( $info[ 'usedSpace' ], false, array( 'data-id-cont' => 'usedSpace' ) ) );
-						}
-						echo( Ui::SettBlock_Item_End() );
-
-						echo( Ui::SettBlock_Item_Begin( esc_html_x( 'FragEffLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ) .  Ui::AdminBtnsBlock( array( Plugin::AdminBtnsBlock_GetPaidContent( $isPaidLockedContent ) ), Ui::AdminHelpBtnModeText ), array( 'style' => array( 'display' => 'none' ) ) ) );
-						{
-							echo( Ui::Label( $info[ 'fragEff' ], false, array( 'data-id-cont' => 'fragEff' ) ) );
-						}
-						echo( Ui::SettBlock_Item_End() );
-
-						echo( Ui::SettBlock_Item_Begin( esc_html_x( 'ComprEffLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ) .  Ui::AdminBtnsBlock( array( Plugin::AdminBtnsBlock_GetPaidContent( $isPaidLockedContent ) ), Ui::AdminHelpBtnModeText ), array( 'style' => array( 'display' => 'none' ) ) ) );
-						{
-							echo( Ui::Label( $info[ 'comprEff' ], false, array( 'data-id-cont' => 'comprEff' ) ) );
-						}
-						echo( Ui::SettBlock_Item_End() );
-					}
-					echo( Ui::SettBlock_End() );
+					echo( Ui::Tag( 'table', Ui::Tag( 'tbody', GetStatCont( $siteId, get_option( 'seraph_accel_status' ) ), array( 'data-id-cont' => 'stat' ) ), array( 'class' => 'form-table stat' ) ) );
 
 					echo( Ui::Tag( 'div',
 						Ui::Button( esc_html_x( 'Refresh', 'admin.Manage_Stat', 'seraphinite-accelerator' ), false, null, null, 'button', array( 'class' => array( 'ctlSpaceAfter ctlVaMiddle' ), 'style' => array( 'min-width' => '7em' ), 'onclick' => 'seraph_accel.Manager._int.OnStatOp( this, true ); return false;' ) ) .
@@ -1296,7 +1289,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.26.4' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.26.5' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -1638,22 +1631,35 @@ function GetStatusData( $siteId )
 	return( $info );
 }
 
-function GetStatData( $siteId, $info = null )
+function GetStatCont( $siteId, $info = null )
 {
-	$res = array();
-
 	if( !is_array( $info ) || (isset($info[ 'v' ])?$info[ 'v' ]:null) != PLUGIN_STAT_VER )
 		$info = null;
 
-	$res[ 'objCount' ] = $info ? ( string )$info[ 'nObj' ] : '-';
-	$res[ 'jsCount' ] = $info ? ( string )$info[ 'nJs' ] : '-';
-	$res[ 'cssCount' ] = $info ? ( string )$info[ 'nCss' ] : '-';
-	$res[ 'imgCount' ] = $info ? ( isset( $info[ 'nImg' ] ) ? ( string )$info[ 'nImg' ] : '0' ) : '-';
-	$res[ 'lrnCount' ] = $info ? ( isset( $info[ 'nLrn' ] ) ? ( string )$info[ 'nLrn' ] : 0 ) : '-';
-	$res[ 'lrnSpace' ] = $info ? size_format( isset( $info[ 'sizeLrn' ] ) ? $info[ 'sizeLrn' ] : 0, 1 ) : '-';
-	$res[ 'usedSpace' ] = $info ? size_format( $info[ 'size' ], 1 ) : '-';
-	$res[ 'fragEff' ] = $info ? ( sprintf( '%01.0f', 100 * ( 1 - ( $info[ 'sizeObj' ] && $info[ 'sizeObjFrag' ] <= $info[ 'sizeObj' ] ? ( $info[ 'sizeObjFrag' ] / $info[ 'sizeObj' ] ) : 1 ) ) ) . '%' ) : '-';
-	$res[ 'comprEff' ] = $info ? ( sprintf( '%01.0f', 100 * ( 1 - ( $info[ 'sizeUncompr' ] && $info[ 'size' ] <= $info[ 'sizeUncompr' ] ? ( $info[ 'size' ] / $info[ 'sizeUncompr' ] ) : 1 ) ) ) . '%' ) : '-';
+	$isPaidLockedContent = false;
+
+	$res = Ui::TableCells(
+		array(
+			function( $args )
+			{
+				extract( $args );
+				return( array( esc_html_x( 'ObjCountLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ), Ui::Label( $info ? ( string )$info[ 'nObj' ] : '-' ) ) );
+			},
+
+			function( $args )
+			{
+				extract( $args );
+				return( array( esc_html_x( 'FileCountLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ), Ui::Label( $info && isset( $info[ 'nFile' ] ) ? ( string )$info[ 'nFile' ] : '-' ) ) );
+			},
+
+			function( $args )
+			{
+				extract( $args );
+				return( array( esc_html_x( 'UsedSpaceLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ), Ui::Label( $info ? size_format( $info[ 'size' ], 1 ) : '-' ) ) );
+			},
+
+		)
+	, array( 'info' => $info, 'isPaidLockedContent' => $isPaidLockedContent ), 3 );
 
 	return( $res );
 }

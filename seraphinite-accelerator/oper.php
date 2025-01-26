@@ -178,7 +178,11 @@ function _CacheDirWalk( $siteId, $siteSubId, $aViewId, &$ctxWalk, $spec = null, 
 
 function CacheGetInfo( $siteId, $cbCancel )
 {
-	$info = array( 'cbCancel' => $cbCancel, 'nObj' => 0, 'nJs' => 0, 'nCss' => 0, 'nImg' => 0, 'nLrn' => 0, 'size' => 0, 'sizeUncompr' => 0, 'sizeLrn' => 0, 'sizeObjFrag' => 0, 'sizeObj' => 0 );
+	$info = array(
+		'cbCancel' => $cbCancel, '_ai_fileMask' => '@^[\\w\\-]+\\.(?:' . implode( '|', array( 'jpe','jpg','jpeg','png','gif','bmp', 'webp','avif' ) ) . ')$@iS',
+		'nObj' => 0, 'nFile' => 0, 'nJs' => 0, 'sizeJs' => 0, 'nCss' => 0, 'sizeCss' => 0, 'nImg' => 0, 'sizeImg' => 0, 'nLrn' => 0, 'sizeLrn' => 0, 'nAi' => 0, 'sizeAi' => 0, 'nExtObj' => 0, 'sizeExtObj' => 0,
+		'size' => 0, 'sizeUncompr' => 0, 'sizeObjFrag' => 0, 'sizeObj' => 0
+	);
 
 	if( _CacheDirWalk( $siteId, null, null, $info, null,
 		function( &$info, $isUserCtx, $objFile )
@@ -186,7 +190,7 @@ function CacheGetInfo( $siteId, $cbCancel )
 			if( $info[ 'cbCancel' ]() )
 				return( false );
 
-			$info[ 'nObj' ] += 1;
+			$info[ 'nObj' ] += 1; $info[ 'nFile' ] += 1;
 			$sz = @filesize( $objFile );
 			$info[ 'size' ] += $sz;
 			$info[ 'sizeUncompr' ] += $sz;
@@ -211,18 +215,20 @@ function CacheGetInfo( $siteId, $cbCancel )
 
 			$sz = @filesize( $dataFile );
 			$info[ 'size' ] += $sz;
+			$info[ 'nFile' ] += 1;
 
 			if( $dataType == 'img' )
 			{
 				$info[ 'nImg' ] += 1;
+				$info[ 'sizeImg' ] += $sz;
 				$info[ 'sizeUncompr' ] += $sz;
 			}
 			else if( $dataType == Gen::GetFileExt( $dataFile ) )
 			{
 				switch( $dataType )
 				{
-				case 'js':		$info[ 'nJs' ] += 1; break;
-				case 'css':		$info[ 'nCss' ] += 1; break;
+				case 'js':		$info[ 'nJs' ] += 1; $info[ 'sizeJs' ] += $sz; break;
+				case 'css':		$info[ 'nCss' ] += 1; $info[ 'sizeCss' ] += $sz; break;
 				}
 
 				$info[ 'sizeUncompr' ] += $sz;
@@ -264,7 +270,10 @@ function CacheGetInfo( $siteId, $cbCancel )
 
 					$path = $path . '/' . $item;
 					if( @is_dir( $path ) )
+					{
+						$info[ 'nFile' ] += 1;
 						return;
+					}
 
 					$sz = @filesize( $path );
 					$info[ 'size' ] += $sz;
@@ -272,6 +281,7 @@ function CacheGetInfo( $siteId, $cbCancel )
 					$info[ 'sizeLrn' ] += $sz;
 
 					$info[ 'nLrn' ] += 1;
+					$info[ 'nFile' ] += 1;
 				}
 			, true ) === false )
 			{
@@ -293,12 +303,68 @@ function CacheGetInfo( $siteId, $cbCancel )
 
 					$path = $path . '/' . $item;
 					if( @is_dir( $path ) )
+					{
+						$info[ 'nFile' ] += 1;
 						return;
+					}
 
 					$sz = @filesize( $path );
 					$info[ 'size' ] += $sz;
 					$info[ 'sizeUncompr' ] += GetCacheCos( Gen::GetFileName( Gen::GetFileName( $path, true ), true ) );
 					$info[ 'sizeLrn' ] += $sz;
+					$info[ 'nFile' ] += 1;
+				}
+			, true ) === false )
+			{
+				return( false );
+			}
+
+			if( Gen::DirEnum( $siteDir . '/ai', $info,
+				function( $path, $item, &$info )
+				{
+					if( $info[ 'cbCancel' ]() )
+						return( false );
+
+					$path = $path . '/' . $item;
+					if( @is_dir( $path ) )
+					{
+						$info[ 'nFile' ] += 1;
+						return;
+					}
+
+					$sz = @filesize( $path );
+					$info[ 'size' ] += $sz;
+					$info[ 'sizeUncompr' ] += $sz;
+					$info[ 'sizeAi' ] += $sz;
+					if( preg_match( $info[ '_ai_fileMask' ], $item ) )
+						$info[ 'nAi' ] += 1;
+					$info[ 'nFile' ] += 1;
+				}
+			, true ) === false )
+			{
+				return( false );
+			}
+
+			if( Gen::DirEnum( $siteDir . '/eo', $info,
+				function( $path, $item, &$info )
+				{
+					if( $info[ 'cbCancel' ]() )
+						return( false );
+
+					$path = $path . '/' . $item;
+					if( @is_dir( $path ) )
+					{
+						$info[ 'nFile' ] += 1;
+						return;
+					}
+
+					$sz = @filesize( $path );
+					$info[ 'size' ] += $sz;
+					$info[ 'sizeUncompr' ] += $sz;
+					$info[ 'sizeExtObj' ] += $sz;
+					if( Gen::GetFileExt( $item ) )
+						$info[ 'nExtObj' ] += 1;
+					$info[ 'nFile' ] += 1;
 				}
 			, true ) === false )
 			{
@@ -310,7 +376,7 @@ function CacheGetInfo( $siteId, $cbCancel )
 		return( null );
 	}
 
-	unset( $info[ 'cbCancel' ] );
+	unset( $info[ 'cbCancel' ], $info[ '_ai_fileMask' ] );
 	return( $info );
 }
 
@@ -441,6 +507,7 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $cbIsAborte
 	{
 		$ctx -> timeout = Gen::GetArrField( $sett, array( 'cache', 'timeoutCln' ), 0 ) * 60;
 		$ctx -> timeoutCtx = Gen::GetArrField( $sett, array( 'cache', 'ctxTimeoutCln' ), 0 ) * 60;
+		$ctx -> timeoutExtObj = Gen::GetArrField( $sett, array( 'cache', 'extObjTimeoutCln' ), 0 ) * 60;
 		$ctx -> tmCur = Gen::GetCurRequestTime();
 		unset( $sett );
 
@@ -617,8 +684,34 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $cbIsAborte
 						@unlink( $siteDir . '/l/' . $file );
 
 					if( $ctx -> op == 1 )
+					{
 						if( Images_ProcessSrcSizeAlternatives_Cache_Cleanup( $siteDir . '/d', $ctx -> tmCur - $ctx -> timeout, array( $ctx, 'isAborted' ) ) === false )
 							return( false );
+
+						if( Gen::DirEnum( $siteDir . '/eo', $ctx,
+							function( $path, $item, &$ctx )
+							{
+								if( $ctx -> isAborted() )
+									return( false );
+
+								$path = $path . '/' . $item;
+								if( @is_dir( $path ) || !Gen::GetFileExt( $item ) )
+									return;
+
+								$tmFile = @filectime( $path );
+								if( $tmFile !== false )
+								{
+									if( $tmFile < $ctx -> tmCur - $ctx -> timeoutExtObj )
+										@unlink( $path );
+									else if( ( $tmFile = @filemtime( $path ) ) !== false && $tmFile < $ctx -> tmCur )
+										@unlink( $path );
+								}
+							}
+						, true ) === false )
+						{
+							return( false );
+						}
+					}
 				}
 			}
 		) === false )
@@ -748,7 +841,7 @@ function CacheOp_IsPostVisible( $post )
 	return( in_array( $post -> post_status, array( 'publish' ) ) );
 }
 
-function CacheOpPost( $postId, $del, $priority = 0, $proc = null, $cbIsAborted = false, $immediatelyPushQueue = true )
+function CacheOpPost( $postId, $reason, $priority = 0, $proc = null, $cbIsAborted = false, $immediatelyPushQueue = true )
 {
     $post = get_post( $postId );
 	if( !$post )
@@ -783,7 +876,15 @@ function CacheOpPost( $postId, $del, $priority = 0, $proc = null, $cbIsAborted =
 		case 2:				$txt .= 'Automatic deleting'; break;
 		}
 
-		$txt .= ' due to post with ID ' . $postId . ' ' . ( $del ? 'deleted' : 'changed' );
+		$txt .= ' due to post with ID ' . $postId . ' ';
+		if( $reason == 'delete' )
+			$txt .= 'deleted';
+		else
+		{
+			$txt .= 'changed';
+			if( is_string( $reason ) )
+				$txt .= ': ' . $reason;
+		}
 		$txt .= '; scope: URL(s): ' . implode( ', ', array_merge( $ctx -> urls, Gen::GetArrField( $sett, array( 'cache', 'updPostDeps' ), array() ) ) );
 
 		LogWrite( $txt, Ui::MsgInfo, 'Cache update' );
@@ -796,7 +897,7 @@ function CacheOpPost( $postId, $del, $priority = 0, $proc = null, $cbIsAborted =
 	if( $bAborted )
 		return( false );
 
-	if( $del && $op !== 2 )
+	if( $reason == 'delete' && $op !== 2 )
 	{
 		if( CacheOpUrls( false, $ctx -> urls[ 0 ], 2, $priority, $cbIsAborted, $proc ) === false )
 			return( false );
@@ -1006,7 +1107,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.4' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.5' );
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
 	{

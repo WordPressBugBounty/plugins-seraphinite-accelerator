@@ -1107,7 +1107,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.5' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.6' );
 
 	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
 	{
@@ -1166,7 +1166,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 function OnOptDel_Sett()
 {
-	return( CacheInitEnv( Plugin::SettGet() ) );
+	return( CacheInitEnv( Plugin::SettGet(), Plugin::SettGetGlobal() ) );
 }
 
 function CacheVerifyEnvDropin( $sett, $verifyEnvDropin = null )
@@ -1176,6 +1176,19 @@ function CacheVerifyEnvDropin( $sett, $verifyEnvDropin = null )
 
 	$verifyEnvDropin -> needed = str_replace( '.0,', ',', ( string )GetAdvCacheFileContent( $sett ) );
 	$verifyEnvDropin -> actual = str_replace( '.0,', ',', ( string )@file_get_contents( WP_CONTENT_DIR . '/advanced-cache.php' ) );
+
+	if( $verifyEnvDropin -> actual == $verifyEnvDropin -> needed )
+		return( true );
+
+}
+
+function CacheVerifyEnvObjDropin( $settGlob, $verifyEnvDropin = null )
+{
+	if( $verifyEnvDropin === null )
+		$verifyEnvDropin = new AnyObj();
+
+	$verifyEnvDropin -> needed = str_replace( '.0,', ',', ( string )GetObjCacheFileContent( $settGlob ) );
+	$verifyEnvDropin -> actual = str_replace( '.0,', ',', ( string )@file_get_contents( WP_CONTENT_DIR . '/object-cache.php' ) );
 
 	if( $verifyEnvDropin -> actual == $verifyEnvDropin -> needed )
 		return( true );
@@ -1314,12 +1327,32 @@ function CacheInitEnvDropin( $sett, $init = true )
 	return( $hr );
 }
 
+function CacheInitEnvObjDropin( $settGlob, $init = true )
+{
+	$file = WP_CONTENT_DIR . '/object-cache.php';
+	$cont = @file_get_contents( $file );
+
+	if( !$init && ( !$cont || strpos( $cont, '/* seraphinite-accelerator */' ) === false ) )
+		return( Gen::S_OK );
+
+	$contNew = GetObjCacheFileContent( $settGlob, $init );
+
+	$hr = Gen::S_OK;
+	if( $cont != $contNew )
+	{
+		$hr = Gen::HrAccom( $hr, ( strlen( $contNew ) ? @file_put_contents( $file, $contNew ) : @unlink( $file ) ) !== false ? Gen::S_OK : Gen::E_FAIL );
+		_OpCache_Invalidate( $file );
+	}
+
+	return( $hr );
+}
+
 function IsWpCacheActive()
 {
 	return( defined( 'WP_CACHE' ) && WP_CACHE );
 }
 
-function CacheInitEnv( $sett, $init = true )
+function CacheInitEnv( $sett, $settGlob, $init = true )
 {
 	$cacheEnable = Gen::GetArrField( $sett, 'cache/enable', true, '/' );
 
@@ -1333,6 +1366,8 @@ function CacheInitEnv( $sett, $init = true )
 
 	if( !$init )
 	{
+		CacheInitEnvObjDropin( $settGlob, false );
+
 		if( Gen::HtAccess_IsSupported() )
 			Gen::HtAccess_SetBlock( 'seraphinite-accelerator', '' );
 
@@ -1361,6 +1396,8 @@ function CacheInitEnv( $sett, $init = true )
 
 		$hr = Gen::HrAccom( $hr, Gen::MakeDir( GetCacheDir(), true ) );
 	}
+
+	$hr = Gen::HrAccom( $hr, CacheInitEnvObjDropin( $settGlob, Gen::GetArrField( $settGlob, array( 'cacheObj', 'enable' ), false ) ) );
 
 	extract( _CacheGetEnvConfPrms( $sett ) );
 
@@ -1649,7 +1686,16 @@ function GetAdvCacheFileContent( $sett, $init = true )
 
 	if( $content )
 	{
-		$content = '<?php' . "\n" . '/* seraphinite-accelerator */' . "\n" . $content;
+		$content = '<?php' . "\n\n" .
+			'/*' . "\n" .
+			'Plugin Name: Seraphinite Accelerator - Advanced Cache (Drop-in)' . "\n" .
+			'Plugin URI: http://wordpress.org/plugins/seraphinite-accelerator' . "\n" .
+			'Description: Turns on site high speed to be attractive for people and search engines.' . "\n" .
+
+			'Author: Seraphinite Solutions' . "\n" .
+			'Author URI: https://www.s-sols.com' . "\n" .
+			'*/' . "\n\n" .
+			'/* seraphinite-accelerator */' . "\n" . $content;
 
 		$content .= '$seraph_accel_sites = ' . var_export( $sitesIds, true ) . ';' . "\n";
 
@@ -1659,6 +1705,32 @@ function GetAdvCacheFileContent( $sett, $init = true )
 	else
 	{
 		$content .= '<?php /* Disabled by seraphinite-accelerator */';
+	}
+
+	return( $content );
+}
+
+function GetObjCacheFileContent( $sett, $init = true )
+{
+	$content = '';
+
+	if( $init )
+	{
+		$content = '<?php' . "\n\n" .
+			'/*' . "\n" .
+			'Plugin Name: Seraphinite Accelerator - Object Cache (Drop-in)' . "\n" .
+			'Plugin URI: http://wordpress.org/plugins/seraphinite-accelerator' . "\n" .
+			'Description: Turns on site high speed to be attractive for people and search engines.' . "\n" .
+
+			'Author: Seraphinite Solutions' . "\n" .
+			'Author URI: https://www.s-sols.com' . "\n" .
+			'*/' . "\n\n" .
+			'/* seraphinite-accelerator */' . "\n" . $content;
+
+		$content .= 'global $seraph_accel_settObjCache; $seraph_accel_settObjCache = ' . var_export( array( 'cacheObj' => Gen::GetArrField( $sett, array( 'cacheObj' ), array() ) ), true ) . ';' . "\n";
+
+		$content .= '@include(WP_CONTENT_DIR . \'/plugins/' . Plugin::GetCurBaseName( false ) . '/cache_obj.php\');' . "\n";
+		$content .= '?>';
 	}
 
 	return( $content );

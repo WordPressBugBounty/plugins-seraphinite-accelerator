@@ -164,7 +164,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.26.5' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.26.6' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -4772,7 +4772,7 @@ function _SettingsPage_Advanced( $callbacks_args, $box )
 					$o .= ( Ui::TagOpen( 'td' ) );
 					{
 						$fldId = 'cache/forceAdvCache';
-						$o .= ( Ui::CheckBox( sprintf( esc_html_x( 'ForceAdvCacheChk_%1$s', 'admin.Settings_Advanced_Common', 'seraphinite-accelerator' ), 'advanced-cache.php' ) . Ui::AdminBtnsBlock( array( Plugin::AdminBtnsBlock_GetPaidContent( $isPaidLockedContent ) ), Ui::AdminHelpBtnModeChkRad ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+						$o .= ( Ui::CheckBox( sprintf( esc_html_x( 'ForceCacheDropinChk_%1$s', 'admin.Settings_Advanced_Common', 'seraphinite-accelerator' ), 'advanced-cache.php' ) . Ui::AdminBtnsBlock( array( Plugin::AdminBtnsBlock_GetPaidContent( $isPaidLockedContent ) ), Ui::AdminHelpBtnModeChkRad ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 					}
 					$o .= ( Ui::TagClose( 'td' ) );
 				}
@@ -5984,7 +5984,7 @@ function ApplySettings( $sett, $changedUpdateCache = true )
 {
 	$hr = Gen::S_OK;
 	$hr = Gen::HrAccom( $hr, Plugin::SettSet( $sett ) );
-	$hr = Gen::HrAccom( $hr, CacheInitEnv( $sett ) );
+	$hr = Gen::HrAccom( $hr, CacheInitEnv( $sett, Plugin::SettGetGlobal() ) );
 
 	if( $changedUpdateCache )
 		Plugin::StateUpdateFlds( array( 'settChangedUpdateCache' => true ) );

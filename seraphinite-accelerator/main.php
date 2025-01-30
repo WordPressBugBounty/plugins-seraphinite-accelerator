@@ -17,15 +17,13 @@ Plugin::Init();
 
 function OnActivate()
 {
-	$sett = Plugin::SettGet();
-	if( Gen::GetArrField( $sett, 'cache/enable', true, '/' ) )
-		CacheInitEnv( $sett, true );
+	CacheInitEnv( Plugin::SettGet(), Plugin::SettGetGlobal(), true );
 	CacheInitQueueTable( true );
 }
 
 function OnDeactivate()
 {
-	CacheInitEnv( null, false );
+	CacheInitEnv( null, null, false );
 }
 
 function OnChangeVer( $verPrev, $pkPrev )
@@ -40,7 +38,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.26.5', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.26.6', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -218,6 +216,7 @@ function OnInit( $isAdminMode )
 			if( is_admin() )
 				Plugin::SettCacheClear();
 			$sett = Plugin::SettGet();
+			$settGlob = Plugin::SettGetGlobal();
 
 			if( isset( $sett[ PluginOptions::VERPREV ] ) )
 			{
@@ -227,12 +226,16 @@ function OnInit( $isAdminMode )
 				unset( $sett[ PluginOptions::VERPREV ] );
 				Plugin::SettSet( $sett );
 
-				if( Gen::GetArrField( $sett, array( 'cache', 'enable' ), false ) )
-					CacheInitEnv( $sett );
+				CacheInitEnv( $sett, $settGlob );
 
 			}
-			else if( Gen::GetArrField( $sett, array( 'cache', 'enable' ), false ) && Gen::GetArrField( Plugin::SettGetGlobal(), array( 'cache', 'forceAdvCache' ), false ) )
-				CacheInitEnvDropin( $sett );
+			else
+			{
+				if( Gen::GetArrField( $sett, array( 'cache', 'enable' ), false ) && Gen::GetArrField( $settGlob, array( 'cache', 'forceAdvCache' ), false ) )
+					CacheInitEnvDropin( $sett );
+				if( Gen::GetArrField( $settGlob, array( 'cacheObj', 'enable' ), false ) && Gen::GetArrField( $settGlob, array( 'cacheObj', 'forceDropin' ), false ) )
+					CacheInitEnvObjDropin( $settGlob );
+			}
 		}
 	);
 
@@ -1053,7 +1056,7 @@ function _OnUpdateGeoDb()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.26.5' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.26.6' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1289,7 +1292,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.26.5' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.26.6' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';

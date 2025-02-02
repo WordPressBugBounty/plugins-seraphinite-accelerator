@@ -159,7 +159,7 @@ function _CacheDirWalk( $siteId, $siteSubId, $aViewId, &$ctxWalk, $spec = null, 
 					$itemType = 'html';
 
 				$itemId = explode( '.', $itemId );
-				$itemId = implode( '', $itemIdPrefix ) . (isset($itemId[ 0 ])?$itemId[ 0 ]:null) . '.' . (isset($itemId[ 1 ])?$itemId[ 1 ]:null);
+				$itemId = implode( '', $itemIdPrefix ) . ($itemId[ 0 ]??null) . '.' . ($itemId[ 1 ]??null);
 
 				return( call_user_func_array( $ctx[ 'cbData' ], array( &$ctx[ 'ctxWalk' ], $itemType, $itemId, $item ) ) );
 			}
@@ -180,7 +180,7 @@ function CacheGetInfo( $siteId, $cbCancel )
 {
 	$info = array(
 		'cbCancel' => $cbCancel, '_ai_fileMask' => '@^[\\w\\-]+\\.(?:' . implode( '|', array( 'jpe','jpg','jpeg','png','gif','bmp', 'webp','avif' ) ) . ')$@iS',
-		'nObj' => 0, 'nFile' => 0, 'nJs' => 0, 'sizeJs' => 0, 'nCss' => 0, 'sizeCss' => 0, 'nImg' => 0, 'sizeImg' => 0, 'nLrn' => 0, 'sizeLrn' => 0, 'nAi' => 0, 'sizeAi' => 0, 'nExtObj' => 0, 'sizeExtObj' => 0,
+		'nObj' => 0, 'nDataObj' => 0, 'nCacheObj' => 0, 'sizeCacheObj' => 0, 'nFile' => 0, 'nJs' => 0, 'sizeJs' => 0, 'nCss' => 0, 'sizeCss' => 0, 'nImg' => 0, 'sizeImg' => 0, 'nLrn' => 0, 'sizeLrn' => 0, 'nAi' => 0, 'sizeAi' => 0, 'nExtObj' => 0, 'sizeExtObj' => 0,
 		'size' => 0, 'sizeUncompr' => 0, 'sizeObjFrag' => 0, 'sizeObj' => 0
 	);
 
@@ -190,7 +190,11 @@ function CacheGetInfo( $siteId, $cbCancel )
 			if( $info[ 'cbCancel' ]() )
 				return( false );
 
-			$info[ 'nObj' ] += 1; $info[ 'nFile' ] += 1;
+			if( Gen::GetFileExt( Gen::GetFileName( $objFile, true ) ) == 'html' )
+				$info[ 'nObj' ] += 1;
+			else
+				$info[ 'nDataObj' ] += 1;
+			$info[ 'nFile' ] += 1;
 			$sz = @filesize( $objFile );
 			$info[ 'size' ] += $sz;
 			$info[ 'sizeUncompr' ] += $sz;
@@ -376,6 +380,32 @@ function CacheGetInfo( $siteId, $cbCancel )
 		return( null );
 	}
 
+	if( Gen::DirEnum( GetCacheDir() . '/oc', $info,
+		function( $path, $item, &$info )
+		{
+			if( $info[ 'cbCancel' ]() )
+				return( false );
+
+			$path = $path . '/' . $item;
+			if( @is_dir( $path ) )
+			{
+				$info[ 'nFile' ] += 1;
+				return;
+			}
+
+			$sz = @filesize( $path );
+			$info[ 'size' ] += $sz;
+			$info[ 'sizeUncompr' ] += $sz;
+			$info[ 'sizeCacheObj' ] += $sz;
+			if( Gen::GetFileExt( $item ) )
+				$info[ 'nCacheObj' ] += 1;
+			$info[ 'nFile' ] += 1;
+		}
+	, true ) === false )
+	{
+		return( false );
+	}
+
 	unset( $info[ 'cbCancel' ], $info[ '_ai_fileMask' ] );
 	return( $info );
 }
@@ -488,8 +518,8 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $cbIsAborte
 	$ctx -> curSiteId = GetSiteId();
 	$ctx -> lock = new DscLockUpdater(  );
 	$ctx -> datasDel = array();
-	$ctx -> procWorkInt = (isset($settCacheGlobal[ 'procWorkInt' ])?$settCacheGlobal[ 'procWorkInt' ]:null);
-	$ctx -> procPauseInt = (isset($settCacheGlobal[ 'procPauseInt' ])?$settCacheGlobal[ 'procPauseInt' ]:null);
+	$ctx -> procWorkInt = ($settCacheGlobal[ 'procWorkInt' ]??null);
+	$ctx -> procPauseInt = ($settCacheGlobal[ 'procPauseInt' ]??null);
 	$ctx -> cbIsAborted = $cbIsAborted;
 	$ctx -> _isAborted =
 		function( $ctx )
@@ -738,7 +768,7 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $cbIsAborte
 					if( $ctx -> isAborted() )
 						return( false );
 
-					if( (isset($ctx -> datasDel[ $dataType ][ $dataId ])?$ctx -> datasDel[ $dataType ][ $dataId ]:null) )
+					if( ($ctx -> datasDel[ $dataType ][ $dataId ]??null) )
 					{
 						$tmFile = @filemtime( $dataFile );
 						if( $tmFile !== false && $ctx -> tmCur - $tmFile > min( $ctx -> timeout, ( 12 * 60 * 60 ) ) )
@@ -749,6 +779,25 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $cbIsAborte
 			{
 				return( false );
 			}
+		}
+
+		if( Gen::DirEnum( GetCacheDir() . '/oc', $ctx,
+			function( $path, $item, &$ctx )
+			{
+				if( $ctx -> isAborted() )
+					return( false );
+
+				$path = $path . '/' . $item;
+				if( @is_dir( $path ) )
+					return;
+
+				$tmFile = @filemtime( $path );
+				if( $tmFile !== false && $tmFile < $ctx -> tmCur )
+					@unlink( $path );
+			}
+		, true ) === false )
+		{
+			return( false );
 		}
 	}
 
@@ -921,7 +970,7 @@ function CacheOpUrl_ParseUrl( $url, &$siteAddr, &$siteSubId, &$path, &$query )
 {
 	global $seraph_accel_sites;
 
-	if( (isset($url[ 0 ])?$url[ 0 ]:null) === '/' && (isset($url[ 1 ])?$url[ 1 ]:null) === '/' )
+	if( ($url[ 0 ]??null) === '/' && ($url[ 1 ]??null) === '/' )
 	{
 	}
 	else if( strpos( $url, '://' ) === false )
@@ -932,12 +981,12 @@ function CacheOpUrl_ParseUrl( $url, &$siteAddr, &$siteSubId, &$path, &$query )
 	}
 
 	$urlComps = Net::UrlParse( $url, Net::URLPARSE_F_PATH_FIXFIRSTSLASH | Net::URLPARSE_F_PRESERVEEMPTIES );
-	if( !(isset($urlComps[ 'scheme' ])?$urlComps[ 'scheme' ]:null) )
+	if( !($urlComps[ 'scheme' ]??null) )
 		Net::GetUrlWithoutProtoEx( Wp::GetSiteRootUrl(), $urlComps[ 'scheme' ] );
 
 	$host = Net::GetSiteAddrFromUrl( Net::UrlDeParse( $urlComps, 0, array(), array( PHP_URL_SCHEME, PHP_URL_HOST, PHP_URL_PORT ) ) );
 	$path = CachePathNormalize( $urlComps[ 'path' ], $pathIsDir, false );
-	$query = (isset($urlComps[ 'query' ])?$urlComps[ 'query' ]:null);
+	$query = ($urlComps[ 'query' ]??null);
 	$siteId = GetCacheSiteIdAdjustPath( $seraph_accel_sites, $host, $siteSubId, $path );
 	$siteAddr = $urlComps[ 'scheme' ] . '://' . $host;
 
@@ -981,8 +1030,8 @@ function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $
 	$ctx -> viewId = _CacheOp_GetViews( $viewId, $geoId );
 	$ctx -> userId = $userId;
 	$ctx -> lock = new DscLockUpdater();
-	$ctx -> procWorkInt = (isset($settCacheGlobal[ 'procWorkInt' ])?$settCacheGlobal[ 'procWorkInt' ]:null);
-	$ctx -> procPauseInt = (isset($settCacheGlobal[ 'procPauseInt' ])?$settCacheGlobal[ 'procPauseInt' ]:null);
+	$ctx -> procWorkInt = ($settCacheGlobal[ 'procWorkInt' ]??null);
+	$ctx -> procPauseInt = ($settCacheGlobal[ 'procPauseInt' ]??null);
 	$ctx -> _isAborted =
 		function( $ctx )
 		{
@@ -1107,17 +1156,17 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.6' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.7' );
 
-	if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
+	if( ($settCache[ 'views' ]??null) )
 	{
 		$viewsDeviceGrps = Gen::GetArrField( $settCache, array( 'viewsDeviceGrps' ), array() );
 		foreach( $viewsDeviceGrps as $viewsDeviceGrp )
 		{
-			if( !(isset($viewsDeviceGrp[ 'enable' ])?$viewsDeviceGrp[ 'enable' ]:null) )
+			if( !($viewsDeviceGrp[ 'enable' ]??null) )
 				continue;
 
-			$id = (isset($viewsDeviceGrp[ 'id' ])?$viewsDeviceGrp[ 'id' ]:null);
+			$id = ($viewsDeviceGrp[ 'id' ]??null);
 			foreach( $viewId === null ? array( $id ) : $viewId as $viewIdI )
 				if( CacheOpViewsHeadersGetViewId( $viewIdI ) == $id )
 					$res[ $viewIdI ] = array( 'User-Agent' => GetViewTypeUserAgent( $viewsDeviceGrp ) );
@@ -1151,7 +1200,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 		}
 	}
 
-	if( (isset($settCache[ 'opAgentPostpone' ])?$settCache[ 'opAgentPostpone' ]:null) )
+	if( ($settCache[ 'opAgentPostpone' ]??null) )
 	{
 		foreach( $res as $id => &$aHdr )
 		{
@@ -1342,6 +1391,11 @@ function CacheInitEnvObjDropin( $settGlob, $init = true )
 	{
 		$hr = Gen::HrAccom( $hr, ( strlen( $contNew ) ? @file_put_contents( $file, $contNew ) : @unlink( $file ) ) !== false ? Gen::S_OK : Gen::E_FAIL );
 		_OpCache_Invalidate( $file );
+
+		if( function_exists( 'wp_suspend_cache_changing' ) )
+			wp_suspend_cache_changing();
+		if( function_exists( 'wp_cache_flush' ) )
+			wp_cache_flush();
 	}
 
 	return( $hr );
@@ -1456,7 +1510,7 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 					'<IfModule mod_rewrite.c>' . "\n\t" . 'RewriteEngine On' . "\n\t" . 'RewriteCond %{HTTP_ACCEPT} image\\/' . $comprType . "\n\t" . 'RewriteCond %{REQUEST_FILENAME} \\.(' . $imgTypesCnvFrom_RegExpEnum . ')$' . "\n\t" . 'RewriteCond %{REQUEST_FILENAME}.' . $comprType . ' -f' . "\n\t" . 'RewriteRule ^(.*)\\.(' . $imgTypesCnvFrom_RegExpEnum . ')$ $1\\.$2\\.' . $comprType . ' [QSA' . ( $redirCacheAdapt ? ',R' : '' ) . ']' . "\n" .
 					'</IfModule>' . "\n" .
 					'<IfModule mod_headers.c>' . "\n\t" . '<FilesMatch \\.(' . $imgTypesCnvFrom_RegExpEnum . ')\\.' . $comprType . '$>' . "\n\t\t" . 'Header merge Vary Accept' . "\n" .
-					( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) && !( @preg_match( '@IdeaWebServer@i', (isset($_SERVER[ 'SERVER_SOFTWARE' ])?$_SERVER[ 'SERVER_SOFTWARE' ]:'') ) ) ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=preoptimized; redir=htaccess;"' . "\n" : '' ) .
+					( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) && !( @preg_match( '@IdeaWebServer@i', ($_SERVER[ 'SERVER_SOFTWARE' ]??'') ) ) ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=preoptimized; redir=htaccess;"' . "\n" : '' ) .
 					"\t" . '</FilesMatch>' . "\n" .
 					'</IfModule>' . "\n" .
 					'';
@@ -1466,7 +1520,7 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 			{
 				$htaccessBlock .=
 					'<IfModule mod_headers.c>' . "\n\t" . '<FilesMatch \\.(' . $imgTypesCnvFrom_RegExpEnum . ')$>' . "\n\t\t" . 'Header merge Vary Accept' . "\n" .
-					( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) && !( @preg_match( '@IdeaWebServer@i', (isset($_SERVER[ 'SERVER_SOFTWARE' ])?$_SERVER[ 'SERVER_SOFTWARE' ]:'') ) ) ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=original; redir=htaccess;"' . "\n" : '' ) .
+					( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) && !( @preg_match( '@IdeaWebServer@i', ($_SERVER[ 'SERVER_SOFTWARE' ]??'') ) ) ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=original; redir=htaccess;"' . "\n" : '' ) .
 					"\t" . '</FilesMatch>' . "\n" .
 					'</IfModule>' . "\n" .
 					$htaccessBlockRedir;
@@ -1541,17 +1595,17 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 			{
 				$htaccessBlock .=
 					'<IfModule mod_headers.c>' . "\n\t" . '<IfModule mod_rewrite.c>' . "\n\t\t" . 'RewriteEngine On' . "\n\t\t" . 'RewriteCond %{HTTP:Accept-Encoding} (^|\\W)br(\\W|$)' . "\n\t\t" . 'RewriteCond %{REQUEST_FILENAME} \\.(css|js)$' . "\n\t\t" . 'RewriteCond %{REQUEST_FILENAME}.br -f' . "\n\t\t" . 'RewriteRule ^(.*)\\.(css|js)$ $1\\.$2\\.br [QSA]' . "\n\t\t" . 'RewriteRule \\.css\\.br$ - [T=text/css,E=no-gzip:1,E=no-brotli:1]' . "\n\t\t" . 'RewriteRule \\.js\\.br$ - [T=application/javascript,E=no-gzip:1,E=no-brotli:1]' . "\n\t" . '</IfModule>' . "\n\t" . '<FilesMatch \\.(js|css)\\.br$>' . "\n\t\t" . 'Header set Content-Encoding br' . "\n\t\t" . 'Header merge Vary Accept-Encoding' . "\n" .
-					( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) && !( @preg_match( '@IdeaWebServer@i', (isset($_SERVER[ 'SERVER_SOFTWARE' ])?$_SERVER[ 'SERVER_SOFTWARE' ]:'') ) ) ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=precompressed; redir=htaccess;"' . "\n" : '' ) .
+					( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) && !( @preg_match( '@IdeaWebServer@i', ($_SERVER[ 'SERVER_SOFTWARE' ]??'') ) ) ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=precompressed; redir=htaccess;"' . "\n" : '' ) .
 					"\t" . '</FilesMatch>' . "\n" .
 					'</IfModule>' . "\n" .
 					'';
 			}
 
-			if( in_array( 'deflate', $dataComprs ) && !( @preg_match( '@IdeaWebServer@i', (isset($_SERVER[ 'SERVER_SOFTWARE' ])?$_SERVER[ 'SERVER_SOFTWARE' ]:'') ) ) )
+			if( in_array( 'deflate', $dataComprs ) && !( @preg_match( '@IdeaWebServer@i', ($_SERVER[ 'SERVER_SOFTWARE' ]??'') ) ) )
 			{
 				$htaccessBlock .=
 					'<IfModule mod_headers.c>' . "\n\t" . '<IfModule mod_rewrite.c>' . "\n\t\t" . 'RewriteEngine On' . "\n\t\t" . 'RewriteCond %{HTTP:Accept-Encoding} (^|\\W)gzip(\\W|$)' . "\n\t\t" . 'RewriteCond %{REQUEST_FILENAME} \\.(css|js)$' . "\n\t\t" . 'RewriteCond %{REQUEST_FILENAME}.gz -f' . "\n\t\t" . 'RewriteRule ^(.*)\\.(css|js)$ $1\\.$2\\.gz [QSA]' . "\n\t\t" . 'RewriteRule \\.css\\.gz$ - [T=text/css,E=no-gzip:1,E=no-brotli:1]' . "\n\t\t" . 'RewriteRule \\.js\\.gz$ - [T=application/javascript,E=no-gzip:1,E=no-brotli:1]' . "\n\t" . '</IfModule>' . "\n\t" . '<FilesMatch \\.(js|css)\\.gz$>' . "\n\t\t" . 'Header set Content-Encoding gzip' . "\n\t\t" . 'Header merge Vary Accept-Encoding' . "\n" .
-					( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) && !( @preg_match( '@IdeaWebServer@i', (isset($_SERVER[ 'SERVER_SOFTWARE' ])?$_SERVER[ 'SERVER_SOFTWARE' ]:'') ) ) ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=precompressed; redir=htaccess;"' . "\n" : '' ) .
+					( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) && !( @preg_match( '@IdeaWebServer@i', ($_SERVER[ 'SERVER_SOFTWARE' ]??'') ) ) ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=precompressed; redir=htaccess;"' . "\n" : '' ) .
 					"\t" . '</FilesMatch>' . "\n" .
 					'</IfModule>' . "\n" .
 					'';
@@ -1745,7 +1799,7 @@ function GetLoadAvg( $def = 0 )
 	if( !is_array( $loadavg ) )
 		return( $def );
 
-	$loadavg = ( float )(isset($loadavg[ 0 ])?$loadavg[ 0 ]:null);
+	$loadavg = ( float )($loadavg[ 0 ]??null);
 	if( $loadavg > 1 )
 		$loadavg = 1;
 	return( $loadavg !== null ? ( int )( round( 100 * $loadavg ) ) : $def );
@@ -1757,11 +1811,11 @@ function UpdateClientSessId( $curUserId, $token = null, $expirationNew = null )
 	$tmCur = Gen::GetCurRequestTime();
 
 	$sessInfo = GetCacheCurUserSession( $siteId );
-	$sessId = (isset($sessInfo[ 'sessId' ])?$sessInfo[ 'sessId' ]:null);
+	$sessId = ($sessInfo[ 'sessId' ]??null);
 
 	if( $curUserId )
 	{
-		if( (isset($sessInfo[ 'userSessId' ])?$sessInfo[ 'userSessId' ]:null) != $token || (isset($sessInfo[ 'expiration' ])?$sessInfo[ 'expiration' ]:null) != $expirationNew || (isset($sessInfo[ 'userId' ])?$sessInfo[ 'userId' ]:null) != $curUserId )
+		if( ($sessInfo[ 'userSessId' ]??null) != $token || ($sessInfo[ 'expiration' ]??null) != $expirationNew || ($sessInfo[ 'userId' ]??null) != $curUserId )
 		{
 			if( Gen::IsEmpty( $sessId ) )
 				$sessId = wp_generate_password( 43, false, false );
@@ -1781,7 +1835,7 @@ function UpdateClientSessId( $curUserId, $token = null, $expirationNew = null )
 			else
 			{
 				$settCache = Gen::GetArrField( Plugin::SettGet(), array( 'cache' ), array() );
-				if( ContProcGetExclStatus( $siteId, $settCache, $path, $pathOrig, $pathIsDir, $args, $varsOut, false, !(isset($settCache[ 'enable' ])?$settCache[ 'enable' ]:null) ) == 'noCacheSession' )
+				if( ContProcGetExclStatus( $siteId, $settCache, $path, $pathOrig, $pathIsDir, $args, $varsOut, false, !($settCache[ 'enable' ]??null) ) == 'noCacheSession' )
 					$set = true;
 				unset( $varsOut );
 			}
@@ -1793,7 +1847,7 @@ function UpdateClientSessId( $curUserId, $token = null, $expirationNew = null )
 			SetCacheCurUserSession( $siteId, $sessId, '0', 0, $tmCur + 12 * HOUR_IN_SECONDS );
 		}
 	}
-	else if( (isset($sessInfo[ 'userId' ])?$sessInfo[ 'userId' ]:null) || (isset($sessInfo[ 'expiration' ])?$sessInfo[ 'expiration' ]:null) < $tmCur )
+	else if( ($sessInfo[ 'userId' ]??null) || ($sessInfo[ 'expiration' ]??null) < $tmCur )
 		SetCacheCurUserSession( $siteId, $sessId, '0', 0, $tmCur + 12 * HOUR_IN_SECONDS );
 }
 

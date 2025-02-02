@@ -373,7 +373,7 @@ class Fs
 		if( !$aMime )
 			$aMime = array_merge( self::$mime_types, array_flip( self::$mime_types_rev ) );
 
-		$mimeType = (isset($aMime[ strtolower( Gen::GetFileExt( $filename ) ) ])?$aMime[ strtolower( Gen::GetFileExt( $filename ) ) ]:null);
+		$mimeType = ($aMime[ strtolower( Gen::GetFileExt( $filename ) ) ]??null);
 		if( empty( $mimeType ) )
 			$mimeType = self::_GetMimeContentType( $filename );
 		if( empty( $mimeType ) )
@@ -403,7 +403,7 @@ class Fs
 		if( $aMimeRev === null )
 			$aMimeRev = array_merge( self::$mime_types_rev, array_flip( self::$mime_types ) );
 
-		return( (isset($aMimeRev[ $mimeType ])?$aMimeRev[ $mimeType ]:$def) );
+		return( ($aMimeRev[ $mimeType ]??$def) );
 	}
 }
 

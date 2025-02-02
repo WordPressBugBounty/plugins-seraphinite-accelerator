@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 154;
+const PLUGIN_SETT_VER								= 155;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -2301,9 +2301,9 @@ function GetCacheCurUserSession( $siteId, $defForce = false )
 		return( $seraph_accel_g_sessInfo );
 
 	$secure = is_ssl();
-	$cookie = Gen::SanitizeTextData( (isset($_COOKIE[ ( $secure ? '__Secure-' : '' ) . 'wp_seraph_accel_sess_' . $siteId ])?$_COOKIE[ ( $secure ? '__Secure-' : '' ) . 'wp_seraph_accel_sess_' . $siteId ]:null) );
+	$cookie = Gen::SanitizeTextData( ($_COOKIE[ ( $secure ? '__Secure-' : '' ) . 'wp_seraph_accel_sess_' . $siteId ]??null) );
 	if( empty( $cookie ) && $secure )
-		$cookie = Gen::SanitizeTextData( (isset($_COOKIE[ 'wp_seraph_accel_sess_' . $siteId ])?$_COOKIE[ 'wp_seraph_accel_sess_' . $siteId ]:null) );
+		$cookie = Gen::SanitizeTextData( ($_COOKIE[ 'wp_seraph_accel_sess_' . $siteId ]??null) );
 	if( empty( $cookie ) )
 		return( $seraph_accel_g_sessInfo = $sessInfoDef );
 
@@ -2447,7 +2447,7 @@ function CacheCvs( $sz, $szOrig )
 function IsSrvNotSupportGzAssets()
 {
 
-	return( preg_match( '@litespeed@i', (isset($_SERVER[ 'SERVER_SOFTWARE' ])?$_SERVER[ 'SERVER_SOFTWARE' ]:'') ) );
+	return( preg_match( '@litespeed@i', ($_SERVER[ 'SERVER_SOFTWARE' ]??'') ) );
 }
 
 function CacheCgf( $settCache, $dataPath, $oiCi, $fileExt, $dataFileExt = '' )
@@ -2723,7 +2723,7 @@ function CacheDscUpdate( $lock, $settCache, $content, $deps, $subParts, $dataPat
 
 		{
 			if( !$tmp && $dscOld && isset( $dscOld[ 't' ] ) )
-				$hdrs = (isset($dscOld[ 'hd' ])?$dscOld[ 'hd' ]:null);
+				$hdrs = ($dscOld[ 'hd' ]??null);
 			else
 				$hdrs = GetCurHdrsToStoreInCache( $settCache );
 
@@ -2816,7 +2816,7 @@ function CacheDoCronAndEndRequest()
 
 function GetContentProcessorForce( $sett )
 {
-	if( !(isset($sett[ 'debug' ])?$sett[ 'debug' ]:null) )
+	if( !($sett[ 'debug' ]??null) )
 		return( null );
 
 	if( isset( $_REQUEST[ 'seraph_accel_proc' ] ) )
@@ -2902,7 +2902,7 @@ function Tof_GetFileData( $dir, $id, $ver = null, $compressed = false, $oiCi = n
 
 	if( $ver )
 	{
-		$vFrom = (isset($data[ 'v' ])?$data[ 'v' ]:null);
+		$vFrom = ($data[ 'v' ]??null);
 		if( is_array( $ver ) )
 		{
 			if( $ver[ 0 ] !== $vFrom )
@@ -2968,7 +2968,7 @@ function GetCacheSiteIdAdjustPath( $sites, &$addr, &$siteSubId, &$path )
 	$addrSite = $addr;
 	for( ;; )
 	{
-		$id = (isset($sites[ $addrSite ])?$sites[ $addrSite ]:null);
+		$id = ($sites[ $addrSite ]??null);
 		if( $id )
 		{
 			$path = ltrim( substr( $addr, strlen( $addrSite ) ), '/' );
@@ -3041,13 +3041,13 @@ function CachePathNormalize( $path, &$pathIsDir, $bLwr = true )
 function ParseContCachePathArgs( $serverArgs, &$args )
 {
 
-	$path = (isset($serverArgs[ 'REQUEST_URI' ])?$serverArgs[ 'REQUEST_URI' ]:null);
+	$path = ($serverArgs[ 'REQUEST_URI' ]??null);
 	$posQuery = strpos( $path, '?' );
 
 	if( $posQuery !== false )
 	{
 		$queryOrig = substr( $path, $posQuery + 1 );
-		if( $args === null || $queryOrig != (isset($serverArgs[ 'QUERY_STRING' ])?$serverArgs[ 'QUERY_STRING' ]:null) )
+		if( $args === null || $queryOrig != ($serverArgs[ 'QUERY_STRING' ]??null) )
 		{
 			$args = array();
 			@parse_str( $queryOrig, $args );
@@ -3195,7 +3195,7 @@ function _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $cookies, $pa
 
 					foreach( $ctxGrps as $ctxGrp )
 					{
-						if( !(isset($ctxGrp[ 'enable' ])?$ctxGrp[ 'enable' ]:null) )
+						if( !($ctxGrp[ 'enable' ]??null) )
 							continue;
 
 						$ctxArgs = Gen::GetArrField( $ctxGrp, array( 'args' ), array() );
@@ -3244,7 +3244,7 @@ function _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $cookies, $pa
 
 					foreach( $ctxGrps as $ctxGrp )
 					{
-						if( !(isset($ctxGrp[ 'enable' ])?$ctxGrp[ 'enable' ]:null) )
+						if( !($ctxGrp[ 'enable' ]??null) )
 							continue;
 
 						$ctxArgs = Gen::GetArrField( $ctxGrp, array( 'args' ), array() );
@@ -3320,7 +3320,7 @@ function ContProcGetExclStatus( $siteId, $settCache, $path, $pathOrig, $pathIsDi
 
 	$varsOut = array();
 
-	$userAgent = strtolower( (isset($_SERVER[ 'HTTP_USER_AGENT' ])?$_SERVER[ 'HTTP_USER_AGENT' ]:'') );
+	$userAgent = strtolower( ($_SERVER[ 'HTTP_USER_AGENT' ]??'') );
 
 	$varsOut[ 'tmCur' ] = $tmCur;
 	$varsOut[ 'userAgent' ] = $userAgent;
@@ -3336,7 +3336,7 @@ function ContProcGetExclStatus( $siteId, $settCache, $path, $pathOrig, $pathIsDi
 
 	$sessInfo = GetCacheCurUserSession( $siteId, $seraph_accel_g_cacheCtxSkip );
 
-	$userId = (isset($sessInfo[ 'userId' ])?$sessInfo[ 'userId' ]:null);
+	$userId = ($sessInfo[ 'userId' ]??null);
 
 	$varsOut[ 'sessInfo' ] = $sessInfo;
 	$varsOut[ 'userId' ] = $userId;
@@ -3362,9 +3362,9 @@ function ContProcGetExclStatus( $siteId, $settCache, $path, $pathOrig, $pathIsDi
 		foreach( array_keys( $_COOKIE ) as $cookKey )
 		{
 			$viewStateIdProbe = '';
-			if( (isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
+			if( ($settCache[ 'views' ]??null) )
 				foreach( $viewsGrps as $viewsGrp )
-					if( (isset($viewsGrp[ 'enable' ])?$viewsGrp[ 'enable' ]:null) )
+					if( ($viewsGrp[ 'enable' ]??null) )
 						AccomulateCookiesState( $viewStateIdProbe, array( $cookKey => $_COOKIE[ $cookKey ] ), Gen::GetArrField( $viewsGrp, array( 'cookies' ), array() ) );
 
 			if( !strlen( $viewStateIdProbe ) )
@@ -3375,7 +3375,7 @@ function ContProcGetExclStatus( $siteId, $settCache, $path, $pathOrig, $pathIsDi
 	$varsOut[ 'stateCookId' ] = $stateCookId;
 
 	$shouldCurUserSessionExist = ShouldCurUserSessionExist();
-	if( ( !(isset($sessInfo[ 'sessId' ])?$sessInfo[ 'sessId' ]:null) && ( $shouldCurUserSessionExist || $stateCookId ) ) || ( $shouldCurUserSessionExist && !$userId ) )
+	if( ( !($sessInfo[ 'sessId' ]??null) && ( $shouldCurUserSessionExist || $stateCookId ) ) || ( $shouldCurUserSessionExist && !$userId ) )
 		$seraph_accel_g_contProcGetExclStatus = Gen::GetArrField( $settCache, array( 'ctx' ), false ) ? 'noCacheSession' : 'userCtx';
 
 	return( $seraph_accel_g_contProcGetExclStatus );
@@ -3383,7 +3383,7 @@ function ContProcGetExclStatus( $siteId, $settCache, $path, $pathOrig, $pathIsDi
 
 function IsStrRegExp( $s )
 {
-	return( strpos( '/~@;%`#', (isset($s[ 0 ])?$s[ 0 ]:null) ) !== false );
+	return( strpos( '/~@;%`#', ($s[ 0 ]??null) ) !== false );
 }
 
 function ExprConditionsSet_Parse( $expr )
@@ -3549,7 +3549,7 @@ function GetCookiesState( $ctxGrps, $cookies )
 	$stateCookId = '';
 
 	foreach( $ctxGrps as $ctxGrp )
-		if( (isset($ctxGrp[ 'enable' ])?$ctxGrp[ 'enable' ]:null) )
+		if( ($ctxGrp[ 'enable' ]??null) )
 			AccomulateCookiesState( $stateCookId, $cookies, Gen::GetArrField( $ctxGrp, array( 'cookies' ), array() ) );
 
 	return( $stateCookId );
@@ -3663,19 +3663,19 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.6 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.7 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
 {
 
-	if( strtolower( (isset($serverArgs[ 'HTTPS' ])?$serverArgs[ 'HTTPS' ]:'') ) == 'on' || ( $target == 'client' && strtolower( (isset($serverArgs[ 'HTTP_X_FORWARDED_PROTO' ])?$serverArgs[ 'HTTP_X_FORWARDED_PROTO' ]:'') ) == 'https' ) )
+	if( strtolower( ($serverArgs[ 'HTTPS' ]??'') ) == 'on' || ( $target == 'client' && strtolower( ($serverArgs[ 'HTTP_X_FORWARDED_PROTO' ]??'') ) == 'https' ) )
 	{
-		if( (isset($serverArgs[ 'REQUEST_SCHEME' ])?$serverArgs[ 'REQUEST_SCHEME' ]:null) == 'http' && (isset($serverArgs[ 'SERVER_PORT' ])?$serverArgs[ 'SERVER_PORT' ]:null) == 80 )
+		if( ($serverArgs[ 'REQUEST_SCHEME' ]??null) == 'http' && ($serverArgs[ 'SERVER_PORT' ]??null) == 80 )
 			$serverArgs[ 'SERVER_PORT' ] = 443;
 		$serverArgs[ 'REQUEST_SCHEME' ] = 'https';
 	}
-	else if( !(isset($serverArgs[ 'REQUEST_SCHEME' ])?$serverArgs[ 'REQUEST_SCHEME' ]:null) )
+	else if( !($serverArgs[ 'REQUEST_SCHEME' ]??null) )
 		$serverArgs[ 'REQUEST_SCHEME' ] = 'http';
 }
 
@@ -3695,11 +3695,11 @@ function Queue_GetStgPrms( $dirQueue, $state )
 	return( array( 'dirFilesPattern' => $dirQueue . '/' . $state . '/*.dat.gz', 'options' => array( 'countPerFirstChunk' => 100, 'cbSort' =>
 		function( $item1, $item2 )
 		{
-			$iCmp = Gen::VarCmp( (isset($item1[ 'p' ])?$item1[ 'p' ]:null), (isset($item2[ 'p' ])?$item2[ 'p' ]:null) );
+			$iCmp = Gen::VarCmp( ($item1[ 'p' ]??null), ($item2[ 'p' ]??null) );
 			if( $iCmp !== 0 )
 				return( $iCmp );
 
-			$iCmp = Gen::VarCmp( (isset($item1[ 't' ])?$item1[ 't' ]:null), (isset($item2[ 't' ])?$item2[ 't' ]:null) );
+			$iCmp = Gen::VarCmp( ($item1[ 't' ]??null), ($item2[ 't' ]??null) );
 			if( $iCmp !== 0 )
 				return( $iCmp );
 
@@ -3740,7 +3740,7 @@ function OnAsyncTask_QueueProcessItems( $args )
 	$settGlobal = Plugin::SettGetGlobal();
 	$settCacheGlobal = Gen::GetArrField( $settGlobal, array( 'cache' ), array() );
 
-	$nMaxItems = (isset($settCacheGlobal[ 'maxProc' ])?$settCacheGlobal[ 'maxProc' ]:null);
+	$nMaxItems = ($settCacheGlobal[ 'maxProc' ]??null);
 	if( !$nMaxItems )
 		$nMaxItems = 1;
 	$nMaxItemsTotal = $nMaxItems;
@@ -3773,11 +3773,11 @@ function OnAsyncTask_QueueProcessItems( $args )
 		$aDone = new ArrayOnFiles( Queue_GetStgPrms( $dirQueue, 2 ) );
 		foreach( $aProgress -> slice( 0 ) as $id => $item )
 		{
-			$data = Gen::GetArrField( Gen::Unserialize( (isset($item[ 'd' ])?$item[ 'd' ]:null) ), array( '' ), array() );
+			$data = Gen::GetArrField( Gen::Unserialize( ($item[ 'd' ]??null) ), array( '' ), array() );
 
 			$hrItemForce = Gen::S_OK;
-			$tmDur = $tmCur - ( float )(isset($item[ 't' ])?$item[ 't' ]:null);
-			$fileCtl = ProcessCtlData_GetFullPath( (isset($data[ 'pc' ])?$data[ 'pc' ]:null) );
+			$tmDur = $tmCur - ( float )($item[ 't' ]??null);
+			$fileCtl = ProcessCtlData_GetFullPath( ($data[ 'pc' ]??null) );
 			if( $tmDur <= $procTmLim + 30 )
 			{
 				if( $tmDur > ( 30 ) && $fileCtl )
@@ -3796,7 +3796,7 @@ function OnAsyncTask_QueueProcessItems( $args )
 			{
 				if( $nMaxItems > 0 )
 					$nMaxItems --;
-				$aCurItemsPrior[ ( int )(isset($item[ 'p' ])?$item[ 'p' ]:null) ] = true;
+				$aCurItemsPrior[ ( int )($item[ 'p' ]??null) ] = true;
 				continue;
 			}
 
@@ -3828,7 +3828,7 @@ function OnAsyncTask_QueueProcessItems( $args )
 					{
 						$item = $aDone -> current();
 
-						$data = Gen::GetArrField( Gen::Unserialize( (isset($item[ 'd' ])?$item[ 'd' ]:null) ), array( '' ), array() );
+						$data = Gen::GetArrField( Gen::Unserialize( ($item[ 'd' ]??null) ), array( '' ), array() );
 						list( $iconClr, $state, $stateDsc, $duration ) = GetQueueItem_Done_Attrs( $data );
 						unset( $state, $stateDsc, $duration );
 
@@ -3878,7 +3878,7 @@ function OnAsyncTask_QueueProcessItems( $args )
 		return;
 	}
 
-	$procInterval = (isset($settCacheGlobal[ 'procInterval' ])?$settCacheGlobal[ 'procInterval' ]:null);
+	$procInterval = ($settCacheGlobal[ 'procInterval' ]??null);
 	if( $procInterval )
 	{
 		if( $nMaxItems < $nMaxItemsTotal )
@@ -3926,14 +3926,14 @@ function OnAsyncTask_QueueProcessItems( $args )
 
 	foreach( $items as $id => $item )
 	{
-		$prior = ( int )(isset($item[ 'p' ])?$item[ 'p' ]:null);
+		$prior = ( int )($item[ 'p' ]??null);
 
 		if( isset( $aCurItemsPrior[ -480 ] ) && $prior > -480 )
 		    continue;
 
 		$aCurItemsPrior[ $prior ] = true;
 
-		Plugin::AsyncTaskPostEx( 'CacheProcessItem', ( int )(isset($item[ 'tp' ])?$item[ 'tp' ]:0) == 0 && $asyncMode == 'ec', array( 'id' => $id, 'siteId' => $item[ 's' ] ) );
+		Plugin::AsyncTaskPostEx( 'CacheProcessItem', ( int )($item[ 'tp' ]??0) == 0 && $asyncMode == 'ec', array( 'id' => $id, 'siteId' => $item[ 's' ] ) );
 
 	}
 
@@ -3963,7 +3963,7 @@ function CachePushQueueProcessor( $next = false, $immediately = false, $shortInt
 	if( $next && $immediately === false )
 	{
 		$settCacheGlobal = Gen::GetArrField( Plugin::SettGetGlobal(), array( 'cache' ), array() );
-		$procInterval = $shortInterval ? (isset($settCacheGlobal[ 'procIntervalShort' ])?$settCacheGlobal[ 'procIntervalShort' ]:null) : (isset($settCacheGlobal[ 'procInterval' ])?$settCacheGlobal[ 'procInterval' ]:null);
+		$procInterval = $shortInterval ? ($settCacheGlobal[ 'procIntervalShort' ]??null) : ($settCacheGlobal[ 'procInterval' ]??null);
 	}
 
 	$dirFileValues = PluginFileValues::GetDirVar( '' );
@@ -4002,11 +4002,11 @@ function ContentProcess_IsAborted( $settCache = null )
 	if( $seraph_accel_g_prepPrms === null )
 		return;
 
-	return( !Gen::SliceExecTime( (isset($settCache[ 'procWorkInt' ])?$settCache[ 'procWorkInt' ]:null), (isset($settCache[ 'procPauseInt' ])?$settCache[ 'procPauseInt' ]:null), 2,
+	return( !Gen::SliceExecTime( ($settCache[ 'procWorkInt' ]??null), ($settCache[ 'procPauseInt' ]??null), 2,
 		function()
 		{
 			global $seraph_accel_g_prepPrms;
-			return( ProcessCtlData_IsAborted( (isset($seraph_accel_g_prepPrms[ 'pc' ])?$seraph_accel_g_prepPrms[ 'pc' ]:null) ) );
+			return( ProcessCtlData_IsAborted( ($seraph_accel_g_prepPrms[ 'pc' ]??null) ) );
 		}
 	) );
 }
@@ -4201,13 +4201,13 @@ class ProcessQueueItemCtx
 
 	function PrepareRequest()
 	{
-		$prepArgs = array( 'pc' => $this -> data[ 'pc' ], 'p' => ( int )(isset($this -> data[ 'p' ])?$this -> data[ 'p' ]:null) );
-		if( ( int )(isset($this -> item[ 'p' ])?$this -> item[ 'p' ]:null) == -480 )
-			$prepArgs[ 'lrn' ] = (isset($this -> data[ 'l' ])?$this -> data[ 'l' ]:null);
+		$prepArgs = array( 'pc' => $this -> data[ 'pc' ], 'p' => ( int )($this -> data[ 'p' ]??null) );
+		if( ( int )($this -> item[ 'p' ]??null) == -480 )
+			$prepArgs[ 'lrn' ] = ($this -> data[ 'l' ]??null);
 
-		$this -> url = ProcessQueueItemCtx::AdjustRequestUrl( (isset($this -> data[ 'u' ])?$this -> data[ 'u' ]:null), $this -> item[ 't' ], $prepArgs );
+		$this -> url = ProcessQueueItemCtx::AdjustRequestUrl( ($this -> data[ 'u' ]??null), $this -> item[ 't' ], $prepArgs );
 
-		$this -> hdrs = (isset($this -> data[ 'h' ])?$this -> data[ 'h' ]:null);
+		$this -> hdrs = ($this -> data[ 'h' ]??null);
 		if( !is_array( $this -> hdrs ) )
 			$this -> hdrs = array();
 
@@ -4290,7 +4290,7 @@ class ProcessQueueItemCtx
 			else if( $this -> httpCode && $this -> httpCode != 500 )
 			{
 				if( $this -> httpCode == 524 || $this -> httpCode == 522 || $this -> httpCode == 504 || $this -> httpCode == 503 )
-					if( ( $this -> repeatIdx = (isset($this -> data[ 'rdr' ])?$this -> data[ 'rdr' ]:0) ) <= 3 )
+					if( ( $this -> repeatIdx = ($this -> data[ 'rdr' ]??0) ) <= 3 )
 						$this -> needRepeatPage = true;
 				$this -> hr = Gen::HrSuccFromFail( $this -> hr );
 			}
@@ -4300,7 +4300,7 @@ class ProcessQueueItemCtx
 		if( !$this -> urlRedir && $this -> skipStatus && preg_match( '@^httpCode\\:(?:301|302|307|308)\\:@', $this -> skipStatus ) )
 			$this -> urlRedir = rawurldecode( substr( $this -> skipStatus, 13 ) );
 
-		if( $this -> urlRedir && $this -> urlRedir != (isset($this -> data[ 'u' ])?$this -> data[ 'u' ]:null) )
+		if( $this -> urlRedir && $this -> urlRedir != ($this -> data[ 'u' ]??null) )
 		{
 			$this -> urlRedir = remove_query_arg( array( 'seraph_accel_prep' ), $this -> urlRedir );
 			if( Gen::StrStartsWith( $this -> urlRedir, '//' ) )
@@ -4312,9 +4312,9 @@ class ProcessQueueItemCtx
 			else if( strpos( $this -> urlRedir, '://' ) === false )
 				$this -> urlRedir = Net::GetSiteAddrFromUrl( $this -> url, true ) . $this -> urlRedir;
 
-			if( ( int )(isset($this -> item[ 'p' ])?$this -> item[ 'p' ]:null) !== 10 )
-				if( ( $redirIdx = (isset($this -> data[ 'rdr' ])?$this -> data[ 'rdr' ]:0) ) <= 4 )
-					if( CachePostPreparePageEx( $this -> urlRedir, $this -> siteId, ( int )(isset($this -> item[ 'p' ])?$this -> item[ 'p' ]:null), (isset($this -> data[ 'p' ])?$this -> data[ 'p' ]:null), $this -> hdrs, $this -> data[ 'to' ], $redirIdx + 1, (isset($this -> data[ 'l' ])?$this -> data[ 'l' ]:null) ) )
+			if( ( int )($this -> item[ 'p' ]??null) !== 10 )
+				if( ( $redirIdx = ($this -> data[ 'rdr' ]??0) ) <= 4 )
+					if( CachePostPreparePageEx( $this -> urlRedir, $this -> siteId, ( int )($this -> item[ 'p' ]??null), ($this -> data[ 'p' ]??null), $this -> hdrs, $this -> data[ 'to' ], $redirIdx + 1, ($this -> data[ 'l' ]??null) ) )
 						$this -> immediatelyPushQueue = true;
 		}
 	}
@@ -4348,7 +4348,7 @@ class ProcessQueueItemCtx
 				$this -> data[ 'r' ] = $this -> skipStatus;
 		}
 
-		$priorOrig = ( int )(isset($this -> item[ 'p' ])?$this -> item[ 'p' ]:null);
+		$priorOrig = ( int )($this -> item[ 'p' ]??null);
 
 		if( $this -> needLrn )
 		{
@@ -4368,7 +4368,7 @@ class ProcessQueueItemCtx
 				unset( $aProgress, $lock );
 			}
 
-			CachePostPreparePageEx( (isset($this -> data[ 'u' ])?$this -> data[ 'u' ]:null), $this -> siteId, -480, (isset($this -> data[ 'p' ])?$this -> data[ 'p' ]:null), $this -> hdrs, $this -> data[ 'to' ], null, $this -> needLrn );
+			CachePostPreparePageEx( ($this -> data[ 'u' ]??null), $this -> siteId, -480, ($this -> data[ 'p' ]??null), $this -> hdrs, $this -> data[ 'to' ], null, $this -> needLrn );
 			$this -> immediatelyPushQueue = true;
 		}
 		else
@@ -4376,7 +4376,7 @@ class ProcessQueueItemCtx
 			if( $this -> hr == Gen::S_OK && $this -> warns )
 				$this -> data[ 'w' ] = $this -> warns;
 
-			if( isset( $this -> data[ 'hr' ] ) && $this -> data[ 'hr' ] != Gen::S_OK && $this -> urlRedir && $this -> urlRedir == (isset($this -> data[ 'u' ])?$this -> data[ 'u' ]:null) )
+			if( isset( $this -> data[ 'hr' ] ) && $this -> data[ 'hr' ] != Gen::S_OK && $this -> urlRedir && $this -> urlRedir == ($this -> data[ 'u' ]??null) )
 			{
 				$this -> data[ 'hr' ] = ( $this -> hr = Gen::E_FAIL );
 				$this -> data[ 'r' ] = 'redirectToItself';
@@ -4396,8 +4396,8 @@ class ProcessQueueItemCtx
 					$dataExtUpdated = $aProgress[ $this -> id ];
 					if( $dataExtUpdated )
 					{
-						if( $dataExtUpdated = Gen::GetArrField( Gen::Unserialize( (isset($dataExtUpdated[ 'd' ])?$dataExtUpdated[ 'd' ]:null) ), array( '' ), array() ) )
-							if( (isset($dataExtUpdated[ 'rpt' ])?$dataExtUpdated[ 'rpt' ]:null) )
+						if( $dataExtUpdated = Gen::GetArrField( Gen::Unserialize( ($dataExtUpdated[ 'd' ]??null) ), array( '' ), array() ) )
+							if( ($dataExtUpdated[ 'rpt' ]??null) )
 								$this -> needRepeatPage = true;
 
 						unset( $dataExtUpdated );
@@ -4420,7 +4420,7 @@ class ProcessQueueItemCtx
 
 		PluginFileValues::SetEx( PluginFileValues::GetDirVar( '' ), 'pelt', ( int )$this -> tmFinish );
 
-		if( $this -> needRepeatPage && CachePostPreparePageEx( (isset($this -> data[ 'u' ])?$this -> data[ 'u' ]:null), $this -> siteId, $priorOrig, (isset($this -> data[ 'p' ])?$this -> data[ 'p' ]:null), $this -> hdrs, $this -> data[ 'to' ], $this -> repeatIdx !== null ? ( $this -> repeatIdx + 1 ) : null, (isset($this -> data[ 'l' ])?$this -> data[ 'l' ]:null) ) )
+		if( $this -> needRepeatPage && CachePostPreparePageEx( ($this -> data[ 'u' ]??null), $this -> siteId, $priorOrig, ($this -> data[ 'p' ]??null), $this -> hdrs, $this -> data[ 'to' ], $this -> repeatIdx !== null ? ( $this -> repeatIdx + 1 ) : null, ($this -> data[ 'l' ]??null) ) )
 			$this -> immediatelyPushQueue = true;
 
 		CachePushQueueProcessor( true, $this -> immediatelyPushQueue, $this -> hr != Gen::S_OK && Gen::HrSucc( $this -> hr ) );
@@ -4432,7 +4432,7 @@ class ProcessQueueItemCtx
 function OnAsyncTask_CacheProcessItem( $args )
 {
 
-	$ctx = new ProcessQueueItemCtx( (isset($args[ 'id' ])?$args[ 'id' ]:null), Gen::SanitizeId( (isset($args[ 'siteId' ])?$args[ 'siteId' ]:null) ) );
+	$ctx = new ProcessQueueItemCtx( ($args[ 'id' ]??null), Gen::SanitizeId( ($args[ 'siteId' ]??null) ) );
 	if( !$ctx -> id || !$ctx -> siteId )
 		return;
 
@@ -4452,11 +4452,11 @@ function OnAsyncTask_CacheProcessItem( $args )
 	if( !$ctx -> item )
 		return;
 
-	$ctx -> data = Gen::GetArrField( Gen::Unserialize( (isset($ctx -> item[ 'd' ])?$ctx -> item[ 'd' ]:null) ), array( '' ), array() );
+	$ctx -> data = Gen::GetArrField( Gen::Unserialize( ($ctx -> item[ 'd' ]??null) ), array( '' ), array() );
 	if( !$ctx -> data )
 		return;
 
-	{ if( !isset( $ctx -> data[ 'p' ] ) ) $ctx -> data[ 'p' ] = ( int )(isset($ctx -> item[ 'p' ])?$ctx -> item[ 'p' ]:null); }
+	{ if( !isset( $ctx -> data[ 'p' ] ) ) $ctx -> data[ 'p' ] = ( int )($ctx -> item[ 'p' ]??null); }
 
 	$ctx -> procTmLim = Gen::GetArrField( Plugin::SettGet(), array( 'cache', 'procTmLim' ), 570 );
 	Gen::SetTimeLimit( $ctx -> procTmLim + 30 );
@@ -4489,7 +4489,7 @@ function OnAsyncTask_CacheProcessItem( $args )
 	unset( $fileCtlDir );
 
 	$ctx -> data[ 'pc' ] = Gen::GetFileName( $ctx -> fileCtl );
-	$ctx -> data[ 'to' ] = ( float )(isset($ctx -> item[ 't' ])?$ctx -> item[ 't' ]:null);
+	$ctx -> data[ 'to' ] = ( float )($ctx -> item[ 't' ]??null);
 	$ctx -> item[ 't' ] = microtime( true );
 	$ctx -> item[ 'd' ] = Gen::Serialize( $ctx -> data );
 
@@ -4523,7 +4523,7 @@ function OnAsyncTask_CacheProcessItem( $args )
 		unset( $aInitial, $aProgress, $lock );
 	}
 
-	$itemType = ( int )(isset($ctx -> item[ 'tp' ])?$ctx -> item[ 'tp' ]:0);
+	$itemType = ( int )($ctx -> item[ 'tp' ]??0);
 	if( $itemType == 0 )
 	{
 
@@ -4545,24 +4545,24 @@ function OnAsyncTask_CacheProcessItem( $args )
 	{
 		global $seraph_accel_g_prepPrms;
 
-		$seraph_accel_g_prepPrms = array( 'pc' => $ctx -> fileCtl, 'p' => ( int )(isset($ctx -> item[ 'p' ])?$ctx -> item[ 'p' ]:null) );
+		$seraph_accel_g_prepPrms = array( 'pc' => $ctx -> fileCtl, 'p' => ( int )($ctx -> item[ 'p' ]??null) );
 		$sett = Plugin::SettGet();
 
 		$ctxProcess = &GetContentProcessCtx( $_SERVER, $sett );
 
 		if( $itemType == 10 )
 		{
-			ProcessCtlData_Update( (isset($seraph_accel_g_prepPrms[ 'pc' ])?$seraph_accel_g_prepPrms[ 'pc' ]:null), array( 'stage' => 'images' ) );
+			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'stage' => 'images' ) );
 
-			$file = (isset($ctx -> data[ 'u' ])?$ctx -> data[ 'u' ]:null);
+			$file = ($ctx -> data[ 'u' ]??null);
 			Images_ProcessSrc_ConvertAll( $ctxProcess, Gen::GetArrField( $sett, array( 'contPr', 'img' ), array() ), null, $file, Images_ProcessSrcEx_FileMTime( $file ), false );
 		}
 		else if( $itemType == 20 )
 		{
-			ProcessCtlData_Update( (isset($seraph_accel_g_prepPrms[ 'pc' ])?$seraph_accel_g_prepPrms[ 'pc' ]:null), array( 'stage' => 'images' ) );
+			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'stage' => 'images' ) );
 
-			$file = (isset($ctx -> data[ 'u' ])?$ctx -> data[ 'u' ]:null);
-			Images_ProcessSrc_SizeAlternatives( $ctxProcess, $file, $sett, (isset($ctx -> data[ 'ai' ])?$ctx -> data[ 'ai' ]:null) );
+			$file = ($ctx -> data[ 'u' ]??null);
+			Images_ProcessSrc_SizeAlternatives( $ctxProcess, $file, $sett, ($ctx -> data[ 'ai' ]??null) );
 		}
 
 		unset( $ctxProcess );
@@ -4632,12 +4632,12 @@ function CacheInitQueueTable( $force = false )
 
 					foreach( $items as $itemFromDb )
 					{
-						$id = @hex2bin( (isset($itemFromDb[ 'id' ])?$itemFromDb[ 'id' ]:null) );
-						$siteId = (isset($itemFromDb[ 'site_id' ])?$itemFromDb[ 'site_id' ]:null);
+						$id = @hex2bin( ($itemFromDb[ 'id' ]??null) );
+						$siteId = ($itemFromDb[ 'site_id' ]??null);
 						if( !$siteId )
 							$siteId = 'm';
 
-						$item = array( 'p' => ( int )(isset($itemFromDb[ 'prior' ])?$itemFromDb[ 'prior' ]:null), 't' => ( float )(isset($itemFromDb[ 'tm' ])?$itemFromDb[ 'tm' ]:null), 'd' => (isset($itemFromDb[ 'data' ])?$itemFromDb[ 'data' ]:null) );
+						$item = array( 'p' => ( int )($itemFromDb[ 'prior' ]??null), 't' => ( float )($itemFromDb[ 'tm' ]??null), 'd' => ($itemFromDb[ 'data' ]??null) );
 
 						{
 							$dirQueue = GetCacheDir() . '/q/' . $siteId;
@@ -4676,9 +4676,9 @@ function CacheInitQueueTable( $force = false )
 
 function GetViewDeviceGrpNameFromData( $viewsDeviceGrp )
 {
-	$viewName = (isset($viewsDeviceGrp[ 'name' ])?$viewsDeviceGrp[ 'name' ]:null);
+	$viewName = ($viewsDeviceGrp[ 'name' ]??null);
 	if( !$viewName )
-		$viewName = 'id:' . (isset($viewsDeviceGrp[ 'id' ])?$viewsDeviceGrp[ 'id' ]:null);
+		$viewName = 'id:' . ($viewsDeviceGrp[ 'id' ]??null);
 	return( $viewName );
 }
 
@@ -4688,9 +4688,9 @@ function _CachePostPreparePageEx_StopAndRepeat( $aProgress, $id, $data = null )
 	if( !$item )
 		return;
 
-	$itemInProgressData = Gen::GetArrField( Gen::Unserialize( (isset($item[ 'd' ])?$item[ 'd' ]:null) ), array( '' ), array() );
+	$itemInProgressData = Gen::GetArrField( Gen::Unserialize( ($item[ 'd' ]??null) ), array( '' ), array() );
 
-	if( (isset($itemInProgressData[ 'rpt' ])?$itemInProgressData[ 'rpt' ]:null) || !( $fileCtl = ProcessCtlData_GetFullPath( (isset($itemInProgressData[ 'pc' ])?$itemInProgressData[ 'pc' ]:null) ) ) )
+	if( ($itemInProgressData[ 'rpt' ]??null) || !( $fileCtl = ProcessCtlData_GetFullPath( ($itemInProgressData[ 'pc' ]??null) ) ) )
 		return;
 
 	ProcessCtlData_Del( $fileCtl );
@@ -4735,7 +4735,7 @@ function CachePostPreparePageEx( $url, $siteId, $priority, $priorityInitiator, $
 	$idLearn = md5( $idLearn, true );
 
 	$viewName = null;
-	if( $viewsDeviceGrp = GetCacheViewDeviceGrp( $settCache, strtolower( isset( $headers[ 'X-Seraph-Accel-Postpone-User-Agent' ] ) ? $headers[ 'X-Seraph-Accel-Postpone-User-Agent' ] : (isset($headers[ 'User-Agent' ])?$headers[ 'User-Agent' ]:'') ) ) )
+	if( $viewsDeviceGrp = GetCacheViewDeviceGrp( $settCache, strtolower( isset( $headers[ 'X-Seraph-Accel-Postpone-User-Agent' ] ) ? $headers[ 'X-Seraph-Accel-Postpone-User-Agent' ] : ($headers[ 'User-Agent' ]??'') ) ) )
 		$viewName = GetViewDeviceGrpNameFromData( $viewsDeviceGrp );
 
 	$dirQueue = GetCacheDir() . '/q/' . $siteId;
@@ -4919,14 +4919,14 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.6';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.7';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
 	if( $serverId = Net::UrlParse( $url ) )
 		$serverId = Net::UrlDeParse( $serverId, 0, array( PHP_URL_USER, PHP_URL_PASS, PHP_URL_PATH, PHP_URL_QUERY, PHP_URL_FRAGMENT ) );
 
-	if( $rememberServerState && $serverId && Gen::HrFail( (isset($seraph_accel_g_aGetExtContentsFailedSrvs[ $serverId ])?$seraph_accel_g_aGetExtContentsFailedSrvs[ $serverId ]:null) ) )
+	if( $rememberServerState && $serverId && Gen::HrFail( ($seraph_accel_g_aGetExtContentsFailedSrvs[ $serverId ]??null) ) )
 		return( false );
 
 	$res = Wp::RemoteGet( $url, $args );
@@ -4996,14 +4996,14 @@ function Images_ProcessSrcEx_FileMTime( $file )
 
 function CacheExtractPreparePageParams( &$args )
 {
-	$prms = (isset($args[ 'seraph_accel_prep' ])?$args[ 'seraph_accel_prep' ]:null);
+	$prms = ($args[ 'seraph_accel_prep' ]??null);
 	if( !$prms )
 		return( null );
 
 	Net::CurRequestRemoveArgs( $args, array( 'seraph_accel_prep' ) );
 
 	$prms = @json_decode( @base64_decode( Gen::SanitizeTextData( $prms ) ), true );
-	if( hash_hmac( 'md5', '' . (isset($prms[ '_tm' ])?$prms[ '_tm' ]:null), GetSalt() ) != (isset($prms[ 'nonce' ])?$prms[ 'nonce' ]:null) )
+	if( hash_hmac( 'md5', '' . ($prms[ '_tm' ]??null), GetSalt() ) != ($prms[ 'nonce' ]??null) )
 		return( false );
 
 	unset( $prms[ '_tm' ] );
@@ -5020,14 +5020,14 @@ function CacheExtractPreparePageParams( &$args )
 
 function GetCacheViewDeviceGrp( $settCache, $userAgent )
 {
-	if( !(isset($settCache[ 'views' ])?$settCache[ 'views' ]:null) )
+	if( !($settCache[ 'views' ]??null) )
 		return( null );
 
 	$viewsDeviceGrps = Gen::GetArrField( $settCache, array( 'viewsDeviceGrps' ), array() );
 
 	foreach( $viewsDeviceGrps as $viewsDeviceGrp )
 	{
-		if( !(isset($viewsDeviceGrp[ 'enable' ])?$viewsDeviceGrp[ 'enable' ]:null) )
+		if( !($viewsDeviceGrp[ 'enable' ]??null) )
 			continue;
 
 		$a = implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) );
@@ -5037,7 +5037,7 @@ function GetCacheViewDeviceGrp( $settCache, $userAgent )
 
 	foreach( $viewsDeviceGrps as $viewsDeviceGrp )
 	{
-		if( !(isset($viewsDeviceGrp[ 'enable' ])?$viewsDeviceGrp[ 'enable' ]:null) )
+		if( !($viewsDeviceGrp[ 'enable' ]??null) )
 			continue;
 
 		if( MatchUserAgentExpressions( $userAgent, Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) )
@@ -5051,7 +5051,7 @@ function GetCurHdrsToStoreInCache( $settCache )
 {
 	$res = array();
 
-	$hdrPatterns = (isset($settCache[ 'hdrs' ])?$settCache[ 'hdrs' ]:null);
+	$hdrPatterns = ($settCache[ 'hdrs' ]??null);
 	if( !$hdrPatterns )
 		return( $res );
 
@@ -5092,7 +5092,7 @@ function _FileWriteTmpAndReplace( $file, $fileTime = null, $data = null, $fileTm
 	if( !$lock )
 		$lock = new Lock( $fileTmp . '.l', false, true );
 
-	if( $lock -> Acquire() )
+	if( ( $lr = $lock -> Acquire() ) !== false )
 	{
 		if( $data === null || @file_put_contents( $fileTmp, $data ) )
 		{
@@ -5115,7 +5115,8 @@ function _FileWriteTmpAndReplace( $file, $fileTime = null, $data = null, $fileTm
 		else
 			Gen::LastErrDsc_Set( LocId::Pack( 'FileWriteErr_%1$s', 'Common', array( $fileTmp ) ) );
 
-		$lock -> Release();
+		if( $lr )
+			$lock -> Release();
 	}
 	else
 		Gen::LastErrDsc_Set( $lock -> GetErrDescr() );
@@ -5223,7 +5224,7 @@ function GetViewGeoId( $settCache, $serverArgs, &$ip, $geoIdForce = null )
 		{
 			foreach( $aGrp as $grpId => $grp )
 			{
-				if( !(isset($grp[ 'enable' ])?$grp[ 'enable' ]:null) || ( $geoIdForce !== '' && $geoIdForce !== $grpId ) )
+				if( !($grp[ 'enable' ]??null) || ( $geoIdForce !== '' && $geoIdForce !== $grpId ) )
 					continue;
 
 				$grpItem = Gen::ArrGetByPos( Gen::GetArrField( $grp, array( 'items' ), array() ), 0 );
@@ -5255,7 +5256,7 @@ function GetViewGeoId( $settCache, $serverArgs, &$ip, $geoIdForce = null )
 	$countryCodeForce = null;
 	foreach( $aGrp as $grpId => $grp )
 	{
-		if( !(isset($grp[ 'enable' ])?$grp[ 'enable' ]:null) )
+		if( !($grp[ 'enable' ]??null) )
 			continue;
 
 		$matched = false;
@@ -5337,6 +5338,21 @@ function DepsRemove( &$a, $aRem )
 		if( isset( $a[ $type ] ) && !count( $a[ $type ] ) )
 			unset( $a[ $type ] );
 	}
+}
+
+function CacheExt_Clear_CopyHdrs( &$aSrv )
+{
+	if( isset( $aSrv[ 'cw_allowed_ip' ] ) )
+		$aSrv[ 'HTTP_X_SERAPH_ACCEL_CW_ALLOWED_IP' ] = $aSrv[ 'cw_allowed_ip' ];
+	if( isset( $aSrv[ 'PRESSABLE_PROXIED_REQUEST' ] ) )
+		$aSrv[ 'HTTP_X_SERAPH_ACCEL_PRESSABLE_PROXIED_REQUEST' ] = $aSrv[ 'PRESSABLE_PROXIED_REQUEST' ];
+	if( isset( $aSrv[ 'WARPDRIVE_API' ] ) )
+		$aSrv[ 'HTTP_X_SERAPH_ACCEL_WARPDRIVE_API' ] = $aSrv[ 'WARPDRIVE_API' ];
+}
+
+function CacheExt_Clear_CopyHdrsArr()
+{
+	return( array( 'HTTP_X_LSCACHE', 'HTTP_X_ZXCS_VHOST', 'HTTP_X_SERAPH_ACCEL_CW_ALLOWED_IP', 'HTTP_X_SERAPH_ACCEL_PRESSABLE_PROXIED_REQUEST', 'HTTP_X_SERAPH_ACCEL_WARPDRIVE_API', 'HTTP_X_VARNISH' ) );
 }
 
 function LogGetRelativeFile()

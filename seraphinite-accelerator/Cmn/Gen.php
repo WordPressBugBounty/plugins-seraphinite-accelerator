@@ -107,11 +107,16 @@ class Gen
 		return( Gen::HrSuccFromFail( $hr ) );
 	}
 
-	static function GetArrField( $arr, $fieldPath, $defVal = null, $sep = '.', $bCaseIns = false, $bSafe = true )
+	static function NormArrFieldKey( $key )
+	{
+		return( is_scalar( $key ) ? $key : null );
+	}
+
+	static function GetArrField( $arr, $fieldPath, $defVal = null, $sep = '.', $bCaseIns = false, $bSafe = true, &$bFound = null )
 	{
 		if( !is_array( $fieldPath ) )
 			$fieldPath = explode( $sep, $fieldPath );
-		return( self::_GetArrField( $arr, $fieldPath, $defVal, $bCaseIns, $bSafe ) );
+		return( self::_GetArrField( $arr, $fieldPath, $defVal, $bCaseIns, $bSafe, $bFound ) );
 	}
 
 	static private function _GetVarType( $v )
@@ -122,11 +127,12 @@ class Gen
 		return( $t );
 	}
 
-	static private function _GetArrField( $v, array $fieldPath, $defVal = null, $bCaseIns = false, $bSafe = true )
+	static private function _GetArrField( $v, array $fieldPath, $defVal = null, $bCaseIns = false, $bSafe = true, &$bFound = null )
 	{
 		if( !count( $fieldPath ) )
 			return( $defVal );
 
+		$bFoundLastKey = false;
 		foreach( $fieldPath as $fld )
 		{
 			$isArr = is_array( $v ) ? true : ( is_object( $v ) ? false : null );
@@ -136,24 +142,31 @@ class Gen
 			if( $fld === '' )
 				continue;
 
-			$vNext = $isArr ? ( isset( $v[ $fld ] ) ? $v[ $fld ] : null ) : ( isset( $v -> { $fld } ) ? $v -> { $fld } : null );
-			if( $vNext === null && !( $isArr ? isset( $v[ $fld ] ) : isset( $v -> { $fld } ) ) )
+			$vNext = $isArr ? ($v[ $fld ]??null) : ($v -> { $fld }??null);
+			if( $vNext === null && !( $isArr ? array_key_exists( $fld, $v ) : property_exists( $v, $fld ) ) )
 			{
 				if( !$bCaseIns )
 					return( $defVal );
 
 				$fld = strtolower( $fld );
 
-				$vNext = $isArr ? ( isset( $v[ $fld ] ) ? $v[ $fld ] : null ) : ( isset( $v -> { $fld } ) ? $v -> { $fld } : null );
-				if( $vNext === null && !( $isArr ? isset( $v[ $fld ] ) : isset( $v -> { $fld } ) ) )
+				$vNext = $isArr ? ($v[ $fld ]??null) : ($v -> { $fld }??null);
+				if( $vNext === null && !( $isArr ? array_key_exists( $fld, $v ) : property_exists( $v, $fld ) ) )
 					return( $defVal );
+
+				$bFoundLastKey = true;
 			}
+			else
+				$bFoundLastKey = true;
 
 			$v = $vNext;
 		}
 
 		if( $bSafe && $defVal !== null && self::_GetVarType( $v ) != self::_GetVarType( $defVal ) )
 			return( $defVal );
+
+		if( $bFoundLastKey )
+			$bFound = true;
 		return( $v );
 	}
 
@@ -208,7 +221,7 @@ class Gen
 			return( true );
 		}
 
-		$vNext = $isObj ? ( isset( $arr -> { $fld } ) ? $arr -> { $fld } : null ) : ( isset( $arr[ $fld ] ) ? $arr[ $fld ] : null );
+		$vNext = $isObj ? ($arr -> { $fld }??null) : ($arr[ $fld ]??null);
 		if( !is_array( $vNext ) && !is_object( $vNext ) )
 		{
 			if( $isObj )
@@ -283,15 +296,14 @@ class Gen
 		return( @serialize( $v ) );
 	}
 
-	static function Unserialize( $data, $defVal = null )
+	static function Unserialize( $data, $defVal = null, &$bOk = null )
 	{
-		if( function_exists( 'is_serialized' ) && !is_serialized( $data ) )
-			return( $defVal );
 
 		$v = @unserialize( $data );
-		if( $v === false )
+		if( $v === false && $data !== @serialize( false ) )
 			return( $defVal );
 
+		$bOk = true;
 		return( $v );
 	}
 
@@ -1392,7 +1404,7 @@ class Gen
 
 		static $requestId;
 		if( $requestId === null )
-			$requestId = Gen::MicroTimeStamp( (isset($_SERVER[ 'REQUEST_TIME_FLOAT' ])?$_SERVER[ 'REQUEST_TIME_FLOAT' ]:null) );
+			$requestId = Gen::MicroTimeStamp( ($_SERVER[ 'REQUEST_TIME_FLOAT' ]??null) );
 
 		{
 			$fileHtaccess = Gen::GetFileDir( $file ) . '/.htaccess';
@@ -1606,18 +1618,18 @@ class Gen
 				$res .= "\n";
 
 			$res .= '#' . $i . ' ';
-			if( (isset($info[ 'file' ])?$info[ 'file' ]:null) )
+			if( ($info[ 'file' ]??null) )
 				$res .= $info[ 'file' ];
 			else
 				$res .= '{}';
-			if( (isset($info[ 'line' ])?$info[ 'line' ]:null) !== null )
+			if( ($info[ 'line' ]??null) !== null )
 				$res .= '(' . $info[ 'line' ] . ')';
 
 			$res .= ': ';
 
-			if( (isset($info[ 'class' ])?$info[ 'class' ]:null) )
+			if( ($info[ 'class' ]??null) )
 				$res .= $info[ 'class' ];
-			if( (isset($info[ 'type' ])?$info[ 'type' ]:null) )
+			if( ($info[ 'type' ]??null) )
 				$res .= $info[ 'type' ];
 			$res .= Gen::GetArrField( $info, array( 'function' ), '' ) . '(';
 
@@ -1793,7 +1805,7 @@ class Gen
 
 			$key = trim( $p[ 0 ] );
 
-			$vDef = $aDefs ? (isset($aDefs[ $key ])?$aDefs[ $key ]:null) : null;
+			$vDef = $aDefs ? ($aDefs[ $key ]??null) : null;
 			if( isset( $p[ 1 ] ) )
 			{
 				$v = trim( $p[ 1 ] );
@@ -1831,6 +1843,15 @@ class Gen
 		if( !function_exists( 'set_time_limit' ) )
 			return( false );
 		return( @set_time_limit( $seconds ) );
+	}
+
+	static function NormVal( $v, array $aPrms )
+	{
+		if( isset( $aPrms[ 'min' ] ) && $v < $aPrms[ 'min' ] )
+			$v = $aPrms[ 'min' ];
+		if( isset( $aPrms[ 'max' ] ) && $v > $aPrms[ 'max' ] )
+			$v = $aPrms[ 'max' ];
+		return( $v );
 	}
 
 	static private $_lastErrDsc = null;
@@ -2061,7 +2082,7 @@ class CsvFileAsDb implements \Iterator
 		if( !$this -> aHdr || !$this -> aData || count( $this -> aHdr ) != count( $this -> aData ) )
 			return( null );
 
-		$i = (isset($this -> aHdr[ $name ])?$this -> aHdr[ $name ]:null);
+		$i = ($this -> aHdr[ $name ]??null);
 		return( $i === null ? null : $this -> aData[ $i ] );
 	}
 
@@ -2210,8 +2231,8 @@ class ArrayOnFiles implements \Iterator, \ArrayAccess, \Countable
 	{
 		if( is_array( $dirFilesPattern ) )
 		{
-		    $options = (isset($dirFilesPattern[ 'options' ])?$dirFilesPattern[ 'options' ]:null);
-		    $dirFilesPattern = (isset($dirFilesPattern[ 'dirFilesPattern' ])?$dirFilesPattern[ 'dirFilesPattern' ]:null);
+		    $options = ($dirFilesPattern[ 'options' ]??null);
+		    $dirFilesPattern = ($dirFilesPattern[ 'dirFilesPattern' ]??null);
 		}
 
 		$this -> dir = explode( '*', $dirFilesPattern );
@@ -3327,7 +3348,7 @@ class Net
 
 		$url = preg_replace_callback( '%[^:/@?&=#]+%usD', function( $m ) { return( urlencode( $m[ 0 ] ) ); }, $url );
 
-		if( (isset($url[ 0 ])?$url[ 0 ]:null) === ':' && (isset($url[ 1 ])?$url[ 1 ]:null) === '/' )
+		if( ($url[ 0 ]??null) === ':' && ($url[ 1 ]??null) === '/' )
 			$url = substr( $url, 1 );
 
 		$urlComps = @parse_url( $url );
@@ -3442,8 +3463,8 @@ class Net
 		$requestUri = &$_SERVER[ 'REQUEST_URI' ];
 		$requestUriArgs = Net::UrlExtractArgs( $requestUri );
 
-		$redirect_query_string_args = Net::UrlParseQuery( (isset($_SERVER[ 'REDIRECT_QUERY_STRING' ])?$_SERVER[ 'REDIRECT_QUERY_STRING' ]:'') );
-		$query_string_args = Net::UrlParseQuery( (isset($_SERVER[ 'QUERY_STRING' ])?$_SERVER[ 'QUERY_STRING' ]:'') );
+		$redirect_query_string_args = Net::UrlParseQuery( ($_SERVER[ 'REDIRECT_QUERY_STRING' ]??'') );
+		$query_string_args = Net::UrlParseQuery( ($_SERVER[ 'QUERY_STRING' ]??'') );
 
 		foreach( $aArgRemove as $argIdx => $argRemove )
 		{
@@ -3486,7 +3507,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'useragent' ] ) )
-			$args[ 'useragent' ] = 'seraph-accel-Agent/2.26.6';
+			$args[ 'useragent' ] = 'seraph-accel-Agent/2.26.7';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -4542,6 +4563,9 @@ class Php
 
 	static function Tokens_GetFromContent( $str, $preserveLineNums = false )
 	{
+		if( !function_exists( 'token_get_all' ) )
+			return( false );
+
 		$tokens = @token_get_all( $str );
 		Php::Tokens_Normalize( $tokens, $preserveLineNums );
 		return( $tokens );
@@ -4628,7 +4652,14 @@ class Php
 		if( !$fileContent )
 			return( Gen::E_ACCESS_DENIED );
 
-		if( !Php::Content_SetDefineVal( $fileContent, $name, $val ) )
+		if( !function_exists( 'token_get_all' ) )
+		{
+			if( !Gen::StrStartsWith( $fileContent, '<?php' ) )
+				return( Gen::S_FALSE );
+
+			$fileContent = "<?php\ndefine( '" . $name . "', " . var_export( $val, true ) . " );\n" . substr( $fileContent, 5 );
+		}
+		else if( !Php::Content_SetDefineVal( $fileContent, $name, $val ) )
 			return( Gen::S_FALSE );
 
 		if( !is_integer( file_put_contents( $file, $fileContent, LOCK_EX ) ) )
@@ -4640,6 +4671,9 @@ class Php
 	static function Content_SetDefineVal( &$fileContent, $name, $val )
 	{
 		$tokens = Php::Tokens_GetFromContent( $fileContent );
+		if( $tokens === false )
+			return( false );
+
 		if( !Php::Tokens_SetDefineVal( $tokens, $name, $val ) )
 			return( false );
 
@@ -4825,7 +4859,7 @@ class Wp
 			}
 		}
 
-		return( (isset($g_aScope[ $context ])?$g_aScope[ $context ]:null) );
+		return( ($g_aScope[ $context ]??null) );
 	}
 
 	static function SanitizeId( $id )
@@ -5037,7 +5071,7 @@ class Wp
 		if( $args === null )
 			$args = array();
 
-		if( (isset($args[ 'local' ])?$args[ 'local' ]:null) )
+		if( ($args[ 'local' ]??null) )
 		{
 			$aUrl = Net::UrlParse( $url, Net::URLPARSE_F_PRESERVEEMPTIES );
 			if( $aUrl )

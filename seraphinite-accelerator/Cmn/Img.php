@@ -173,7 +173,7 @@ class Img
 
 		case 'image/jpeg':
 
-			if( !(isset($infoEx[ 'APP0' ])?$infoEx[ 'APP0' ]:null) )
+			if( !($infoEx[ 'APP0' ]??null) )
 				$infoEx[ 'APP0' ] = substr( $data, 6, 20 - 6 );
 
 			$data = @bin2hex( substr( $infoEx[ 'APP0' ], 8, 4 ) );
@@ -374,8 +374,8 @@ class Img
 						$hProc = @proc_open( $cmdline, array( 2 => array( 'pipe', 'w' ) ), $pipes, null, null, array( 'bypass_shell' => true ) );
 						if( $hProc )
 						{
-							$output = @stream_get_contents( (isset($pipes[ 2 ])?$pipes[ 2 ]:null) );
-							@fclose( (isset($pipes[ 2 ])?$pipes[ 2 ]:null) );
+							$output = @stream_get_contents( ($pipes[ 2 ]??null) );
+							@fclose( ($pipes[ 2 ]??null) );
 							$rescode = @proc_close( $hProc );
 
 							if( $rescode == 0 )
@@ -712,8 +712,8 @@ class Img
 		$hProc = @proc_open( $cmdline, array( 2 => array( 'pipe', 'w' ) ), $pipes, null, null, array( 'bypass_shell' => true ) );
 		if( $hProc )
 		{
-			$output = @stream_get_contents( (isset($pipes[ 2 ])?$pipes[ 2 ]:null) );
-			@fclose( (isset($pipes[ 2 ])?$pipes[ 2 ]:null) );
+			$output = @stream_get_contents( ($pipes[ 2 ]??null) );
+			@fclose( ($pipes[ 2 ]??null) );
 			$rescode = @proc_close( $hProc );
 
 			if( $rescode != 0 )
@@ -829,8 +829,8 @@ class Img
 		$hProc = @proc_open( $cmdline, array( 2 => array( 'pipe', 'w' ) ), $pipes, null, null, array( 'bypass_shell' => true ) );
 		if( $hProc )
 		{
-			$output = @stream_get_contents( (isset($pipes[ 2 ])?$pipes[ 2 ]:null) );
-			@fclose( (isset($pipes[ 2 ])?$pipes[ 2 ]:null) );
+			$output = @stream_get_contents( ($pipes[ 2 ]??null) );
+			@fclose( ($pipes[ 2 ]??null) );
 			$rescode = @proc_close( $hProc );
 
 			if( $rescode != 0 )

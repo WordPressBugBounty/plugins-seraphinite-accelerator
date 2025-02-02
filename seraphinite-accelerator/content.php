@@ -23,10 +23,10 @@ function GetContentProcessCtxEx( $serverArgs, $sett, $siteId, $siteUrl, $siteRoo
 		'deps' => array(),
 		'subs' => array(),
 		'subCurIdx' => 0,
-		'debugM' => (isset($sett[ 'debug' ])?$sett[ 'debug' ]:null),
-		'debug' => (isset($sett[ 'debugInfo' ])?$sett[ 'debugInfo' ]:null),
+		'debugM' => ($sett[ 'debug' ]??null),
+		'debug' => ($sett[ 'debugInfo' ]??null),
 		'jsMinSuffix' => $scriptDebug ? '' : '.min',
-		'userAgent' => strtolower( isset( $_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] ) ? $_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] : (isset($serverArgs[ 'HTTP_USER_AGENT' ])?$serverArgs[ 'HTTP_USER_AGENT' ]:null) ),
+		'userAgent' => strtolower( isset( $_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] ) ? $_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] : ($serverArgs[ 'HTTP_USER_AGENT' ]??null) ),
 		'mode' => ( 1 | 2 | 4 ),
 		'modeReq' => 0,
 		'aAttrImg' => array(),
@@ -39,10 +39,10 @@ function GetContentProcessCtxEx( $serverArgs, $sett, $siteId, $siteUrl, $siteRoo
 	CorrectRequestScheme( $serverArgs );
 
 	$ctx[ 'serverArgs' ] = $serverArgs;
-	$ctx[ 'requestUriPath' ] = Gen::GetFileDir( (isset($serverArgs[ 'REQUEST_URI' ])?$serverArgs[ 'REQUEST_URI' ]:null) );
+	$ctx[ 'requestUriPath' ] = Gen::GetFileDir( ($serverArgs[ 'REQUEST_URI' ]??null) );
 	$ctx[ 'host' ] = Gen::GetArrField( Net::UrlParse( $serverArgs[ 'REQUEST_SCHEME' ] . '://' . GetRequestHost( $serverArgs ) ), array( 'host' ) );
 	if( !$ctx[ 'host' ] )
-		$ctx[ 'host' ] = (isset($serverArgs[ 'SERVER_NAME' ])?$serverArgs[ 'SERVER_NAME' ]:null);
+		$ctx[ 'host' ] = ($serverArgs[ 'SERVER_NAME' ]??null);
 
 	$settContPr = Gen::GetArrField( $sett, array( 'contPr' ), array() );
 	if( Gen::GetArrField( $settContPr, array( 'normUrl' ), false ) )

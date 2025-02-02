@@ -31,7 +31,7 @@ class PluginOptions
 				$data = array();
 		}
 
-		$verFrom = (isset($data[ 'v' ])?$data[ 'v' ]:null);
+		$verFrom = ($data[ 'v' ]??null);
 		if( !$verFrom )
 			$verFrom = 0;
 
@@ -232,7 +232,7 @@ class PluginPostOptions
 				$data = array();
 		}
 
-		$verFrom = (isset($data[ 'v' ])?$data[ 'v' ]:null);
+		$verFrom = ($data[ 'v' ]??null);
 
 		$data = Gen::CallFunc( $cbNs . 'On' . $cbType . 'OptRead_' . $name, array( $data, $verFrom ), $data );
 
@@ -291,7 +291,7 @@ class PluginRmtCfg
 			$args[ 'epid' ] = Wp::GetSiteId();
 			$args[ 'id' ] = 'wordpress-accelerator';
 			$args[ 'name' ] = 'Accelerator';
-			$args[ 'v' ] = '2.26.6';
+			$args[ 'v' ] = '2.26.7';
 			$args[ 'pk' ] = 'Base';
 			$args[ 'cfg' ] = '';
 			$args[ 'loc' ] = Wp::GetLocale();
@@ -308,16 +308,16 @@ class PluginRmtCfg
 		$data = PluginOptions::Get( self::STG_VER, self::STG_ID, __CLASS__ . '::' );
 		$curUpdTime = time();
 
-		$lastCheckVer = (isset($data[ 'plgVer' ])?$data[ 'plgVer' ]:null);
-		$lastCheckPackage = (isset($data[ 'plgPk' ])?$data[ 'plgPk' ]:null);
+		$lastCheckVer = ($data[ 'plgVer' ]??null);
+		$lastCheckPackage = ($data[ 'plgPk' ]??null);
 		if( $lastCheckPackage === null && $lastCheckVer !== null )
 			$lastCheckPackage = 'Base';
 
-		if( $lastCheckVer !== '2.26.6' || $lastCheckPackage !== 'Base' )
+		if( $lastCheckVer !== '2.26.7' || $lastCheckPackage !== 'Base' )
 		{
 			$state = Plugin::StateGet();
 
-			if( $lastCheckVer !== '2.26.6' && !isset( $state[ 'changeVerCheck' ] ) )
+			if( $lastCheckVer !== '2.26.7' && !isset( $state[ 'changeVerCheck' ] ) )
 			{
 				$state[ 'changeVerCheck' ] = $lastCheckVer !== null ? $lastCheckVer : '';
 				Plugin::StateSet( $state );
@@ -334,10 +334,10 @@ class PluginRmtCfg
 
 		if( !$bForce )
 		{
-			if( $bFirstTimeOnly && $lastCheckVer == '2.26.6' )
+			if( $bFirstTimeOnly && $lastCheckVer == '2.26.7' )
 				return( Gen::S_FALSE );
 
-			$lastUpdTime = (isset($data[ 'updTime' ])?$data[ 'updTime' ]:null);
+			$lastUpdTime = ($data[ 'updTime' ]??null);
 			if( $lastUpdTime && ( $curUpdTime - $lastUpdTime ) <= 3600 )
 				return( Gen::S_FALSE );
 
@@ -353,7 +353,7 @@ class PluginRmtCfg
 			$args[ 'epid' ] = Wp::GetSiteId();
 			$args[ 'id' ] = 'wordpress-accelerator';
 			$args[ 'name' ] = 'Accelerator';
-			$args[ 'v' ] = '2.26.6';
+			$args[ 'v' ] = '2.26.7';
 			$args[ 'pk' ] = 'Base';
 			$args[ 'cfg' ] = '';
 			$args[ 'loc' ] = Wp::GetLocale();
@@ -361,7 +361,7 @@ class PluginRmtCfg
 			$urlRemoteCfg = add_query_arg( $args, 'https://www.s-sols.com/data/products/wordpress/accelerator/cfg0001.json.txt' );
 		}
 
-		if( !$bForce && (isset($data[ 'mdfTime' ])?$data[ 'mdfTime' ]:null) )
+		if( !$bForce && ($data[ 'mdfTime' ]??null) )
 		{
 			$requestRes = wp_remote_head( $urlRemoteCfg, array( 'timeout' => 5, 'redirection' => 5 ) );
 
@@ -370,7 +370,7 @@ class PluginRmtCfg
 			if( $data[ 'mdfTime' ] >= $timeMdf )
 			{
 				$data[ 'updTime' ] = $curUpdTime;
-				$data[ 'plgVer' ] = '2.26.6';
+				$data[ 'plgVer' ] = '2.26.7';
 				$data[ 'plgPk' ] = 'Base';
 
 				$hr = PluginOptions::Set( self::STG_VER, self::STG_ID, $data, __CLASS__ . '::' );
@@ -387,7 +387,7 @@ class PluginRmtCfg
 
 		$data[ 'mdfTime' ] = $timeMdf;
 		$data[ 'updTime' ] = $curUpdTime;
-		$data[ 'plgVer' ] = '2.26.6';
+		$data[ 'plgVer' ] = '2.26.7';
 		$data[ 'plgPk' ] = 'Base';
 
 		if( $timeMdf )
@@ -498,11 +498,11 @@ class Plugin
 				function()
 				{
 
-					$settingsOp = Wp::SanitizeTextData( (isset($_REQUEST[ 'seraph_accel_settingsOp' ])?$_REQUEST[ 'seraph_accel_settingsOp' ]:null) );
+					$settingsOp = Wp::SanitizeTextData( ($_REQUEST[ 'seraph_accel_settingsOp' ]??null) );
 					if( $settingsOp )
 					{
 						if( $settingsOp == 'reset' )
-							Plugin::ReloadWithPostOpRes( array( 'settingsOp' => array( 'op' => $settingsOp, 'hr' => wp_verify_nonce( (isset($_REQUEST[ '_wpnonce' ])?$_REQUEST[ '_wpnonce' ]:''), 'reset' ) ? ( current_user_can( 'manage_options' ) ? Plugin::SettReset() : Gen::E_ACCESS_DENIED ) : Gen::E_CONTEXT_EXPIRED ) ) );
+							Plugin::ReloadWithPostOpRes( array( 'settingsOp' => array( 'op' => $settingsOp, 'hr' => wp_verify_nonce( ($_REQUEST[ '_wpnonce' ]??''), 'reset' ) ? ( current_user_can( 'manage_options' ) ? Plugin::SettReset() : Gen::E_ACCESS_DENIED ) : Gen::E_CONTEXT_EXPIRED ) ) );
 						exit;
 					}
 				}
@@ -511,7 +511,7 @@ class Plugin
 			add_action( 'seraph_accel_postOpsRes',
 				function( $res )
 				{
-					$settingsOp = (isset($res[ 'settingsOp' ])?$res[ 'settingsOp' ]:null);
+					$settingsOp = ($res[ 'settingsOp' ]??null);
 					if( $settingsOp )
 					{
 						if( $settingsOp[ 'op' ] == 'reset' )
@@ -597,7 +597,7 @@ class Plugin
 					if( !Gen::IsEmpty( Gen::GetArrField( $rmtCfg, 'Prms.FullProductDownloadPath' ) ) )
 						Plugin::ActionsListAdd( $actions, 'order', Ui::Link( esc_html_x( 'OrderInLockedFeatureBtn', 'admin.Common_SwitchTo', 'seraphinite-accelerator' ), Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlProductBuy' ), true, array( 'noTextIfNoHref' => true ), array( 'style' => array( 'font-weight' => '900' ) ) ), true );
 
-					$actDeactivate = (isset($actions[ 'deactivate' ])?$actions[ 'deactivate' ]:null);
+					$actDeactivate = ($actions[ 'deactivate' ]??null);
 					if( $actDeactivate )
 					{
 						$q = Gen::GetArrField( $rmtCfg, 'Questionnaires.Items.Deactivate' );
@@ -673,7 +673,7 @@ class Plugin
 
 	static private function _OnApiCall( $m, $fn )
 	{
-		$apiFunc = Wp::SanitizeId( (isset($_REQUEST[ $fn ])?$_REQUEST[ $fn ]:null) );
+		$apiFunc = Wp::SanitizeId( ($_REQUEST[ $fn ]??null) );
 		if( !$apiFunc )
 		{
 			wp_die( '', 400 );
@@ -722,7 +722,7 @@ class Plugin
 	static private function _AsyncTasksProcess()
 	{
 
-		$taskName = Gen::SanitizeId( (isset($_REQUEST[ 'seraph_accel_at' ])?$_REQUEST[ 'seraph_accel_at' ]:null) );
+		$taskName = Gen::SanitizeId( ($_REQUEST[ 'seraph_accel_at' ]??null) );
 
 		if( !$taskName )
 		{
@@ -735,7 +735,7 @@ class Plugin
 		if( $taskName == 'M' )
 		{
 			if( self::_AsyncTasks_GetMode() == 'ec' )
-				self::_AsyncTasksProcessMgr( false, function( $dataItem ) { return( !!(isset($dataItem[ 'f' ])?$dataItem[ 'f' ]:null) ); }, true, 15, 120, Gen::GetCurRequestTime() );
+				self::_AsyncTasksProcessMgr( false, function( $dataItem ) { return( !!($dataItem[ 'f' ]??null) ); }, true, 15, 120, Gen::GetCurRequestTime() );
 			else
 				self::_AsyncTasksProcessMgr();
 
@@ -745,19 +745,19 @@ class Plugin
 		if( $taskName == 'T' )
 		{
 			if( self::_AsyncTasks_GetMode() == 'ec' )
-				self::_AsyncTasksProcessMgr( false, function( $dataItem ) { return( !(isset($dataItem[ 'f' ])?$dataItem[ 'f' ]:null) ); }, true, false, 60, Gen::GetCurRequestTime() );
+				self::_AsyncTasksProcessMgr( false, function( $dataItem ) { return( !($dataItem[ 'f' ]??null) ); }, true, false, 60, Gen::GetCurRequestTime() );
 
 			exit;
 		}
 
 		if( $taskName == 'M_TEST' )
 		{
-			@header( 'X-Seraph-Accel-test: M_TEST_' . (isset($_REQUEST[ 'rt' ])?$_REQUEST[ 'rt' ]:'') );
-			echo( Gen::SanitizeId( 'M_TEST_' . (isset($_REQUEST[ 'rt' ])?$_REQUEST[ 'rt' ]:'') ) );
+			@header( 'X-Seraph-Accel-test: M_TEST_' . ($_REQUEST[ 'rt' ]??'') );
+			echo( Gen::SanitizeId( 'M_TEST_' . ($_REQUEST[ 'rt' ]??'') ) );
 			exit;
 		}
 
-		$taskRunTime = ( float )str_replace( '_', '.', (isset($_REQUEST[ 'rt' ])?$_REQUEST[ 'rt' ]:'') );
+		$taskRunTime = ( float )str_replace( '_', '.', ($_REQUEST[ 'rt' ]??'') );
 
 		$dataItem = null;
 		if( Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), true, 'cb+' ) == Gen::S_OK )
@@ -863,7 +863,7 @@ class Plugin
 
 			if( $dataItem )
 			{
-				if( !$bMt || (isset($dataItem[ 'f' ])?$dataItem[ 'f' ]:null) )
+				if( !$bMt || ($dataItem[ 'f' ]??null) )
 					self::_AsyncTaskRun( $dataItem );
 				else
 					Plugin::AsyncTaskPushEx( Plugin::AsyncTaskPushGetUrl( $dataItem[ 'n' ], $dataItem[ 'tr' ] ), 0 );
@@ -947,7 +947,7 @@ class Plugin
 				$changed = true;
 			}
 
-			$markAndCut = $mark && ( (isset($dataItem[ 'f' ])?$dataItem[ 'f' ]:null) || $asyncMode == 'ec' );
+			$markAndCut = $mark && ( ($dataItem[ 'f' ]??null) || $asyncMode == 'ec' );
 			if( $i )
 			{
 
@@ -1019,7 +1019,7 @@ class Plugin
 		{
 			foreach( $data as $i => $dataItem )
 			{
-				if( $dataItem[ 'n' ] !== $name || (isset($dataItem[ 'b' ])?$dataItem[ 'b' ]:null) !== (isset($dataItemNew[ 'b' ])?$dataItemNew[ 'b' ]:null) )
+				if( $dataItem[ 'n' ] !== $name || ($dataItem[ 'b' ]??null) !== ($dataItemNew[ 'b' ]??null) )
 					continue;
 
 				if( !is_bool( $singleton ) )
@@ -1083,7 +1083,7 @@ class Plugin
 		$data = Gen::GetArrField( @unserialize( Gen::FileContentExclusive_Get( $h, '' ) ), array( 'data' ), array() );
 		foreach( $data as $i => $dataItem )
 		{
-			if( $dataItem[ 'n' ] !== $name || (isset($dataItem[ 'b' ])?$dataItem[ 'b' ]:null) !== $curBlogId )
+			if( $dataItem[ 'n' ] !== $name || ($dataItem[ 'b' ]??null) !== $curBlogId )
 				continue;
 
 			if( !is_bool( $singleton ) )
@@ -1122,7 +1122,7 @@ class Plugin
 		$data = Gen::GetArrField( @unserialize( Gen::FileContentExclusive_Get( $h, '' ) ), array( 'data' ), array() );
 		foreach( $data as $i => $dataItem )
 		{
-			if( $dataItem[ 'n' ] !== $name || (isset($dataItem[ 'b' ])?$dataItem[ 'b' ]:null) !== $curBlogId )
+			if( $dataItem[ 'n' ] !== $name || ($dataItem[ 'b' ]??null) !== $curBlogId )
 				continue;
 
 			if( !is_bool( $singleton ) )
@@ -1234,7 +1234,7 @@ class Plugin
 		if( self::$_IsEulaAccepted === null )
 		{
 			$state = Plugin::StateGet();
-			self::$_IsEulaAccepted = (isset($state[ 'eulaAcceptedVer' ])?$state[ 'eulaAcceptedVer' ]:null) == namespace\PLUGIN_EULA_VER;
+			self::$_IsEulaAccepted = ($state[ 'eulaAcceptedVer' ]??null) == namespace\PLUGIN_EULA_VER;
 		}
 
 		return( self::$_IsEulaAccepted );
@@ -1421,10 +1421,10 @@ class Plugin
 		$rmtCfg = PluginRmtCfg::Get();
 
 		$urlProductInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlProductInfo' );
-		$urlAboutPluginImg = file_exists( __DIR__ . '/../Images/ProductLogo.png' ) ? add_query_arg( array( 'v' => '2.26.6' ), Plugin::FileUri( '../Images/ProductLogo.png', __FILE__ ) ) : null;
+		$urlAboutPluginImg = file_exists( __DIR__ . '/../Images/ProductLogo.png' ) ? add_query_arg( array( 'v' => '2.26.7' ), Plugin::FileUri( '../Images/ProductLogo.png', __FILE__ ) ) : null;
 		$urlAboutPluginDocs = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlProductDocs' );
 		$urlAboutPluginSupport = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlProductSupport' );
-		$url3rdPartySoft = file_exists( __DIR__ . '/../third-party-software.html' ) ? add_query_arg( array( 'v' => '2.26.6' ), Plugin::FileUri( '../third-party-software.html', __FILE__ ) ) : null;
+		$url3rdPartySoft = file_exists( __DIR__ . '/../third-party-software.html' ) ? add_query_arg( array( 'v' => '2.26.7' ), Plugin::FileUri( '../third-party-software.html', __FILE__ ) ) : null;
 
 		$urlEula = null;
 
@@ -1433,7 +1433,7 @@ class Plugin
 		$res .= Ui::Tag( 'p' );
 
 		{
-			$version = esc_html( '2.26.6' );
+			$version = esc_html( '2.26.7' );
 
 			$res .= Ui::TagOpen( 'div' );
 
@@ -1482,7 +1482,7 @@ class Plugin
 	{
 		$rmtCfg = PluginRmtCfg::Get();
 
-		$urlAboutUsLogoImg = file_exists( __DIR__ . '/../Images/VendorLogo.png' ) ? add_query_arg( array( 'v' => '2.26.6' ), Plugin::FileUri( '../Images/VendorLogo.png', __FILE__ ) ) : null;
+		$urlAboutUsLogoImg = file_exists( __DIR__ . '/../Images/VendorLogo.png' ) ? add_query_arg( array( 'v' => '2.26.7' ), Plugin::FileUri( '../Images/VendorLogo.png', __FILE__ ) ) : null;
 		$urlMorePlugins = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlMorePlugins' );
 		$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlMain' );
 
@@ -1906,7 +1906,7 @@ class Plugin
 	{
 		$data = file_get_contents( 'php://input' );
 		$data = @json_decode( $data, true );
-		if( !$data || (isset($data[ 't' ])?$data[ 't' ]:null) != 'mdl:seraph_accel' )
+		if( !$data || ($data[ 't' ]??null) != 'mdl:seraph_accel' )
 			return( false );
 
 		unset( $data[ 't' ] );
@@ -1942,7 +1942,7 @@ class Plugin
 	{
 		$state = Plugin::StateGet();
 
-		$mode = (isset($state[ 'rateItRemind' ])?$state[ 'rateItRemind' ]:null);
+		$mode = ($state[ 'rateItRemind' ]??null);
 		if( $mode === false )
 			return( false );
 
@@ -1985,10 +1985,10 @@ class Plugin
 	static private function _PrevVer_Check()
 	{
 		$state = Plugin::StateGet();
-		$warningVersionInfo = (isset($state[ 'warnChangeVer' ])?$state[ 'warnChangeVer' ]:null);
+		$warningVersionInfo = ($state[ 'warnChangeVer' ]??null);
 
-		$plgVerPrev = (isset($state[ 'changeVerCheck' ])?$state[ 'changeVerCheck' ]:null);
-		$plgPkPrev = (isset($state[ 'changePkCheck' ])?$state[ 'changePkCheck' ]:null);
+		$plgVerPrev = ($state[ 'changeVerCheck' ]??null);
+		$plgPkPrev = ($state[ 'changePkCheck' ]??null);
 		if( $plgVerPrev !== null || $plgPkPrev !== null )
 		{
 			unset( $state[ 'changeVerCheck' ] );
@@ -2009,7 +2009,7 @@ class Plugin
 				return( null );
 
 			$verFrom = self::_PrevVer_GetInt( $plgVerPrev );
-			$verTo = self::_PrevVer_GetInt( '2.26.6' );
+			$verTo = self::_PrevVer_GetInt( '2.26.7' );
 			if( $verTo < $verFrom )
 				list( $verTo, $verFrom ) = array( $verFrom, $verTo );
 
@@ -2131,10 +2131,10 @@ class Plugin
 		foreach( $ids as $id )
 		{
 
-			if( (isset(self::$g_aAlreadyIncludedObj[ 'css' ][ $id ])?self::$g_aAlreadyIncludedObj[ 'css' ][ $id ]:null) )
+			if( (self::$g_aAlreadyIncludedObj[ 'css' ][ $id ]??null) )
 				continue;
 
-			wp_enqueue_style( Plugin::CmnScriptId( $id ), add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.css' ), array(), '2.26.6' );
+			wp_enqueue_style( Plugin::CmnScriptId( $id ), add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.css' ), array(), '2.26.7' );
 
 			self::$g_aAlreadyIncludedObj[ 'css' ][ $id ] = true;
 		}
@@ -2182,7 +2182,7 @@ class Plugin
 
 		foreach( $ids as $id )
 		{
-			if( (isset(self::$g_aAlreadyIncludedObj[ 'js' ][ $id ])?self::$g_aAlreadyIncludedObj[ 'js' ][ $id ]:null) )
+			if( (self::$g_aAlreadyIncludedObj[ 'js' ][ $id ]??null) )
 				continue;
 
 			$deps = array( 'jquery' );
@@ -2201,7 +2201,7 @@ class Plugin
 
 			$scrHndId = Plugin::CmnScriptId( $id );
 
-			wp_register_script( $scrHndId, add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.js' ), $deps, '2.26.6' );
+			wp_register_script( $scrHndId, add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.js' ), $deps, '2.26.7' );
 			if( $id == 'Gen' )
 				Plugin::Loc_ScriptLoad( $scrHndId );
 			wp_enqueue_script( $scrHndId );
@@ -2307,7 +2307,7 @@ class Plugin
 
 	static function _on_admin_action_act()
 	{
-		$fn = Wp::SanitizeId( (isset($_REQUEST[ 'fn' ])?$_REQUEST[ 'fn' ]:null) );
+		$fn = Wp::SanitizeId( ($_REQUEST[ 'fn' ]??null) );
 		if( !$fn )
 		{
 			wp_die( '', 400 );
@@ -2318,7 +2318,7 @@ class Plugin
 		unset( $_REQUEST[ 'fn' ] );
 
 		$processed = true;
-		$redir = Wp::SanitizeUrl( (isset($_REQUEST[ 'redir' ])?$_REQUEST[ 'redir' ]:null) );
+		$redir = Wp::SanitizeUrl( ($_REQUEST[ 'redir' ]??null) );
 		switch( $fn )
 		{
 		case 'acceptEula':
@@ -2343,7 +2343,7 @@ class Plugin
 
 			if( !current_user_can( 'manage_options' ) )
 				$hr = Gen::E_ACCESS_DENIED;
-			else if( !wp_verify_nonce( (isset($_REQUEST[ '_wpnonce' ])?$_REQUEST[ '_wpnonce' ]:''), 'import' ) )
+			else if( !wp_verify_nonce( ($_REQUEST[ '_wpnonce' ]??''), 'import' ) )
 				$hr = Gen::E_CONTEXT_EXPIRED;
 			else if( !self::_Sett_Import() )
 				$hr = Gen::E_FAIL;
@@ -2355,7 +2355,7 @@ class Plugin
 		case 'settExport':
 			if( !current_user_can( 'manage_options' ) )
 				wp_die( '', 403 );
-			else if( !wp_verify_nonce( (isset($_REQUEST[ '_wpnonce' ])?$_REQUEST[ '_wpnonce' ]:''), 'export' ) )
+			else if( !wp_verify_nonce( ($_REQUEST[ '_wpnonce' ]??''), 'export' ) )
 				wp_die( '', 403 );
 
 			self::_Sett_Export();
@@ -2420,7 +2420,7 @@ class Plugin
 
 	static function _on_admin_notices()
 	{
-		$opsRes = Wp::SanitizeTextData( (isset($_REQUEST[ 'seraph_accel_postOpsRes' ])?$_REQUEST[ 'seraph_accel_postOpsRes' ]:null) );
+		$opsRes = Wp::SanitizeTextData( ($_REQUEST[ 'seraph_accel_postOpsRes' ]??null) );
 		if( !empty( $opsRes ) )
 			$opsRes = @json_decode( base64_decode( stripslashes( $opsRes ) ), true );
 
@@ -2493,7 +2493,7 @@ class Plugin
 		if( $verFrom === null )
 		{
 			$dataEula = PluginOptions::Get( namespace\PLUGIN_EULA_VER, 'Eula', __CLASS__ . '::' );
-			$state[ 'eulaAcceptedVer' ] = (isset($dataEula[ 'acceptedVer' ])?$dataEula[ 'acceptedVer' ]:null);
+			$state[ 'eulaAcceptedVer' ] = ($dataEula[ 'acceptedVer' ]??null);
 			$state[ '_eulaClearPrevStorage' ] = true;
 		}
 
@@ -2502,7 +2502,7 @@ class Plugin
 
 	static function OnOptWrite_State( $state )
 	{
-		if( (isset($state[ '_eulaClearPrevStorage' ])?$state[ '_eulaClearPrevStorage' ]:null) )
+		if( ($state[ '_eulaClearPrevStorage' ]??null) )
 		{
 			PluginOptions::Del( 'Eula', __CLASS__ . '::' );
 			unset( $state[ '_eulaClearPrevStorage' ] );
@@ -2542,7 +2542,7 @@ class Plugin
 					{
 						$commentText = Plugin::RmtCfgFld_GetLocEx( $rmtCfgFldCtx, $qListItem, 'Content' );
 						$userData = Plugin::RmtCfgFld_GetLocEx( $rmtCfgFldCtx, $qListItem, 'UserData' );
-						$isUerDataMultiline = (isset($qListItem[ 'IsUserDataMultiline' ])?$qListItem[ 'IsUserDataMultiline' ]:null);
+						$isUerDataMultiline = ($qListItem[ 'IsUserDataMultiline' ]??null);
 
 						echo( Ui::TagOpen( 'tr', array( 'class' => 'item' ) ) . Ui::TagOpen( 'td' ) );
 
@@ -2646,11 +2646,11 @@ class Plugin
 
 							var sendDataUrl = "<?php echo( Gen::GetArrField( $rmtCfg, 'Questionnaires.SendAnswerUrlTpl' ) ); ?>";
 							sendDataUrl = sendDataUrl.replace( "{EndPointId}",					encodeURI( "<?php echo( Wp::GetSiteId() ); ?>" ) );
-							sendDataUrl = sendDataUrl.replace( "{PluginVersion}",				encodeURI( "2.26.6" ) );
+							sendDataUrl = sendDataUrl.replace( "{PluginVersion}",				encodeURI( "2.26.7" ) );
 							sendDataUrl = sendDataUrl.replace( "{PluginMode}",					encodeURI( "base" ) );
 							sendDataUrl = sendDataUrl.replace( "{PluginPackage}",				encodeURI( "Base" ) );
-							sendDataUrl = sendDataUrl.replace( "{QuestionnaireId}",				encodeURI( "<?php echo( (isset($q[ 'id' ])?$q[ 'id' ]:null) ); ?>" ) );
-							sendDataUrl = sendDataUrl.replace( "{QuestionnaireVersionId}",		encodeURI( "<?php echo( (isset($qParams[ 'VersionId' ])?$qParams[ 'VersionId' ]:null) ); ?>" ) );
+							sendDataUrl = sendDataUrl.replace( "{QuestionnaireId}",				encodeURI( "<?php echo( ($q[ 'id' ]??null) ); ?>" ) );
+							sendDataUrl = sendDataUrl.replace( "{QuestionnaireVersionId}",		encodeURI( "<?php echo( ($qParams[ 'VersionId' ]??null) ); ?>" ) );
 							sendDataUrl = sendDataUrl.replace( "{AnswerId}",					encodeURI( answerId ) );
 							sendDataUrl = sendDataUrl.replace( "{AnswerUserData}",				answerUserData ? encodeURI( answerUserData ) : "" );
 
@@ -2731,7 +2731,7 @@ class RmtCfgFldLoc
 			$siteLang = null;
 			foreach( $aLocaleSearch as $localeSearch )
 			{
-				$siteLang = (isset($locToSiteLang[ $localeSearch ])?$locToSiteLang[ $localeSearch ]:null);
+				$siteLang = ($locToSiteLang[ $localeSearch ]??null);
 				if( $siteLang !== null )
 					break;
 			}

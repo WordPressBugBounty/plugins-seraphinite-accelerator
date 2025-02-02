@@ -45,7 +45,7 @@ function _CacheExt_GetResponseResString( $requestRes, $body = false )
 		return( $prefix . 'Error: ' . $requestRes -> get_error_message() );
 	}
 
-	return( 'HTTP ' . ( isset( $requestRes[ 'method' ] ) ? ( $requestRes[ 'method' ] . ' ' ) : '' ) . wp_remote_retrieve_response_code( $requestRes ) . ' ' . ( string )(isset($requestRes[ 'url' ])?$requestRes[ 'url' ]:null) . ', sent headers: ' . @json_encode( ( array )(isset($requestRes[ 'headers_sent' ])?$requestRes[ 'headers_sent' ]:null) ) . ( isset( $requestRes[ 'data_sent' ] ) ? ( ', sent data: ' . $requestRes[ 'data_sent' ] ) : '' ) . ', response headers: ' . @json_encode( ( array )Net::GetHeadersFromWpRemoteGet( $requestRes ) ) . ', response body: ' . substr( wp_remote_retrieve_body( $requestRes ), 0, 2000 ) );
+	return( 'HTTP ' . ( isset( $requestRes[ 'method' ] ) ? ( $requestRes[ 'method' ] . ' ' ) : '' ) . wp_remote_retrieve_response_code( $requestRes ) . ' ' . ( string )($requestRes[ 'url' ]??null) . ', sent headers: ' . @json_encode( ( array )($requestRes[ 'headers_sent' ]??null) ) . ( isset( $requestRes[ 'data_sent' ] ) ? ( ', sent data: ' . $requestRes[ 'data_sent' ] ) : '' ) . ', response headers: ' . @json_encode( ( array )Net::GetHeadersFromWpRemoteGet( $requestRes ) ) . ', response body: ' . substr( wp_remote_retrieve_body( $requestRes ), 0, 2000 ) );
 }
 
 function _CacheExt_Nginx_GetUrlKey( $url, $method = 'GET' )
@@ -87,7 +87,7 @@ function CacheExt_ClearOnExtRequest( $url = null )
 	$sett = Plugin::SettGet();
 	$aSrv = $_SERVER;
 
-	if( isset( $aSrv[ 'HTTP_X_LSCACHE' ] ) || @preg_match( '@litespeed@i', (isset($aSrv[ 'SERVER_SOFTWARE' ])?$aSrv[ 'SERVER_SOFTWARE' ]:'') ) )
+	if( isset( $aSrv[ 'HTTP_X_LSCACHE' ] ) || @preg_match( '@litespeed@i', ($aSrv[ 'SERVER_SOFTWARE' ]??'') ) )
 	{
 		$logInfo = '';
 		if( !headers_sent() )
@@ -106,24 +106,9 @@ function CacheExt_ClearOnExtRequest( $url = null )
 		else
 			$logInfo .= 'Skipped, headers already sent';
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'LiteSpeed: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
-}
-
-function CacheExt_Clear_CopyHdrs( &$aSrv )
-{
-	if( isset( $aSrv[ 'cw_allowed_ip' ] ) )
-		$aSrv[ 'HTTP_X_SERAPH_ACCEL_CW_ALLOWED_IP' ] = $aSrv[ 'cw_allowed_ip' ];
-	if( isset( $aSrv[ 'PRESSABLE_PROXIED_REQUEST' ] ) )
-		$aSrv[ 'HTTP_X_SERAPH_ACCEL_PRESSABLE_PROXIED_REQUEST' ] = $aSrv[ 'PRESSABLE_PROXIED_REQUEST' ];
-	if( isset( $aSrv[ 'WARPDRIVE_API' ] ) )
-		$aSrv[ 'HTTP_X_SERAPH_ACCEL_WARPDRIVE_API' ] = $aSrv[ 'WARPDRIVE_API' ];
-}
-
-function CacheExt_Clear_CopyHdrsArr()
-{
-	return( array( 'HTTP_X_LSCACHE', 'HTTP_X_ZXCS_VHOST', 'HTTP_X_SERAPH_ACCEL_CW_ALLOWED_IP', 'HTTP_X_SERAPH_ACCEL_PRESSABLE_PROXIED_REQUEST', 'HTTP_X_SERAPH_ACCEL_WARPDRIVE_API', 'HTTP_X_VARNISH' ) );
 }
 
 function CacheExt_Clear( $url = null )
@@ -152,7 +137,7 @@ function CacheExt_Clear( $url = null )
 		else
 			$requestRes = _CacheExt_SockDoRequest( $aSrv[ 'SERVER_ADDR' ], 'PURGE', Wp::GetSiteRootUrl(), array( 'X-Purge-Regex' => '.*', 'X-VC-Purge-Key' => @constant( 'O2SWITCH_VARNISH_PURGE_KEY' ) ) );
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'O2Switch: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -189,7 +174,7 @@ function CacheExt_Clear( $url = null )
 				$logInfo = 'Directory \'' . $dir . '\' cleared';
 			}
 
-			if( $requestRes !== null && (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+			if( $requestRes !== null && ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 				LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 		}
 		else if( $method == 'direct' )
@@ -220,7 +205,7 @@ function CacheExt_Clear( $url = null )
 					$logInfo = 'Directory \'' . $dir . '\' cleared';
 				}
 
-				if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+				if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 					LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 			}
 		}
@@ -262,7 +247,7 @@ function CacheExt_Clear( $url = null )
 				else
 					$logInfo = 'NginxChampuru: no instance';
 
-				if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+				if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 					LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 			}
 
@@ -298,7 +283,7 @@ function CacheExt_Clear( $url = null )
 				else
 					$logInfo = 'NginxCache: no dir';
 
-				if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+				if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 					LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 			}
 
@@ -323,7 +308,7 @@ function CacheExt_Clear( $url = null )
 				else
 					$logInfo = 'Purger: no instance';
 
-				if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+				if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 					LogWrite( 'Nginx: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 			}
 		}
@@ -344,7 +329,7 @@ function CacheExt_Clear( $url = null )
 			$logInfo = 'Purged all';
 		}
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'CloudFlare: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -365,7 +350,7 @@ function CacheExt_Clear( $url = null )
 			$logInfo .= ', ';
 		$logInfo .= 'WP cache flushed';
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'EasyWP: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -390,7 +375,7 @@ function CacheExt_Clear( $url = null )
 			if( strlen( Gen::GetArrField( $requestRes, array( 'body' ), '' ) ) )
 				Gen::SetArrField( $requestRes, array( 'body' ), '' );
 
-			if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+			if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 				LogWrite( 'CloudWays (Varhish): ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
 		}
 
@@ -444,7 +429,7 @@ function CacheExt_Clear( $url = null )
 
 				( 'POST', $urlFpcMicroservice, array( 'timeout' => 4, 'sslverify' => false, 'data' => $data, 'referer' => home_url(), 'useragent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . get_bloginfo( 'url' ), 'headers' => array( 'Accept' => 'application/json', 'Content-Type' => 'application/json', 'Content-Length' => strlen( $data ) ) ) );
 
-			if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+			if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 				LogWrite( 'CloudWays (CloudFlare): ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
 		}
 	}
@@ -467,7 +452,7 @@ function CacheExt_Clear( $url = null )
 		else
 			$requestRes = _CacheExt_SockDoRequest( $aSrv[ 'SERVER_ADDR' ], 'PURGE', Wp::GetSiteRootUrl( '.*' ), array( 'x-purge-method' => 'regex' ) );
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'DreamHost: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -481,7 +466,7 @@ function CacheExt_Clear( $url = null )
 		update_option( 'gd_system_last_cache_flush', time() );
 		$requestRes = _CacheExt_SockDoRequest( \WPaaS\Plugin::vip(), 'BAN', $urlPurge );
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'GoDaddy: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -498,7 +483,7 @@ function CacheExt_Clear( $url = null )
 		else
 			$requestRes = Wp::RemoteGet( 'https://localhost/kinsta-clear-cache-all', array( 'timeout' => 5, 'sslverify' => false ) );
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Kinsta: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -522,7 +507,7 @@ function CacheExt_Clear( $url = null )
 			$logInfo = 'Purged all';
 		}
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Pagely: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -545,17 +530,17 @@ function CacheExt_Clear( $url = null )
 					ksort( $urlComps[ 'query' ] );
 
 					$keys = array(
-						'host' => (isset($urlComps[ 'host' ])?$urlComps[ 'host' ]:''),
+						'host' => ($urlComps[ 'host' ]??''),
 						'method' => 'GET',
-						'path' => (isset($urlComps[ 'path' ])?$urlComps[ 'path' ]:''),
-						'query' => (isset($urlComps[ 'query' ])?$urlComps[ 'query' ]:''),
+						'path' => ($urlComps[ 'path' ]??''),
+						'query' => ($urlComps[ 'query' ]??''),
 						'extra' => array()
 					);
 
 					if( isset( $batcache -> origin ) )
 						$keys[ 'origin' ] = $batcache -> origin;
 
-					if( (isset($urlComps[ 'scheme' ])?$urlComps[ 'scheme' ]:'') == 'https' )
+					if( ($urlComps[ 'scheme' ]??'') == 'https' )
 						$keys[ 'ssl' ] = true;
 
 					wp_cache_init();
@@ -581,7 +566,7 @@ function CacheExt_Clear( $url = null )
 			$logInfo = 'Purged all';
 		}
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Pressable: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -607,26 +592,26 @@ function CacheExt_Clear( $url = null )
 		else
 			$logInfo = 'Invalid state';
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'RocketNet: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
-	if( ( strpos( (isset($aSrv[ 'HTTP_X_SERAPH_ACCEL_WARPDRIVE_API' ])?$aSrv[ 'HTTP_X_SERAPH_ACCEL_WARPDRIVE_API' ]:''), '//api.savvii.services' ) !== false ) )
+	if( ( strpos( ($aSrv[ 'HTTP_X_SERAPH_ACCEL_WARPDRIVE_API' ]??''), '//api.savvii.services' ) !== false ) )
 	{
 		$requestRes = Gen::E_INVALIDARG;
 
 		if( $url )
 		{
 			if( $urlComps = Net::UrlParse( $url ) )
-				$requestRes = Wp::RemoteRequest( 'PURGE', Net::UrlDeParse( $urlComps ) . 'purge', array( 'sslverify' => false, 'headers' => array( 'X-PURGE-HOST' => (isset($urlComps[ 'host' ])?$urlComps[ 'host' ]:null), 'X-PURGE-PATH-REGEX' => (isset($urlComps[ 'path' ])?$urlComps[ 'path' ]:'') . '.*' ) ) );
+				$requestRes = Wp::RemoteRequest( 'PURGE', Net::UrlDeParse( $urlComps ) . 'purge', array( 'sslverify' => false, 'headers' => array( 'X-PURGE-HOST' => ($urlComps[ 'host' ]??null), 'X-PURGE-PATH-REGEX' => ($urlComps[ 'path' ]??'') . '.*' ) ) );
 		}
 		else
 		{
 			if( $urlComps = Net::UrlParse( Wp::GetSiteRootUrl() ) )
-				$requestRes = Wp::RemoteRequest( 'PURGE', Net::UrlDeParse( $urlComps ) . 'purge', array( 'sslverify' => false, 'headers' => array( 'X-PURGE-HOST' => (isset($urlComps[ 'host' ])?$urlComps[ 'host' ]:null) ) ) );
+				$requestRes = Wp::RemoteRequest( 'PURGE', Net::UrlDeParse( $urlComps ) . 'purge', array( 'sslverify' => false, 'headers' => array( 'X-PURGE-HOST' => ($urlComps[ 'host' ]??null) ) ) );
 		}
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Savvii: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -662,7 +647,7 @@ function CacheExt_Clear( $url = null )
 			if( Gen::DoesFuncExist( '\\SiteGround_Optimizer\\Supercacher\\Supercacher::delete_assets' ) )
 				\SiteGround_Optimizer\Supercacher\Supercacher::delete_assets();
 
-			if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+			if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 				LogWrite( 'SiteGround: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 		}
 		else
@@ -683,7 +668,7 @@ function CacheExt_Clear( $url = null )
 			else
 				$requestRes = _CacheExt_SockDoRequest( '127.0.0.1', 'PURGE', Wp::GetSiteRootUrl( '/(.*)' ) );
 
-			if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+			if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 				LogWrite( 'SiteGround: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
 		}
 	}
@@ -694,9 +679,9 @@ function CacheExt_Clear( $url = null )
 		if( !$urlPurge )
 			$urlPurge = Wp::GetSiteRootUrl() . '?purgeAll';
 
-		$requestRes = Wp::RemoteRequest( 'PURGE', $urlPurge, array( 'sslverify' => false, 'headers' => array( 'X-Purge-ZXCS' => 'true', 'host-ZXCS' => (isset($aSrv[ 'HTTP_HOST' ])?$aSrv[ 'HTTP_HOST' ]:'') ) ) );
+		$requestRes = Wp::RemoteRequest( 'PURGE', $urlPurge, array( 'sslverify' => false, 'headers' => array( 'X-Purge-ZXCS' => 'true', 'host-ZXCS' => ($aSrv[ 'HTTP_HOST' ]??'') ) ) );
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Vimexx: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -742,7 +727,7 @@ function CacheExt_Clear( $url = null )
 			$logInfo = ( string )$e;
 		}
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'WPEngine: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -767,7 +752,7 @@ function CacheExt_Clear( $url = null )
 			$logInfo = 'Purged all';
 		}
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'WPAAS: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -775,7 +760,7 @@ function CacheExt_Clear( $url = null )
 	{
 		wp_cache_flush();
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'WordPress.Com: Flushed', Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -783,7 +768,7 @@ function CacheExt_Clear( $url = null )
 	{
 		\Tenweb_Manager\Helper::clear_cache();
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( '10web (Tenweb): Cleared', Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -823,7 +808,7 @@ function CacheExt_Clear( $url = null )
 					$clp_varnish_cache_manager = new \ClpVarnishCacheManager();
 
 					{
-						$host = Wp::SanitizeText( (isset($aSrv[ 'HTTP_HOST' ])?$aSrv[ 'HTTP_HOST' ]:null) );
+						$host = Wp::SanitizeText( ($aSrv[ 'HTTP_HOST' ]??null) );
 						if( !empty( $host ) )
 							$clp_varnish_cache_manager -> purge_host( $host );
 						unset( $host );
@@ -848,7 +833,7 @@ function CacheExt_Clear( $url = null )
 				$logInfo = 'Invalid state';
 		}
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'CloudPanel: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -892,7 +877,7 @@ function CacheExt_Clear( $url = null )
 			unset( $clp_varnish_cache_manager );
 		}
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Endurance Page Cache: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -906,7 +891,7 @@ function CacheExt_Clear( $url = null )
 		}
 
 		$requestRes = Wp::RemoteRequest( 'POST', 'https://waf.sucuri.net/api?v2', array( 'body' => 'k=' . Gen::GetArrField( $sett, array( 'cache', 'sucuri', 'apiKey' ), '' ) . '&s=' . Gen::GetArrField( $sett, array( 'cache', 'sucuri', 'apiSecret' ), '' ) . '&a=clear_cache' . ( $urlPurge ? ( '&file=' . rawurlencode( $urlPurge ) ) : '' ), 'headers' => array( 'Content-Type' => 'application/x-www-form-urlencoded' ), 'sslverify' => false ) );
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Sucuri: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -948,7 +933,7 @@ function CacheExt_Clear( $url = null )
 			}
 		}
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Pantheon Cache: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
@@ -988,7 +973,7 @@ function CacheExt_Clear( $url = null )
 			}
 		}
 
-		if( (isset($sett[ 'log' ])?$sett[ 'log' ]:null) && (isset($sett[ 'logScope' ][ 'srvClr' ])?$sett[ 'logScope' ][ 'srvClr' ]:null) )
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Servebolt Cache: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 }

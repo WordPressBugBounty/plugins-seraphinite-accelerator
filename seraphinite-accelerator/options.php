@@ -164,7 +164,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.26.6' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.26.7' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -715,7 +715,7 @@ function _SettingsPage_Revalidate( $callbacks_args, $box )
 								$o .= ( Ui::TagOpen( 'td' ) );
 								{
 									$fldId = 'cache/maxProc';
-									$o .= ( Ui::Label( sprintf( esc_html_x( 'MaxProc_%1$s', 'admin.Settings_Cache_Revalidate', 'seraphinite-accelerator' ), Ui::NumberBox( 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, 1, '/' ), array( 'min' => 1, 'placeholder' => '1', 'style' => array( 'width' => '4em' ) ), true ) ) ) );
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'MaxProc_%1$s', 'admin.Settings_Cache_Revalidate', 'seraphinite-accelerator' ), Ui::NumberBox( 'seraph_accel/' . $fldId, Gen::NormVal( Gen::GetArrField( $sett, $fldId, 1, '/' ), array( 'min' => 1 ) ), array( 'min' => 1, 'placeholder' => '1', 'style' => array( 'width' => '4em' ) ), true ) ) ) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) );
 							}
@@ -760,7 +760,7 @@ function _SettingsPage_Revalidate( $callbacks_args, $box )
 								$o .= ( Ui::TagOpen( 'td' ) );
 								{
 									$fldId = 'cache/procMemLim';
-									$o .= ( Ui::Label( sprintf( esc_html_x( 'MemLim_%1$s', 'admin.Settings_Cache_Revalidate', 'seraphinite-accelerator' ), Ui::NumberBox( 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, 0, '/' ), array( 'min' => '1', 'style' => array( 'width' => '7em' ) ), true ) ) ) );
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'MemLim_%1$s', 'admin.Settings_Cache_Revalidate', 'seraphinite-accelerator' ), Ui::NumberBox( 'seraph_accel/' . $fldId, Gen::NormVal( Gen::GetArrField( $sett, $fldId, 0, '/' ), array( 'min' => 1 ) ), array( 'min' => '1', 'style' => array( 'width' => '7em' ) ), true ) ) ) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) );
 							}
@@ -771,7 +771,7 @@ function _SettingsPage_Revalidate( $callbacks_args, $box )
 								$o .= ( Ui::TagOpen( 'td' ) );
 								{
 									$fldId = 'cache/procTmLim';
-									$o .= ( Ui::Label( sprintf( esc_html_x( 'TimeLim_%1$s', 'admin.Settings_Cache_Revalidate', 'seraphinite-accelerator' ), Ui::NumberBox( 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, 1, '/' ), array( 'min' => 1, 'placeholder' => '1', 'style' => array( 'width' => '5em' ) ), true ) ) ) );
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'TimeLim_%1$s', 'admin.Settings_Cache_Revalidate', 'seraphinite-accelerator' ), Ui::NumberBox( 'seraph_accel/' . $fldId, Gen::NormVal( Gen::GetArrField( $sett, $fldId, 1, '/' ), array( 'min' => 1 ) ), array( 'min' => 1, 'placeholder' => '1', 'style' => array( 'width' => '5em' ) ), true ) ) ) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) );
 							}
@@ -929,7 +929,7 @@ function _SettingsPage_Revalidate( $callbacks_args, $box )
 
 											$o .= ( Ui::CheckBox( sprintf( esc_html_x( 'UpdChk_%1$s%2$s', 'admin.Settings_Cache_Revalidate_Sche_Item', 'seraphinite-accelerator' ),
 												Ui::ComboBox( $idItems . '/' . $itemKey . '/' . $fldIdEx, array( 0 => esc_html_x( 'PerMinute', 'admin.Settings_Cache_Revalidate_Sche_Item', 'seraphinite-accelerator' ), 1 => esc_html_x( 'PerHour', 'admin.Settings_Cache_Revalidate_Sche_Item', 'seraphinite-accelerator' ), 24 => esc_html_x( 'PerDay', 'admin.Settings_Cache_Revalidate_Sche_Item', 'seraphinite-accelerator' ), 168 => esc_html_x( 'PerWeek', 'admin.Settings_Cache_Revalidate_Sche_Item', 'seraphinite-accelerator' ), 720 => esc_html_x( 'PerMonth', 'admin.Settings_Cache_Revalidate_Sche_Item', 'seraphinite-accelerator' ), 8760 => esc_html_x( 'PerYear', 'admin.Settings_Cache_Revalidate_Sche_Item', 'seraphinite-accelerator' ) ), Gen::GetArrField( $item, $fldIdEx, 0, '/' ), true, array( 'class' => 'inline period', 'data-oninit' => 'jQuery(this).change()', 'onchange' => 'seraph_accel.Ui.ComboShowDependedItems( this, jQuery( this.parentNode ).closest( ".blck" ).first().get( 0 ) )' ) ),
-												Ui::NumberBox( $idItems . '/' . $itemKey . '/' . $fldIdEx1, Gen::GetArrField( $item, $fldIdEx1, 1, '/' ), array( 'class' => 'inline', 'min' => 1, 'placeholder' => '1', 'style' => array( 'width' => '4em' ) ), true )
+												Ui::NumberBox( $idItems . '/' . $itemKey . '/' . $fldIdEx1, Gen::NormVal( Gen::GetArrField( $item, $fldIdEx1, 1, '/' ), array( 'min' => 1 ) ), array( 'min' => 1, 'class' => 'inline', 'placeholder' => '1', 'style' => array( 'width' => '4em' ) ), true )
 												), $idItems . '/' . $itemKey . '/' . $fldId, $bEnabled, true ) );
 										}
 
@@ -1231,7 +1231,7 @@ function _SettingsPage_Server( $callbacks_args, $box )
 									$fldId = 'cache/srv';
 									$fldIdEx = 'cache/srvShrdTtl';
 									$o .= ( Ui::CheckBox( sprintf( esc_html_x( 'SrvChk_%1$s', 'admin.Settings_Cache_Srv', 'seraphinite-accelerator' ),
-										Ui::NumberBox( 'seraph_accel/' . $fldIdEx, Gen::GetArrField( $sett, $fldIdEx, 3600, '/' ), array( 'min' => 1, 'placeholder' => '3600', 'style' => array( 'width' => '7em' ), 'class' => 'inline' ), true )
+										Ui::NumberBox( 'seraph_accel/' . $fldIdEx, Gen::NormVal( Gen::GetArrField( $sett, $fldIdEx, 3600, '/' ), array( 'min' => 1 ) ), array( 'min' => 1, 'placeholder' => '3600', 'style' => array( 'width' => '7em' ), 'class' => 'inline' ), true )
 									), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) );
@@ -1553,7 +1553,7 @@ function _SettingsPage_Views( $callbacks_args, $box )
 									{
 										{
 											$fldId = 'id';
-											$id = (isset($item[ $fldId ])?$item[ $fldId ]:null);
+											$id = ($item[ $fldId ]??null);
 											$o .= ( Ui::InputBox( 'hidden', $idItems . '/' . $itemKey . '/' . $fldId, $id, null, true ) );
 										}
 
@@ -1567,7 +1567,7 @@ function _SettingsPage_Views( $callbacks_args, $box )
 										$o .= ( Ui::SettBlock_Item_Begin( esc_html_x( 'NameLbl', 'admin.Settings_Views_Devices_Item', 'seraphinite-accelerator' ) . Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Views_Devices_Item_Name' ) ) ), Ui::AdminHelpBtnModeText ) ) );
 										{
 											$fldId = 'name';
-											$name = (isset($item[ $fldId ])?$item[ $fldId ]:null);
+											$name = ($item[ $fldId ]??null);
 
 											$plchldr = GetViewDisplayNameById( $id );
 											if( !$plchldr )
@@ -1704,7 +1704,7 @@ function _SettingsPage_Views( $callbacks_args, $box )
 									{
 										{
 											$fldId = 'id';
-											$id = (isset($item[ $fldId ])?$item[ $fldId ]:null);
+											$id = ($item[ $fldId ]??null);
 											$o .= ( Ui::InputBox( 'hidden', $idItems . '/' . $itemKey . '/' . $fldId, $id, null, true ) );
 										}
 
@@ -3724,7 +3724,7 @@ function _SettingsPage_Scripts( $callbacks_args, $box )
 					$o .= ( Ui::TagOpen( 'td' ) );
 					{
 						$fldId = 'contPr/js/clk/delay';
-						$o .= ( Ui::Label( sprintf( esc_html_x( 'FirstClickDelay_%1$s', 'admin.Settings_Scripts_Common', 'seraphinite-accelerator' ), Ui::NumberBox( 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, 0, '/' ), array( 'min' => 50, 'placeholder' => '250', 'style' => array( 'width' => '5em' ) ), true ) ) ) );
+						$o .= ( Ui::Label( sprintf( esc_html_x( 'FirstClickDelay_%1$s', 'admin.Settings_Scripts_Common', 'seraphinite-accelerator' ), Ui::NumberBox( 'seraph_accel/' . $fldId, Gen::NormVal( Gen::GetArrField( $sett, $fldId, 0, '/' ), array( 'min' => 50 ) ), array( 'min' => 50, 'placeholder' => '250', 'style' => array( 'width' => '5em' ) ), true ) ) ) );
 					}
 					$o .= ( Ui::TagClose( 'td' ) );
 				}
@@ -4684,7 +4684,7 @@ function _SettingsPage_Groups( $callbacks_args, $box )
 										'agg'		=> esc_html_x( 'Agg', 'admin.Settings_Group_Item_Settings_SklSrch', 'seraphinite-accelerator' ),
 
 									),
-									Gen::GetArrField( array( false => 'std', true => 'fast', 'a' => 'agg' ), array( Gen::GetArrField( $item, $fldId, null, '/' ) ), '' ), true ) );
+									Gen::GetArrField( array( false => 'std', true => 'fast', 'a' => 'agg' ), array( Gen::NormArrFieldKey( Gen::GetArrField( $item, $fldId, null, '/' ) ) ), '' ), true ) );
 							}
 
 							$o .= ( Ui::TagOpen( 'div', array( 'class' => 'blck', 'style' => array( 'margin-top' => '1em' ) ) ) );
@@ -5135,7 +5135,7 @@ function _OnSaveSettings( $args )
 		{
 			$fldId = 'reLnch';
 
-			$v = Gen::SanitizeTextData( trim( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:'') ) );
+			$v = Gen::SanitizeTextData( trim( ($args[ 'seraph_accel/' . $fldId ]??'') ) );
 			if( $v )
 				Gen::SetArrField( $sett, $fldId, $v, '/' );
 			else
@@ -5186,13 +5186,13 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'cache/updPost';							Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/updPostDelay';					Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/updPostOp';						Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
-		{ $fldId = 'cache/updPostDeps';						Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null), null, true ), '/' ); }
+		{ $fldId = 'cache/updPostDeps';						Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), '/' ); }
 		{ $fldId = 'cache/updPostMeta';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
-		{ $fldId = 'cache/updPostMetaExcl';					Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null), null, true ), '/' ); }
+		{ $fldId = 'cache/updPostMetaExcl';					Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), '/' ); }
 		{ $fldId = 'cache/updTerms';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/updTermsOp';						Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
-		{ $fldId = 'cache/updTermsDeps';					Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null), null, true ), '/' ); }
-		{ $fldId = 'cache/updAllDeps';						Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null), null, true ), '/' ); }
+		{ $fldId = 'cache/updTermsDeps';					Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), '/' ); }
+		{ $fldId = 'cache/updAllDeps';						Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), '/' ); }
 
 		{
 			$fldId = 'cache/updSche';
@@ -5206,7 +5206,7 @@ function _OnSaveSettings( $args )
 					{ $fldId = 'prior';						Gen::SetArrField( $item, $fldId, @intval( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
 					{ $fldId = 'period';					Gen::SetArrField( $item, $fldId, @intval( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
 					{ $fldId = 'periodN';					Gen::SetArrField( $item, $fldId, @intval( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
-					{ $fldId = 'deps';						Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null), null, true ), '/' ); }
+					{ $fldId = 'deps';						Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ), '/' ); }
 
 					{
 						$fldId = 'times';
@@ -5253,7 +5253,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'cache/ctxTimeoutCln';					Gen::SetArrField( $sett, $fldId, _GetTimeoutVal( 'seraph_accel/' . $fldId, $args ), '/' ); }
 		{ $fldId = 'cache/autoClnPeriod';					Gen::SetArrField( $sett, $fldId, _GetTimeoutVal( 'seraph_accel/' . $fldId, $args ), '/' ); }
 		{ $fldId = 'cache/useTimeoutClnForWpNonce';			Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
-		{ $fldId = 'cache/hdrs';							Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null), null, true ), '/' ); }
+		{ $fldId = 'cache/hdrs';							Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), '/' ); }
 
 		{ $fldId = 'cache/chunks/enable';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/chunks/js';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
@@ -5333,9 +5333,9 @@ function _OnSaveSettings( $args )
 				{
 					$item = array();
 
-					$name = @trim( Wp::SanitizeText( (isset($args[ $idItems . '/' . $itemKey . '/name' ])?$args[ $idItems . '/' . $itemKey . '/name' ]:null) ) );
+					$name = @trim( Wp::SanitizeText( ($args[ $idItems . '/' . $itemKey . '/name' ]??null) ) );
 
-					$id = @trim( Wp::SanitizeId( (isset($args[ $idItems . '/' . $itemKey . '/id' ])?$args[ $idItems . '/' . $itemKey . '/id' ]:null) ) );
+					$id = @trim( Wp::SanitizeId( ($args[ $idItems . '/' . $itemKey . '/id' ]??null) ) );
 					if( !$id || !GetViewDisplayNameById( $id ) )
 						$id = @str_replace( '-', '', @sanitize_title( $name ) );
 					if( !$id )
@@ -5344,7 +5344,7 @@ function _OnSaveSettings( $args )
 					{ $fldId = 'enable';						Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
 					{ $fldId = 'name';							Gen::SetArrField( $item, $fldId, $name, '/' ); }
 					{ $fldId = 'id';							Gen::SetArrField( $item, $fldId, $id, '/' ); }
-					{ $fldId = 'agents';						Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null), null, true ), '/' ); }
+					{ $fldId = 'agents';						Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ), '/' ); }
 
 					return( $item );
 				}
@@ -5357,8 +5357,8 @@ function _OnSaveSettings( $args )
 				{
 					$item = array();
 
-					$name = @trim( Wp::SanitizeText( (isset($args[ $idItems . '/' . $itemKey . '/name' ])?$args[ $idItems . '/' . $itemKey . '/name' ]:null) ) );
-					$id = @trim( Wp::SanitizeId( (isset($args[ $idItems . '/' . $itemKey . '/id' ])?$args[ $idItems . '/' . $itemKey . '/id' ]:null) ) );
+					$name = @trim( Wp::SanitizeText( ($args[ $idItems . '/' . $itemKey . '/name' ]??null) ) );
+					$id = @trim( Wp::SanitizeId( ($args[ $idItems . '/' . $itemKey . '/id' ]??null) ) );
 					if( !$id )
 						$id = @str_replace( '-', '', @sanitize_title( $name ) );
 					if( !$id )
@@ -5367,7 +5367,7 @@ function _OnSaveSettings( $args )
 					{ $fldId = 'enable';						Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
 					{ $fldId = 'name';							Gen::SetArrField( $item, $fldId, $name, '/' ); }
 					{ $fldId = 'id';							Gen::SetArrField( $item, $fldId, $id, '/' ); }
-					{ $fldId = 'agents';						Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null), null, true ), '/' ); }
+					{ $fldId = 'agents';						Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ), '/' ); }
 
 					return( $item );
 				}
@@ -5381,11 +5381,11 @@ function _OnSaveSettings( $args )
 					$item = array();
 
 					{ $fldId = 'enable';					Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
-					{ $fldId = 'name';						Gen::SetArrField( $item, $fldId, Wp::SanitizeText( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ), '/' ); }
-					{ $fldId = 'urisExcl';					Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null), null, true ), true ), '/' ); }
-					{ $fldId = 'cookies';					Gen::SetArrField( $item, $fldId, _CookiesToLwr( Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null), null, true ) ), '/' ); }
-					{ $fldId = 'hdrs';						Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null), null, true ), '/' ); }
-					{ $fldId = 'args';						Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ) ), '/' ); }
+					{ $fldId = 'name';						Gen::SetArrField( $item, $fldId, Wp::SanitizeText( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ), '/' ); }
+					{ $fldId = 'urisExcl';					Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ), true ), '/' ); }
+					{ $fldId = 'cookies';					Gen::SetArrField( $item, $fldId, _CookiesToLwr( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ) ), '/' ); }
+					{ $fldId = 'hdrs';						Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ), '/' ); }
+					{ $fldId = 'args';						Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ) ), '/' ); }
 
 					return( $item );
 				}
@@ -5410,29 +5410,29 @@ function _OnSaveSettings( $args )
 					$item = array();
 
 					{ $fldId = 'enable';					Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
-					{ $fldId = 'name';						Gen::SetArrField( $item, $fldId, Wp::SanitizeText( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ), '/' ); }
-					{ $fldId = 'items';						Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null), function( $v ) { return( IsStrRegExp( $v ) ? $v : strtoupper( $v ) ); }, true ), '/' ); }
+					{ $fldId = 'name';						Gen::SetArrField( $item, $fldId, Wp::SanitizeText( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ), '/' ); }
+					{ $fldId = 'items';						Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), function( $v ) { return( IsStrRegExp( $v ) ? $v : strtoupper( $v ) ); }, true ), '/' ); }
 
 					return( $item );
 				}
 			, null, 'G^' ) ), '/' );
 		}
 
-		{ $fldId = 'cache/urisExcl';						Gen::SetArrField( $sett, $fldId, _ArrToLwr( Ui::TokensList_GetVal( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null), null, true ), true ), '/' ); }
-		{ $fldId = 'cache/exclAgents';						Gen::SetArrField( $sett, $fldId, _ArrToLwr( Ui::TokensList_GetVal( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null) ) ), '/' ); }
-		{ $fldId = 'cache/exclCookies';						Gen::SetArrField( $sett, $fldId, _CookiesToLwr( Ui::TokensList_GetVal( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null) ) ), '/' ); }
+		{ $fldId = 'cache/urisExcl';						Gen::SetArrField( $sett, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), true ), '/' ); }
+		{ $fldId = 'cache/exclAgents';						Gen::SetArrField( $sett, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null) ) ), '/' ); }
+		{ $fldId = 'cache/exclCookies';						Gen::SetArrField( $sett, $fldId, _CookiesToLwr( Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null) ) ), '/' ); }
 		{
 			$v = Gen::SanitizeId( $args[ 'seraph_accel/cache/exclArgs_Mode' ] );
 			$fldId = 'cache/exclArgsAll';					Gen::SetArrField( $sett, $fldId, $v === 'exclAll', '/' );
 		}
-		{ $fldId = 'cache/exclArgs';						Gen::SetArrField( $sett, $fldId, _ArrToLwr( Ui::TokensList_GetVal( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null), null, true ), true ), '/' ); }
+		{ $fldId = 'cache/exclArgs';						Gen::SetArrField( $sett, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), true ), '/' ); }
 		{
 			$v = Gen::SanitizeId( $args[ 'seraph_accel/cache/skipArgs_Mode' ] );
 			$fldId = 'cache/skipArgsEnable';					Gen::SetArrField( $sett, $fldId, $v !== 'skipNo', '/' );
 			$fldId = 'cache/skipArgsAll';						Gen::SetArrField( $sett, $fldId, $v === 'skipAll', '/' );
 		}
-		{ $fldId = 'cache/skipArgs';						Gen::SetArrField( $sett, $fldId, _ArrToLwr( Ui::TokensList_GetVal( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null), null, true ), true ), '/' ); }
-		{ $fldId = 'cache/exclConts';						Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null), 'seraph_accel\\Wp::SanitizeXPath', true ), '/' ); }
+		{ $fldId = 'cache/skipArgs';						Gen::SetArrField( $sett, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), true ), '/' ); }
+		{ $fldId = 'cache/exclConts';						Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), 'seraph_accel\\Wp::SanitizeXPath', true ), '/' ); }
 
 		{ $fldId = 'cache/ctx';								Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/ctxSkip';							Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
@@ -5447,9 +5447,9 @@ function _OnSaveSettings( $args )
 					$item = array();
 
 					{ $fldId = 'enable';						Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
-					{ $fldId = 'name';							Gen::SetArrField( $item, $fldId, Wp::SanitizeText( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ), '/' ); }
-					{ $fldId = 'cookies';						Gen::SetArrField( $item, $fldId, _CookiesToLwr( Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null), null, true ) ), '/' ); }
-					{ $fldId = 'args';							Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ) ), '/' ); }
+					{ $fldId = 'name';							Gen::SetArrField( $item, $fldId, Wp::SanitizeText( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ), '/' ); }
+					{ $fldId = 'cookies';						Gen::SetArrField( $item, $fldId, _CookiesToLwr( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ) ), '/' ); }
+					{ $fldId = 'args';							Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ) ), '/' ); }
 
 					{
 						$fldId = 'tables';
@@ -5458,12 +5458,12 @@ function _OnSaveSettings( $args )
 							{
 								$item = array();
 
-								{ $fldId = 'name';					Gen::SetArrField( $item, $fldId, Wp::SanitizeText( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ), '/' ); }
-								{ $fldId = 'col';					Gen::SetArrField( $item, $fldId, Wp::SanitizeId( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ), '/' ); }
-								{ $fldId = 'nameRel';				Gen::SetArrField( $item, $fldId, Wp::SanitizeId( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ), '/' ); }
-								{ $fldId = 'colRel';				Gen::SetArrField( $item, $fldId, Wp::SanitizeId( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ), '/' ); }
-								{ $fldId = 'colRelLink';			Gen::SetArrField( $item, $fldId, Wp::SanitizeId( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ), '/' ); }
-								{ $fldId = 'condRel';				Gen::SetArrField( $item, $fldId, _Sett_SetCond( Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ) ), '/' ); }
+								{ $fldId = 'name';					Gen::SetArrField( $item, $fldId, Wp::SanitizeText( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ), '/' ); }
+								{ $fldId = 'col';					Gen::SetArrField( $item, $fldId, Wp::SanitizeId( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ), '/' ); }
+								{ $fldId = 'nameRel';				Gen::SetArrField( $item, $fldId, Wp::SanitizeId( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ), '/' ); }
+								{ $fldId = 'colRel';				Gen::SetArrField( $item, $fldId, Wp::SanitizeId( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ), '/' ); }
+								{ $fldId = 'colRelLink';			Gen::SetArrField( $item, $fldId, Wp::SanitizeId( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ), '/' ); }
+								{ $fldId = 'condRel';				Gen::SetArrField( $item, $fldId, _Sett_SetCond( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ) ), '/' ); }
 
 								return( $item );
 							}
@@ -5483,8 +5483,8 @@ function _OnSaveSettings( $args )
 					$item = array();
 
 					{ $fldId = 'enable';						Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
-					{ $fldId = 'pattern';						Gen::SetArrField( $item, $fldId, @stripslashes( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:'') ), '/' ); }
-					{ $fldId = 'mime';							Gen::SetArrField( $item, $fldId, (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:''), '/' ); }
+					{ $fldId = 'pattern';						Gen::SetArrField( $item, $fldId, @stripslashes( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??'') ), '/' ); }
+					{ $fldId = 'mime';							Gen::SetArrField( $item, $fldId, ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??''), '/' ); }
 					{ $fldId = 'lazyInv';						Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
 					{ $fldId = 'timeout';						Gen::SetArrField( $item, $fldId, 60 * _GetTimeoutVal( $idItems . '/' . $itemKey . '/' . $fldId, $args ), '/' ); }
 					{ $fldId = 'timeoutCln';					Gen::SetArrField( $item, $fldId, 60 * _GetTimeoutVal( $idItems . '/' . $itemKey . '/' . $fldId, $args ), '/' ); }
@@ -5746,7 +5746,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'contPr/css/nonCrit/inl';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/css/nonCrit/int';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/css/nonCrit/ext';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
-		{ $fldId = 'contPr/css/nonCrit/excl';				Gen::SetArrField( $sett, $fldId, !empty( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null) ), '/' ); }
+		{ $fldId = 'contPr/css/nonCrit/excl';				Gen::SetArrField( $sett, $fldId, !empty( ($args[ 'seraph_accel/' . $fldId ]??null) ), '/' ); }
 		{ $fldId = 'contPr/css/nonCrit/items';				Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( $args[ 'seraph_accel/' . $fldId ], null, true ), '/' ); }
 		{ $fldId = 'contPr/css/skips';						Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( $args[ 'seraph_accel/' . $fldId ], null, true ), '/' ); }
 		{ $fldId = 'contPr/css/fontOptLoad';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
@@ -5798,10 +5798,10 @@ function _OnSaveSettings( $args )
 
 					{ $fldId = 'enable';						Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
 					{ $fldId = 'sa';							Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
-					{ $fldId = 'addr';							Gen::SetArrField( $item, $fldId, @rtrim( @trim( Wp::SanitizeUrl( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ) ), '/' ), '/' ); }
-					{ $fldId = 'types';							Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ) ), '/' ); }
-					{ $fldId = 'uris';							Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ) ), '/' ); }
-					{ $fldId = 'urisExcl';						Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ) ), '/' ); }
+					{ $fldId = 'addr';							Gen::SetArrField( $item, $fldId, @rtrim( @trim( Wp::SanitizeUrl( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ) ), '/' ), '/' ); }
+					{ $fldId = 'types';							Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ) ), '/' ); }
+					{ $fldId = 'uris';							Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ) ), '/' ); }
+					{ $fldId = 'urisExcl';						Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ) ), '/' ); }
 
 					return( $item );
 				}
@@ -5825,15 +5825,15 @@ function _OnSaveSettings( $args )
 						$fldId = 'enable';								Gen::SetArrField( $item, $fldId, $v, '/' );
 					}
 
-					{ $fldId = 'name';									Gen::SetArrField( $item, $fldId, @stripslashes( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:'') ), '/' ); }
-					{ $fldId = 'patterns';								Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null), 'seraph_accel\\Wp::SanitizeXPath', true ), '/' ); }
-					{ $fldId = 'urisIncl';								Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null), null, true ), '/' ); }
-					{ $fldId = 'argsIncl';								Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null), null, true ), true ), '/' ); }
-					{ $fldId = 'views';									Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null) ), '/' ); }
+					{ $fldId = 'name';									Gen::SetArrField( $item, $fldId, @stripslashes( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??'') ), '/' ); }
+					{ $fldId = 'patterns';								Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), 'seraph_accel\\Wp::SanitizeXPath', true ), '/' ); }
+					{ $fldId = 'urisIncl';								Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ), '/' ); }
+					{ $fldId = 'argsIncl';								Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ), true ), '/' ); }
+					{ $fldId = 'views';									Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ), '/' ); }
 
 					{ $fldId = 'sklSrch';								Gen::SetArrField( $item, $fldId, Gen::GetArrField( array( 'std' => false, 'fast' => true, 'agg' => 'a' ), array( Gen::SanitizeId( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ) ), '/' ); }
-					{ $fldId = 'sklExcl';								Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null), 'seraph_accel\\Wp::SanitizeXPath', true ), '/' ); }
-					{ $fldId = 'sklCssSelExcl';							Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( (isset($args[ $idItems . '/' . $itemKey . '/' . $fldId ])?$args[ $idItems . '/' . $itemKey . '/' . $fldId ]:null), null, true ), '/' ); }
+					{ $fldId = 'sklExcl';								Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), 'seraph_accel\\Wp::SanitizeXPath', true ), '/' ); }
+					{ $fldId = 'sklCssSelExcl';							Gen::SetArrField( $item, $fldId, Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ), '/' ); }
 
 					{ $fldId = 'contPr/enable';							Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
 					{ $fldId = 'contPr/jsOvr';							Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
@@ -5866,7 +5866,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'test/contExtra';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'test/contExtraSize';					Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ) * 1024, '/' ); }
 
-		{ $fldId = 'bots/agents';							Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( (isset($args[ 'seraph_accel/' . $fldId ])?$args[ 'seraph_accel/' . $fldId ]:null), null, true ), '/' ); }
+		{ $fldId = 'bots/agents';							Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), '/' ); }
 
 		{ $fldId = 'debug';									Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'hdrTrace';								Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
@@ -6012,7 +6012,7 @@ function _ViewsGeo_Normalize( $sett, $aGrp )
 
 	foreach( $aGrp as $grpId => &$grp )
 	{
-		if( !(isset($grp[ 'enable' ])?$grp[ 'enable' ]:null) )
+		if( !($grp[ 'enable' ]??null) )
 			continue;
 
 		$aGrpItem = Gen::GetArrField( $grp, array( 'items' ), array() );

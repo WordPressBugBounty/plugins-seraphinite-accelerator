@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.7
-Stable tag: 2.26.6
+Stable tag: 2.26.7
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,18 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.26.7 =
+
+Improvements:
+
+* Support for animations of Elementor.
+* Support for setting defines in PHP with disabled 'token_get_all' function.
+
+Fixes:
+
+* PHP error: Call to undefined function 'seraph_accel\CacheExt_Clear_CopyHdrs'.
+* PHP error: Illegal offset type in 'options.php'.
 
 = 2.26.6 =
 

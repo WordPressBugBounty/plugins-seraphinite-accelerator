@@ -35,7 +35,7 @@ class DbTbl
 		{
 			$queryColsAttr = '' . $colId . ' ' . strtolower( $col[ 'type' ] );
 
-			$colAttrs = (isset($col[ 'attrs' ])?$col[ 'attrs' ]:null);
+			$colAttrs = ($col[ 'attrs' ]??null);
 			if( $colAttrs )
 			{
 				foreach( $colAttrs as $colAttr )
@@ -194,7 +194,7 @@ class DbTbl
 			}
 		}
 
-		if( $extraWhere = (isset($prms[ 'extraWhere' ])?$prms[ 'extraWhere' ]:null) )
+		if( $extraWhere = ($prms[ 'extraWhere' ]??null) )
 		{
 			if( !is_array( $extraWhere ) )
 				$extraWhere = array( $extraWhere );
@@ -204,16 +204,16 @@ class DbTbl
 		$fields = implode( ',', $fields );
 		$conditions = implode( ' AND ', $conditions );
 
-		if( (isset($prms[ 'distinct' ])?$prms[ 'distinct' ]:null) )
+		if( ($prms[ 'distinct' ]??null) )
 			$fields = 'DISTINCT(' . $fields . ')';
-		if( (isset($prms[ 'count' ])?$prms[ 'count' ]:null) )
+		if( ($prms[ 'count' ]??null) )
 			$fields = 'COUNT(' . $fields . ')';
 
 		$sql = 'SELECT ' . $fields . ' FROM ' . $sqlFrom;
 		if( $conditions )
 			$sql .= ' WHERE ' . $conditions;
 
-		$sql .= self::_QueryGroup( (isset($prms[ 'group' ])?$prms[ 'group' ]:null) );
+		$sql .= self::_QueryGroup( ($prms[ 'group' ]??null) );
 		$sql .= self::_QueryOrder( $order );
 		$sql .= self::_QueryLimit( $limit );
 
@@ -350,7 +350,7 @@ class DbTbl
 			$fmt = '%s';
 
 			if( is_array( $value ) )
-				$value = (isset($value[ 0 ])?$value[ 0 ]:null);
+				$value = ($value[ 0 ]??null);
 
 			switch( gettype( $value ) )
 			{

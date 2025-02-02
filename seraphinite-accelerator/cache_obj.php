@@ -5,6 +5,15 @@ if( !defined( 'ABSPATH' ) )
 
 require_once( __DIR__ . '/common.php' );
 
+function wp_suspend_cache_changing( $suspend = null )
+{
+	static $_suspend = false;
+
+	if( is_bool( $suspend ) )
+		$_suspend = $suspend;
+	return( $_suspend );
+}
+
 function wp_cache_add_global_groups( $groups )
 {
 	global $wp_object_cache;
@@ -32,7 +41,7 @@ function wp_cache_init()
 function wp_cache_add( $key, $data, $group = '', $expire = 0 )
 {
 	global $wp_object_cache;
-	return( $wp_object_cache -> add( $key, $data, $group, ( int )$expire ) );
+	return( $wp_object_cache -> add( $key, $data, $group, $expire ) );
 }
 
 function wp_cache_add_multiple( array $data, $group = '', $expire = 0 )
@@ -44,13 +53,13 @@ function wp_cache_add_multiple( array $data, $group = '', $expire = 0 )
 function wp_cache_replace( $key, $data, $group = '', $expire = 0 )
 {
 	global $wp_object_cache;
-	return( $wp_object_cache -> replace( $key, $data, $group, ( int )$expire ) );
+	return( $wp_object_cache -> replace( $key, $data, $group, $expire ) );
 }
 
 function wp_cache_set( $key, $data, $group = '', $expire = 0 )
 {
 	global $wp_object_cache;
-	return( $wp_object_cache -> set( $key, $data, $group, ( int )$expire ) );
+	return( $wp_object_cache -> set( $key, $data, $group, $expire ) );
 }
 
 function wp_cache_set_multiple( array $data, $group = '', $expire = 0 )
@@ -131,30 +140,21 @@ function wp_cache_reset()
 
 class WP_Object_Cache
 {
+	public		$nHits = 0;
+	public		$nMisses = 0;
 
-	private $cache = array();
+	protected	$aGlobalGroup = array();
+	protected	$aNonPersistentGroup = array();
 
-	public $cache_hits = 0;
-
-	public $cache_misses = 0;
-
-	protected $aGlobalGroup = array();
-	protected $aNonPersistentGroup = array();
-
-	private $blog_prefix;
-
-	private $multisite;
-
-	private $inited;
-	private $curSite;
-	private $curSiteId;
-	private $dataDir;
-	private $lock;
+	private		$aData = array();
+	private		$inited;
+	private		$curSite;
+	private		$curSiteId;
+	private		$dataDir;
+	private		$lock;
 
 	public function __construct()
 	{
-		$this -> multisite   = is_multisite();
-		$this -> blog_prefix = $this -> multisite ? get_current_blog_id() . ':' : '';
 	}
 
 	public function add_global_groups( $groups )
@@ -184,16 +184,110 @@ class WP_Object_Cache
 			$this -> curSite = null;
 		$this -> curSiteId = \seraph_accel\GetSiteId( $this -> curSite );
 
-		$dataDir = \seraph_accel\GetCacheDir() . '/oc/';
-		$this -> lock = new \seraph_accel\Lock( $dataDir . 'l', false, true );
-		$this -> dataDir = $dataDir . 'g/';
+		$dataDir = \seraph_accel\GetCacheDir() . '/oc';
+		$this -> lock = new \seraph_accel\Lock( $dataDir . '/l', false );
+		$this -> dataDir = $dataDir . '/g';
 	}
 
-	protected function _getPath( $group )
+	protected function _getPath( $group, $key )
 	{
-		$path = ( empty( $group ) ? '@' : rawurlencode( $group ) ) . '/';
-		$path .= isset( $this -> aGlobalGroup[ $group ] ) ? 'g' : 's/' . $this -> curSiteId;
-		return( $path );
+		return( array( empty( $group ) ? '@' : $group, isset( $this -> aGlobalGroup[ $group ] ) ? 'g' : 's/' . $this -> curSiteId, $key ) );
+	}
+
+	protected static function _normPath( &$path )
+	{
+		if( strlen( $path ) > 200 )
+			$path = md5( $path );
+		else
+			$path = str_replace( array( ':', '?', '|', '&', '=', '#' ), array( '@', '@', '~', '+', '-', '@' ), $path );
+	}
+
+	protected function _getFilePath( $aPath )
+	{
+		self::_normPath( $aPath[ 0 ] );
+		self::_normPath( $aPath[ count( $aPath ) - 1 ] );
+		return( $this -> dataDir . '/' . implode( '/', $aPath ) . '.dat.gz' );
+	}
+
+	private function _updateFromStg( $aPath )
+	{
+		if( isset( $this -> aNonPersistentGroup[ $aPath[ 0 ] ] ) )
+			return( \seraph_accel\Gen::GetArrField( $this -> aData, $aPath ) );
+
+		$file = $this -> _getFilePath( $aPath );
+
+		$v = null;
+		if( ( $lr = $this -> lock -> Acquire() ) !== false )
+		{
+			$v = @file_exists( $file ) ? array( @file_get_contents( $file ), @filemtime( $file ) ) : null;
+			if( $lr )
+				$this -> lock -> Release();
+
+			if( $v !== null )
+			{
+				if( is_string( $v[ 0 ] ) && is_int( $v[ 1 ] ) )
+				{
+					if( is_string( $v[ 0 ] = @gzdecode( $v[ 0 ] ) ) )
+					{
+						$bOk = false;
+						$v[ 0 ] = \seraph_accel\Gen::Unserialize( $v[ 0 ], null, $bOk );
+						if( !$bOk )
+							$v = null;
+					}
+					else
+						$v = null;
+				}
+				else
+					$v = null;
+			}
+		}
+
+		if( $v !== null )
+			\seraph_accel\Gen::SetArrField( $this -> aData, $aPath, $v );
+		else
+			\seraph_accel\Gen::UnsetArrField( $this -> aData, $aPath );
+
+		return( $v );
+	}
+
+	private function _updateToStg( $aPath, $v )
+	{
+		return( null );
+
+		if( isset( $this -> aNonPersistentGroup[ $aPath[ 0 ] ] ) )
+			return( null );
+
+		$file = $this -> _getFilePath( $aPath );
+
+		if( $v === null )
+		{
+			if( ( $lr = $this -> lock -> Acquire() ) === false )
+				return( false );
+
+			if( @file_exists( $file ) )
+				@unlink( $file );
+
+			if( $lr )
+				$this -> lock -> Release();
+
+			return( true );
+		}
+
+		if( !is_string( $data = \seraph_accel\Gen::Serialize( $v[ 0 ] ) ) )
+			return( false );
+		if( !is_string( $data = @gzencode( $data, 9 ) ) )
+			return( false );
+
+		if( ( $lr = $this -> lock -> Acquire() ) === false )
+			return( false );
+
+		\seraph_accel\Gen::MakeDir( @dirname( $file ), true );
+		$res = \seraph_accel\_FileWriteTmpAndReplace( $file, $v[ 1 ], $data, null, $this -> lock );
+
+		if( $lr )
+			$this -> lock -> Release();
+
+		return( $res );
 	}
 
 	public function __get( $name )
@@ -227,121 +321,120 @@ class WP_Object_Cache
 		return( false );
 	}
 
-	protected function _exists( $key, $group )
+	protected function _add( $key, $data, $group = '', $expire = 0 )
 	{
-		return isset( $this -> cache[ $group ] ) && ( isset( $this -> cache[ $group ][ $key ] ) || array_key_exists( $key, $this -> cache[ $group ] ) );
+
+		if( !self::_is_valid_key( $key ) )
+			return( false );
+
+		$aPath = $this -> _getPath( $group, $key );
+
+		$v = \seraph_accel\Gen::GetArrField( $this -> aData, $aPath );
+		if( $v === null )
+			$v = $this -> _updateFromStg( $aPath );
+		if( $v !== null )
+			return( false );
+
+		return( $this -> _set( $aPath, $data, $expire ) );
 	}
 
 	public function add( $key, $data, $group = '', $expire = 0 )
 	{
-		if( wp_suspend_cache_addition() )
-			return( false );
-
-		if( !self::_is_valid_key( $key ) )
+		if( wp_suspend_cache_addition() || wp_suspend_cache_changing() )
 			return( false );
 
 		$this -> _init();
 
-		if ( empty( $group ) )
-		{
-			$group = '@';
-		}
-
-		$id = $key;
-		if ( $this -> multisite && ! isset( $this -> aGlobalGroup[ $group ] ) )
-		{
-			$id = $this -> blog_prefix . $key;
-		}
-
-		if ( $this -> _exists( $id, $group ) )
-		{
-			return false;
-		}
-
-		return $this -> set( $key, $data, $group, ( int )$expire );
+		return( $this -> _add( $key, $data, $group, $expire ) );
 	}
 
-	public function add_multiple( array $data, $group = '', $expire = 0 )
+	public function add_multiple( array $aData, $group = '', $expire = 0 )
 	{
-		if( wp_suspend_cache_addition() )
-			return( array_fill( 0, count( $data ), false ) );
+		if( wp_suspend_cache_addition() || wp_suspend_cache_changing() )
+			return( array_fill_keys( array_keys( $aData ), false ) );
 
 		$this -> _init();
 
-		$values = array();
+		$aRes = array();
 
-		foreach ( $data as $key => $value )
-		{
-			$values[ $key ] = $this -> add( $key, $value, $group, $expire );
-		}
+		foreach( $aData as $key => $data )
+			$aRes[ $key ] = $this -> _add( $key, $data, $group, $expire );
 
-		return $values;
+		return( $aRes );
 	}
 
 	public function replace( $key, $data, $group = '', $expire = 0 )
 	{
+		if( wp_suspend_cache_changing() )
+			return( false );
+
 		if( !self::_is_valid_key( $key ) )
 			return( false );
 
 		$this -> _init();
 
-		if ( empty( $group ) )
-		{
-			$group = '@';
-		}
+		$aPath = $this -> _getPath( $group, $key );
 
-		$id = $key;
-		if ( $this -> multisite && ! isset( $this -> aGlobalGroup[ $group ] ) )
-		{
-			$id = $this -> blog_prefix . $key;
-		}
+		$v = \seraph_accel\Gen::GetArrField( $this -> aData, $aPath );
+		if( $v === null )
+			$v = $this -> _updateFromStg( $aPath );
+		if( $v === null )
+			return( false );
 
-		if ( ! $this -> _exists( $id, $group ) )
-		{
-			return false;
-		}
-
-		return $this -> set( $key, $data, $group, ( int )$expire );
+		return( $this -> _set( $aPath, $data, $expire ) );
 	}
 
 	public function set( $key, $data, $group = '', $expire = 0 )
 	{
+		if( wp_suspend_cache_changing() )
+			return( false );
+
 		if( !self::_is_valid_key( $key ) )
 			return( false );
 
 		$this -> _init();
 
-		if ( empty( $group ) )
-		{
-			$group = '@';
-		}
-
-		if ( $this -> multisite && ! isset( $this -> aGlobalGroup[ $group ] ) )
-		{
-			$key = $this -> blog_prefix . $key;
-		}
-
-		if ( is_object( $data ) )
-		{
-			$data = clone $data;
-		}
-
-		$this -> cache[ $group ][ $key ] = $data;
-		return true;
+		return( $this -> _set( $this -> _getPath( $group, $key ), $data, $expire ) );
 	}
 
-	public function set_multiple( array $data, $group = '', $expire = 0 )
+	protected function _set( $aPath, $data, $expire, $time = null )
 	{
+		global $seraph_accel_settObjCache;
+
+		if( is_object( $data ) )
+			$data = clone $data;
+
+		if( !$expire )
+			$expire = \seraph_accel\Gen::GetArrField( $seraph_accel_settObjCache, array( 'cacheObj', 'timeout' ), 60 );
+		if( !$time )
+			$time = time();
+
+		$v = array( $data, $time + ( int )$expire );
+		\seraph_accel\Gen::SetArrField( $this -> aData, $aPath, $v );
+		$this -> _updateToStg( $aPath, $v );
+
+		return( true );
+	}
+
+	public function set_multiple( array $aData, $group = '', $expire = 0 )
+	{
+		if( wp_suspend_cache_changing() )
+			return( false );
+
 		$this -> _init();
 
-		$values = array();
+		global $seraph_accel_settObjCache;
 
-		foreach ( $data as $key => $value )
-		{
-			$values[ $key ] = $this -> set( $key, $value, $group, $expire );
-		}
+		if( !$expire )
+			$expire = \seraph_accel\Gen::GetArrField( $seraph_accel_settObjCache, array( 'cacheObj', 'timeout' ), 60 );
+		$time = time();
 
-		return $values;
+		$aRes = array();
+
+		foreach( $aData as $key => $data )
+			$aRes[ $key ] = self::_is_valid_key( $key ) ? $this -> _set( $this -> _getPath( $group, $key ), $data, $expire, $time ) : false;
+
+		return( $aRes );
 	}
 
 	public function get( $key, $group = '', $force = false, &$found = null )
@@ -351,45 +444,51 @@ class WP_Object_Cache
 
 		$this -> _init();
 
-		if ( empty( $group ) )
+		$aPath = $this -> _getPath( $group, $key );
+
+		$v = null;
+		if( $force )
+			$v = $this -> _updateFromStg( $aPath );
+		else
 		{
-			$group = '@';
+			$v = \seraph_accel\Gen::GetArrField( $this -> aData, $aPath );
+			if( $v === null )
+				$v = $this -> _updateFromStg( $aPath );
 		}
 
-		if ( $this -> multisite && ! isset( $this -> aGlobalGroup[ $group ] ) )
+		if( $v !== null && $v[ 1 ] && $v[ 1 ] < time() )
 		{
-			$key = $this -> blog_prefix . $key;
+			\seraph_accel\Gen::UnsetArrField( $this -> aData, $aPath );
+			$v = null;
+			$this -> _updateToStg( $aPath, null );
 		}
 
-		if ( $this -> _exists( $key, $group ) )
+		if( $v === null )
 		{
-			$found             = true;
-			$this -> cache_hits += 1;
-			if ( is_object( $this -> cache[ $group ][ $key ] ) )
-			{
-				return clone $this -> cache[ $group ][ $key ];
-			} else {
-				return $this -> cache[ $group ][ $key ];
-			}
+			$found = false;
+			$this -> nMisses += 1;
+			return( false );
 		}
 
-		$found               = false;
-		$this -> cache_misses += 1;
-		return false;
+		$v = $v[ 0 ];
+		if( is_object( $v ) )
+			$v = clone $v;
+
+		$found = true;
+		$this -> nHits += 1;
+		return( $v );
 	}
 
-	public function get_multiple( $keys, $group = '', $force = false )
+	public function get_multiple( $aKey, $group = '', $force = false )
 	{
 		$this -> _init();
 
-		$values = array();
+		$aData = array();
 
-		foreach ( $keys as $key )
-		{
-			$values[ $key ] = $this -> get( $key, $group, $force );
-		}
+		foreach( $aKey as $key )
+			$aData[ $key ] = $this -> get( $key, $group, $force );
 
-		return $values;
+		return( $aData );
 	}
 
 	public function delete( $key, $group = '', $deprecated = false )
@@ -399,131 +498,111 @@ class WP_Object_Cache
 
 		$this -> _init();
 
-		if ( empty( $group ) )
-		{
-			$group = '@';
-		}
+		$aPath = $this -> _getPath( $group, $key );
 
-		if ( $this -> multisite && ! isset( $this -> aGlobalGroup[ $group ] ) )
-		{
-			$key = $this -> blog_prefix . $key;
-		}
+		$v = \seraph_accel\Gen::GetArrField( $this -> aData, $aPath );
+		if( $v === null )
+			$v = $this -> _updateFromStg( $aPath );
+		if( $v === null )
+			return( false );
 
-		if ( ! $this -> _exists( $key, $group ) )
-		{
-			return false;
-		}
-
-		unset( $this -> cache[ $group ][ $key ] );
-		return true;
+		\seraph_accel\Gen::UnsetArrField( $this -> aData, $aPath );
+		$this -> _updateToStg( $aPath, null );
+		return( true );
 	}
 
-	public function delete_multiple( array $keys, $group = '' )
+	public function delete_multiple( array $aKey, $group = '' )
 	{
 		$this -> _init();
 
-		$values = array();
+		$aRes = array();
 
-		foreach ( $keys as $key )
-		{
-			$values[ $key ] = $this -> delete( $key, $group );
-		}
+		foreach( $aKey as $key )
+			$aRes[ $key ] = $this -> delete( $key, $group );
 
-		return $values;
+		return( $aRes );
 	}
 
 	public function incr( $key, $offset = 1, $group = '' )
 	{
-		if( !self::_is_valid_key( $key ) )
+		if( wp_suspend_cache_changing() )
 			return( false );
 
-		$this -> _init();
-
-		if ( empty( $group ) )
-		{
-			$group = '@';
-		}
-
-		if ( $this -> multisite && ! isset( $this -> aGlobalGroup[ $group ] ) )
-		{
-			$key = $this -> blog_prefix . $key;
-		}
-
-		if ( ! $this -> _exists( $key, $group ) )
-		{
-			return false;
-		}
-
-		if ( ! is_numeric( $this -> cache[ $group ][ $key ] ) )
-		{
-			$this -> cache[ $group ][ $key ] = 0;
-		}
-
-		$offset = (int) $offset;
-
-		$this -> cache[ $group ][ $key ] += $offset;
-
-		if ( $this -> cache[ $group ][ $key ] < 0 )
-		{
-			$this -> cache[ $group ][ $key ] = 0;
-		}
-
-		return $this -> cache[ $group ][ $key ];
+		return( $this -> _incr( $key, $offset, $group ) );
 	}
 
 	public function decr( $key, $offset = 1, $group = '' )
+	{
+		if( wp_suspend_cache_changing() )
+			return( false );
+
+		return( $this -> _incr( $key, -$offset, $group ) );
+	}
+
+	private function _incr( $key, $offset = 1, $group = '' )
 	{
 		if( !self::_is_valid_key( $key ) )
 			return( false );
 
 		$this -> _init();
 
-		if( empty( $group ) )
-			$group = '@';
+		$aPath = $this -> _getPath( $group, $key );
 
-		if ( $this -> multisite && ! isset( $this -> aGlobalGroup[ $group ] ) )
+		if( $this -> lock -> Acquire() === false )
+			return( false );
+
+		$v = \seraph_accel\Gen::GetArrField( $this -> aData, $aPath );
+		if( $v === null )
+			$v = $this -> _updateFromStg( $aPath );
+		if( $v === null )
 		{
-			$key = $this -> blog_prefix . $key;
+			$this -> lock -> Release();
+			return( false );
 		}
 
-		if ( ! $this -> _exists( $key, $group ) )
-		{
-			return false;
-		}
+		if( !is_numeric( $v[ 0 ] ) )
+			$v[ 0 ] = 0;
 
-		if ( ! is_numeric( $this -> cache[ $group ][ $key ] ) )
-		{
-			$this -> cache[ $group ][ $key ] = 0;
-		}
+		$v[ 0 ] += ( int )$offset;
+		if( $v[ 0 ] < 0 )
+			$v[ 0 ] = 0;
 
-		$offset = (int) $offset;
-
-		$this -> cache[ $group ][ $key ] -= $offset;
-
-		if ( $this -> cache[ $group ][ $key ] < 0 )
-		{
-			$this -> cache[ $group ][ $key ] = 0;
-		}
-
-		return $this -> cache[ $group ][ $key ];
+		\seraph_accel\Gen::SetArrField( $this -> aData, $aPath, $v );
+		$this -> _updateToStg( $aPath, $v );
+		$this -> lock -> Release();
+		return( $v[ 0 ] );
 	}
 
 	public function flush()
 	{
 		$this -> _init();
 
-		$this -> cache = array();
+		$this -> aData = array();
 
-		return true;
+		if( $this -> lock -> Acquire() )
+		{
+			\seraph_accel\Gen::DelDir( $this -> dataDir, false );
+			$this -> lock -> Release();
+		}
+
+		return( true );
 	}
 
 	public function flush_group( $group )
 	{
 		$this -> _init();
 
-		unset( $this -> cache[ $group ] );
+		$aPath = $this -> _getPath( $group, '' );
 
-		return true;
+		\seraph_accel\Gen::UnsetArrField( $this -> aData, array( $aPath[ 0 ] ) );
+
+		if( $this -> lock -> Acquire() )
+		{
+			\seraph_accel\Gen::DelDir( $this -> dataDir . '/' . $aPath[ 0 ] );
+			$this -> lock -> Release();
+		}
+
+		return( true );
 	}
 
 	public function switch_to_blog( $blog_id )
@@ -535,9 +614,6 @@ class WP_Object_Cache
 			$this -> curSite -> blog_id = ( int )$blog_id;
 			$this -> curSiteId = \seraph_accel\GetSiteId( $this -> curSite );
 		}
-
-		$blog_id           = (int) $blog_id;
-		$this -> blog_prefix = $this -> multisite ? $blog_id . ':' : '';
 	}
 
 	public function reset()
@@ -554,13 +630,13 @@ class WP_Object_Cache
 	public function stats()
 	{
 		echo '<p>';
-		echo "<strong>Cache Hits:</strong> {$this -> cache_hits}<br />";
-		echo "<strong>Cache Misses:</strong> {$this -> cache_misses}<br />";
+		echo "<strong>Cache Hits:</strong> {$this -> nHits}<br />";
+		echo "<strong>Cache Misses:</strong> {$this -> nMisses}<br />";
 		echo '</p>';
 		echo '<ul>';
-		foreach ( $this -> cache as $group => $cache )
+		foreach( $this -> aData as $group => $cache )
 		{
-			echo '<li><strong>Group:</strong> ' . esc_html( $group ) . ' - ( ' . number_format( strlen( serialize( $cache ) ) / KB_IN_BYTES, 2 ) . 'k )</li>';
+			echo '<li><strong>Group:</strong> "' . esc_html( $group == '@' ? '' : $group ) . '" - (' . number_format( strlen( serialize( $cache ) ) / KB_IN_BYTES, 2 ) . ' KB)</li>';
 		}
 		echo '</ul>';
 	}

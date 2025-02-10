@@ -1854,6 +1854,11 @@ class Gen
 		return( $v );
 	}
 
+	static function FileMTime( $file )
+	{
+		return( @file_exists( $file ) ? @filemtime( $file ) : false );
+	}
+
 	static private $_lastErrDsc = null;
 	static private $_fnGetTmpDir = null;
 }
@@ -3507,7 +3512,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'useragent' ] ) )
-			$args[ 'useragent' ] = 'seraph-accel-Agent/2.26.7';
+			$args[ 'useragent' ] = 'seraph-accel-Agent/2.26.8';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

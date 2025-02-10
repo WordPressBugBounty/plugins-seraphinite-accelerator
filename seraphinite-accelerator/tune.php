@@ -78,6 +78,26 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 
 	}
 
+	if( Gen::GetArrField( $settGlob, array( 'cacheObj', 'enable' ), false ) )
+	{
+		$verifyEnvDropin = new AnyObj();
+		if( !isset( $sett[ PluginOptions::VERPREV ] ) && ( ($_SERVER[ 'REQUEST_METHOD' ]??null) == 'GET' ) && !CacheVerifyEnvObjDropin( $settGlob, $verifyEnvDropin ) )
+		{
+			if( !@file_exists( WP_CONTENT_DIR . '/object-cache.php' ) && !@is_writable( WP_CONTENT_DIR ) )
+				call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDirNotWrittable_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), Gen::GetFileName( WP_CONTENT_DIR ), 'object-cache.php' ) ) );
+			else if( !@is_writable( WP_CONTENT_DIR . '/object-cache.php' ) )
+				call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDropinNotWrittable_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), Gen::GetFileName( WP_CONTENT_DIR ), 'object-cache.php' ) ) );
+			else
+				call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDropinNotMatch_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), Gen::GetFileName( WP_CONTENT_DIR ), 'object-cache.php' ) . ( $ext ? '' : sprintf( Wp::safe_html_x( 'ContentDropinNotMatchEx_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), GetCodeViewHtmlBlock( $verifyEnvDropin -> needed ), GetCodeViewHtmlBlock( $verifyEnvDropin -> actual ) ) ) ) );
+		}
+		else
+		{
+			global $seraph_accel_settObjCache;
+			if( $seraph_accel_settObjCache === null )
+				call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDropinNotLoaded_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), Gen::GetFileName( WP_CONTENT_DIR ), 'object-cache.php' ) ) );
+		}
+	}
+
 	if( !isset( $sett[ PluginOptions::VERPREV ] ) && ( ($_SERVER[ 'REQUEST_METHOD' ]??null) == 'GET' ) && !CacheVerifyEnvNginxConf( $sett ) )
 	{
 		call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentNginxConfNotMatch_%1$s', 'admin.Notice', 'seraphinite-accelerator' ), Wp::GetHomePath() . 'seraph-accel-img-compr-redir.conf' ) ) );

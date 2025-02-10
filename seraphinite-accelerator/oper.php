@@ -1156,7 +1156,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.7' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.8' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1392,10 +1392,8 @@ function CacheInitEnvObjDropin( $settGlob, $init = true )
 		$hr = Gen::HrAccom( $hr, ( strlen( $contNew ) ? @file_put_contents( $file, $contNew ) : @unlink( $file ) ) !== false ? Gen::S_OK : Gen::E_FAIL );
 		_OpCache_Invalidate( $file );
 
-		if( function_exists( 'wp_suspend_cache_changing' ) )
-			wp_suspend_cache_changing();
-		if( function_exists( 'wp_cache_flush' ) )
-			wp_cache_flush();
+		if( strlen( $contNew ) )
+			Gen::DelDir( GetCacheDir() . '/oc', false );
 	}
 
 	return( $hr );

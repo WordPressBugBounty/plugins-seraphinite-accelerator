@@ -9,7 +9,7 @@ require( __DIR__ . '/common.php' );
 
 global $seraph_accel_g_cacheSkipData;
 
-$hr = _Process( $seraph_accel_sites, $_GET );
+$hr = _Process( $seraph_accel_sites );
 if( $hr == Gen::S_OK || Gen::HrFail( $hr ) )
 {
 	if( isset( $args[ 'seraph_accel_gp' ] ) || !CacheDoCronAndEndRequest() )
@@ -37,11 +37,10 @@ else if( $seraph_accel_g_cacheSkipData )
 	ob_start( 'seraph_accel\\_CbContentProcess' );
 }
 
-function _Process( $sites, $args )
+function _Process( $sites )
 {
-
-	if( ($_SERVER[ 'REQUEST_METHOD' ]??null) != 'GET' )
-		return( Gen::S_FALSE );
+	$requestMethod = strtoupper( ($_SERVER[ 'REQUEST_METHOD' ]??'GET') );
+	$args = $_GET;
 
 	global $seraph_accel_g_noFo;
 	global $seraph_accel_g_prepPrms;
@@ -50,7 +49,7 @@ function _Process( $sites, $args )
 	global $seraph_accel_g_cacheCtxSkip;
 	global $seraph_accel_g_simpCacheMode;
 
-	if( isset( $_SERVER[ 'HTTP_X_SERAPH_ACCEL_TEST' ] ) )
+	if( ( $requestMethod == 'GET' ) && isset( $_SERVER[ 'HTTP_X_SERAPH_ACCEL_TEST' ] ) )
 	{
 		if( $idTest = Gen::SanitizeId( substr( $_SERVER[ 'HTTP_X_SERAPH_ACCEL_TEST' ], 0, 64 ) ) )
 		{
@@ -104,11 +103,12 @@ function _Process( $sites, $args )
 		}
 	}
 
-	$siteUriRoot = '';
-	if( !GetContCacheEarlySkipData( $pathOrig, $path, $pathIsDir, $args ) )
+	$siteUriRoot = ''; GetContCacheEarlySkipData( $pathOrig, $path, $pathIsDir, $args );
+	if( $pathOrig !== null )
 	{
 		$host = GetRequestHost( $_SERVER );
 		$addrSite = $host;
+
 		$seraph_accel_g_siteId = GetCacheSiteIdAdjustPath( $sites, $addrSite, $siteSubId, $path );
 		if( $seraph_accel_g_siteId === null )
 			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'siteIdUnk' ) );
@@ -124,7 +124,7 @@ function _Process( $sites, $args )
 	$timeoutCln = Gen::GetArrField( $settCache, array( 'timeoutCln' ), 0 ) * 60;
 	$timeout = Gen::GetArrField( $settCache, array( 'timeout' ), 0 ) * 60;
 
-	if( isset( $_REQUEST[ 'seraph_accel_gf' ] ) )
+	if( ( $requestMethod == 'GET' ) && isset( $_REQUEST[ 'seraph_accel_gf' ] ) )
 	{
 		@header( 'X-Robots-Tag: noindex' );
 
@@ -138,68 +138,45 @@ function _Process( $sites, $args )
 	if( $seraph_accel_g_simpCacheMode === null && Gen::GetArrField( $settCache, array( 'ctxSkip' ), false ) )
 		$seraph_accel_g_cacheCtxSkip = true;
 
-	$idSubPart = Gen::SanitizeId( ($_REQUEST[ 'seraph_accel_gp' ]??null), null );
+	$idSubPart = ( $requestMethod == 'GET' ) ? Gen::SanitizeId( ($_REQUEST[ 'seraph_accel_gp' ]??null), null ) : null;
 	if( $idSubPart )
 	{
 		@header( 'X-Robots-Tag: noindex' );
 		Net::CurRequestRemoveArgs( $args, array( 'seraph_accel_gp' ) );
 	}
 
-	if( $seraph_accel_g_cacheSkipData )
+	$requestMethodCache = 'GET';
 	{
-		_ProcessOutHdrTrace( $sett, true, true, $seraph_accel_g_cacheSkipData[ 0 ], ($seraph_accel_g_cacheSkipData[ 1 ]??null) );
-		if( $seraph_accel_g_prepPrms !== null )
-			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'finish' => true, 'skip' => Gen::GetArrField( ($seraph_accel_g_cacheSkipData[ 1 ]??null), array( 'reason' ), '' ) ), false, false );
-		return( Gen::S_NOTIMPL );
-	}
-
-	{
-		if( GetContentProcessorForce( $sett ) !== null )
-		{
-			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'debugContProcForce' ) );
-
-			return( Gen::S_FALSE );
-		}
-	}
-
-	{
-		$exclStatus = ContProcGetExclStatus( $seraph_accel_g_siteId, $settCache, $path, $pathOrig, $pathIsDir, $args, $varsOut, true, $seraph_accel_g_prepPrms === null );
-		if( $exclStatus )
-		{
-			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => $exclStatus ) );
-
-			if( Gen::StrStartsWith( $exclStatus, 'excl' ) )
-			{
-				_ProcessOutHdrTrace( $sett, true, true, $seraph_accel_g_cacheSkipData[ 0 ], ($seraph_accel_g_cacheSkipData[ 1 ]??null) );
-				if( $seraph_accel_g_prepPrms !== null )
-					ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'finish' => true, 'skip' => $exclStatus ), false, false );
-				return( Gen::S_NOTIMPL );
-			}
-
-			return( Gen::S_FALSE );
-		}
-
-		extract( $varsOut );
-		Net::CurRequestRemoveArgs( $args, $aArgRemove );
-		unset( $varsOut, $exclStatus, $aArgRemove );
-	}
-
-	{
+		$requestURICheck = null;
 		foreach( Gen::GetArrField( $settCache, array( 'data', 'items' ), array() ) as $itemData )
 		{
 			if( !($itemData[ 'enable' ]??null) )
 				continue;
 
+			if( $requestMethod != ($itemData[ 'type' ]??'GET') )
+				continue;
+
 			$found = false;
 			foreach( ExprConditionsSet_Parse( ($itemData[ 'pattern' ]??'') ) as $e )
 			{
+				if( $requestURICheck === null )
+				{
+					$requestURICheck = $_SERVER[ 'REQUEST_URI' ];
+
+					if( $requestMethod == 'POST' )
+					{
+						AddCurPostArgs( $args );
+						$requestURICheck = Net::UrlAddArgs( $requestURICheck, $args );
+					}
+				}
+
 				$val = false;
 				if( IsStrRegExp( $e[ 'expr' ] ) )
 				{
-					if( @preg_match( $e[ 'expr' ], $_SERVER[ 'REQUEST_URI' ] ) )
+					if( @preg_match( $e[ 'expr' ], $requestURICheck ) )
 						$val = true;
 				}
-				else if( strpos( $_SERVER[ 'REQUEST_URI' ], $e[ 'expr' ] ) !== false )
+				else if( strpos( $requestURICheck, $e[ 'expr' ] ) !== false )
 					$val = true;
 
 				if( !ExprConditionsSet_ItemOp( $e, $val ) )
@@ -216,13 +193,62 @@ function _Process( $sites, $args )
 
 			$seraph_accel_g_simpCacheMode = 'data:' . Fs::GetFileTypeFromMimeContentType( ($itemData[ 'mime' ]??''), 'bin' );
 
+			$requestMethodCache = ($itemData[ 'type' ]??'GET');
 			$timeoutCln = Gen::GetArrField( $itemData, array( 'timeoutCln' ), 0 );
 			$timeout = Gen::GetArrField( $itemData, array( 'timeout' ), 0 );
+
+			if( $pathOrig !== null && $seraph_accel_g_cacheSkipData )
+				$seraph_accel_g_cacheSkipData = null;
 
 			break;
 		}
 
-		unset( $itemData, $found, $val );
+		unset( $requestURICheck, $itemData, $found, $val );
+	}
+
+	if( $requestMethod != $requestMethodCache )
+	{
+		if( $requestMethod != 'GET' )
+			$seraph_accel_g_cacheSkipData = null;
+		return( Gen::S_FALSE );
+	}
+
+	if( $seraph_accel_g_cacheSkipData )
+	{
+		_ProcessOutHdrTrace( $sett, true, true, $seraph_accel_g_cacheSkipData[ 0 ], ($seraph_accel_g_cacheSkipData[ 1 ]??null) );
+		if( $seraph_accel_g_prepPrms !== null )
+			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'finish' => true, 'skip' => Gen::GetArrField( ($seraph_accel_g_cacheSkipData[ 1 ]??null), array( 'reason' ), '' ) ), false, false );
+		return( Gen::S_NOTIMPL );
+	}
+
+	if( GetContentProcessorForce( $sett ) !== null )
+	{
+		$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'debugContProcForce' ) );
+
+		return( Gen::S_FALSE );
+	}
+
+	{
+		$exclStatus = ContProcGetExclStatus( $seraph_accel_g_siteId, $settCache, $path, $pathOrig, $pathIsDir, $args, $varsOut, true, $seraph_accel_g_prepPrms === null );
+		if( $exclStatus )
+		{
+			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => $exclStatus ) );
+
+			if( Gen::StrStartsWith( $exclStatus, 'excl' ) )
+			{
+
+				_ProcessOutHdrTrace( $sett, true, true, $seraph_accel_g_cacheSkipData[ 0 ], ($seraph_accel_g_cacheSkipData[ 1 ]??null) );
+				if( $seraph_accel_g_prepPrms !== null )
+					ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'finish' => true, 'skip' => $exclStatus ), false, false );
+				return( Gen::S_NOTIMPL );
+			}
+
+			return( Gen::S_FALSE );
+		}
+
+		extract( $varsOut );
+		Net::CurRequestRemoveArgs( $args, $aArgRemove );
+		unset( $varsOut, $exclStatus, $aArgRemove );
 	}
 
 	global $seraph_accel_g_dscFile;
@@ -278,6 +304,9 @@ function _Process( $sites, $args )
 			$objectType = substr( $seraph_accel_g_simpCacheMode, 5 );
 		}
 	}
+
+	if( $requestMethod == 'POST' )
+		$objectId .= '-p';
 
 	if( !empty( $args ) )
 	{
@@ -559,7 +588,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.26.7;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.26.8;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -1158,7 +1187,7 @@ function CacheDscWriteCancel( $dscDel = true, $updTime = false )
 	}
 }
 
-function _CacheSetRequestToPrepareAsyncEx( $siteId, $url, $hdrs, $tmp = false )
+function _CacheSetRequestToPrepareAsyncEx( $siteId, $method, $url, $hdrs, $tmp = false )
 {
 	if( !$siteId )
 	{
@@ -1166,7 +1195,7 @@ function _CacheSetRequestToPrepareAsyncEx( $siteId, $url, $hdrs, $tmp = false )
 
 		$asyncMode = null;
 
-			ProcessQueueItemCtx::MakeRequest( $asyncMode, $urlProc, $hdrs );
+			ProcessQueueItemCtx::MakeRequest( $asyncMode, $method, $urlProc, $hdrs );
 		return;
 	}
 
@@ -1176,10 +1205,10 @@ function _CacheSetRequestToPrepareAsyncEx( $siteId, $url, $hdrs, $tmp = false )
 
 		$asyncMode = null;
 
-			ProcessQueueItemCtx::MakeRequest( $asyncMode, $urlProc, $hdrs );
+			ProcessQueueItemCtx::MakeRequest( $asyncMode, $method, $urlProc, $hdrs );
 	}
 
-	if( CachePostPreparePageEx( $url, $siteId, 10, null, $hdrs ) )
+	if( CachePostPreparePageEx( $method, $url, $siteId, 10, null, $hdrs ) )
 		CachePushQueueProcessor();
 }
 
@@ -1188,7 +1217,13 @@ function CacheSetCurRequestToPrepareAsync( $siteId, $tmp = false, $bgEnabled = f
 	global $seraph_accel_g_simpCacheMode;
 
 	$obj = new AnyObj();
+	$obj -> method = strtoupper( ($_SERVER[ 'REQUEST_METHOD' ]??'GET') );
 	$obj -> url = GetCurRequestUrl();
+	if( $obj -> method == 'POST' )
+	{
+		$aRequestArg = array(); AddCurPostArgs( $aRequestArg );
+		$obj -> url = Net::UrlAddArgs( $obj -> url, $aRequestArg );
+	}
 
 	$obj -> hdrs = Net::GetRequestHeaders();
 	if( isset( $_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] ) )
@@ -1220,13 +1255,13 @@ function CacheSetCurRequestToPrepareAsync( $siteId, $tmp = false, $bgEnabled = f
 
 	if( !$early )
 	{
-		_CacheSetRequestToPrepareAsyncEx( $siteId, $obj -> url, $obj -> hdrs, $tmp );
+		_CacheSetRequestToPrepareAsyncEx( $siteId, $obj -> method, $obj -> url, $obj -> hdrs, $tmp );
 		return( false );
 	}
 
 	$obj -> siteId = $siteId;
 	$obj -> tmp = $tmp;
-	$obj -> cb = function( $obj ) { _CacheSetRequestToPrepareAsyncEx( $obj -> siteId, $obj -> url, $obj -> hdrs, $obj -> tmp ); };
+	$obj -> cb = function( $obj ) { _CacheSetRequestToPrepareAsyncEx( $obj -> siteId, $obj -> method, $obj -> url, $obj -> hdrs, $obj -> tmp ); };
 	add_action( 'muplugins_loaded', array( $obj, 'cb' ) , 0 );
 
 	if( Wp::IsCronEnabled() )
@@ -1437,7 +1472,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( ($settCache[ 'normAgent' ]??null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = ($_SERVER[ 'HTTP_USER_AGENT' ]??'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.7';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.8';
 	}
 
 	if( ($settCache[ 'views' ]??null) )

@@ -1145,9 +1145,14 @@ function OnOptGetDef_Sett()
 			'updPostMetaExcl' => array(
 				'@^\\d+$@',
 				'@^_edit_lock$@',
+				'@^_edit_last$@',
 				'@^classic-editor-remember$@',
 				'@post_views_@',
 				'@^import_started_at@',
+				'@^_wc_gla_@',
+				'@^_yoast_@',
+				'@^cwg_total_subscribers@',
+				'@^_backorders$@',
 			),
 
 			'updTerms' => false,
@@ -1489,6 +1494,50 @@ function OnOptGetDef_Sett()
 		'cacheBr' => array(
 			'enable' => true,
 			'timeout' => 30 * 24 * 60,
+		),
+
+		'cacheObj' => array(
+			'enable' => false,
+			'forceDropin' => false,
+			'timeout' => 24 * 60 * 60,
+
+			'groupsGlobal' => array(
+				'blog-details',
+				'blog-id-cache',
+				'blog-lookup',
+				'global-posts',
+				'networks',
+				'rss',
+				'sites',
+				'site-details',
+				'site-lookup',
+				'site-options',
+				'site-transient',
+				'users',
+				'useremail',
+				'userlogins',
+				'usermeta',
+				'user_meta',
+				'userslugs',
+
+				'blog_meta',
+				'image_editor',
+				'network-queries',
+				'site-queries',
+				'theme_files',
+				'translation_files',
+				'user-queries',
+			),
+
+			'groupsNonPersistent' => array(
+				'comment',
+				'counts',
+				'plugins',
+				'theme_json',
+				'themes',
+				'trp',
+				'wc_session_id',
+			),
 		),
 
 		'contPr' => array(
@@ -3072,12 +3121,8 @@ function GetContCacheEarlySkipData( &$pathOrig = null , &$path = null , &$pathIs
 
 	if( defined( 'SID' ) && SID != '' )
 		$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'sid' ) );
-	else if( is_admin() )
-		$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'admin' ) );
 	else if( defined( 'DOING_CRON' ) || isset( $_REQUEST[ 'doing_wp_cron' ] ) )
 		$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'cron' ) );
-	else if( defined( 'XMLRPC_REQUEST' ) )
-		$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'xmlrpc' ) );
 	else if( isset( $_REQUEST[ 'seraph_accel_at' ] ) )
 		$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'seraph_accel_at:' . Gen::SanitizeId( $_REQUEST[ 'seraph_accel_at' ] ) ) );
 	else
@@ -3085,7 +3130,11 @@ function GetContCacheEarlySkipData( &$pathOrig = null , &$path = null , &$pathIs
 		$pathOrig = ParseContCachePathArgs( $_SERVER, $args );
 		$path = CachePathNormalize( $pathOrig, $pathIsDir );
 
-		if( strpos( $path, 'robots.txt' ) !== false )
+		if( is_admin() )
+			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'admin' ) );
+		else if( defined( 'XMLRPC_REQUEST' ) )
+			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'xmlrpc' ) );
+		else if( strpos( $path, 'robots.txt' ) !== false )
 			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'robots' ) );
 		else if( strpos( $path, '.htaccess' ) !== false )
 			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'htaccess' ) );
@@ -3663,7 +3712,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.7 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.8 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -3688,6 +3737,13 @@ function GetCurRequestUrl()
 {
 	$serverArgsTmp = Gen::ArrCopy( $_SERVER ); CorrectRequestScheme( $serverArgsTmp, 'client' );
 	return( $serverArgsTmp[ 'REQUEST_SCHEME' ] . '://' . GetRequestHost( $serverArgsTmp ) . $serverArgsTmp[ 'REQUEST_URI' ] );
+}
+
+function AddCurPostArgs( &$args )
+{
+	foreach( $_POST as $argId => $argV )
+		if( is_scalar( $argV ) )
+			$args[ $argId ] = substr( ( string )$argV, 0, 100 );
 }
 
 function Queue_GetStgPrms( $dirQueue, $state )
@@ -3757,7 +3813,7 @@ function OnAsyncTask_QueueProcessItems( $args )
 		@unlink( $fileTempQueue );
 
 		if( $data )
-			CachePostPreparePageEx( Gen::GetArrField( $data, array( 'u' ), '' ), Gen::GetArrField( $data, array( 's' ), '' ), Gen::GetArrField( $data, array( 'p' ), 10 ), null, Gen::GetArrField( $data, array( 'h' ), array() ), Gen::GetArrField( $data, array( 't' ), 0.0 ) );
+			CachePostPreparePageEx( null, Gen::GetArrField( $data, array( 'u' ), '' ), Gen::GetArrField( $data, array( 's' ), '' ), Gen::GetArrField( $data, array( 'p' ), 10 ), null, Gen::GetArrField( $data, array( 'h' ), array() ), Gen::GetArrField( $data, array( 't' ), 0.0 ) );
 	}
 
 	$aCurItemsPrior = array();
@@ -4150,6 +4206,7 @@ class ProcessQueueItemCtx
 	public $skipStatus = null;
 	public $warns = null;
 	public $requestRes = null;
+	public $method = null;
 	public $url = null;
 	public $hdrs = null;
 	public $hr = Gen::S_OK;
@@ -4173,7 +4230,7 @@ class ProcessQueueItemCtx
 		return( Net::UrlAddArgs( $url, array( 'seraph_accel_prep' => @base64_encode( @json_encode( array_merge( $prepArgs, array( 'nonce' => hash_hmac( 'md5', '' . $tmStamp, GetSalt() ), '_tm' => '' . $tmStamp ) ) ) ) ) ) );
 	}
 
-	static function MakeRequest( $asyncMode, $url, $hdrs, $timeout = 0 )
+	static function MakeRequest( $asyncMode, $method, $url, $hdrs, $timeout = 0 )
 	{
 
 		$prms = array( 'redirection' => 0, 'timeout' => $timeout, 'sslverify' => false, 'headers' => $hdrs );
@@ -4196,7 +4253,7 @@ class ProcessQueueItemCtx
 			$prms[ 'headers' ] = array_merge( OnAsyncTasksSetNeededHdrs( $_SERVER, array() ), ( array )$hdrs );
 		}
 
-		return( Wp::RemoteGet( $url, $prms ) );
+		return( Wp::RemoteRequest( $method, $url, $prms ) );
 	}
 
 	function PrepareRequest()
@@ -4204,6 +4261,8 @@ class ProcessQueueItemCtx
 		$prepArgs = array( 'pc' => $this -> data[ 'pc' ], 'p' => ( int )($this -> data[ 'p' ]??null) );
 		if( ( int )($this -> item[ 'p' ]??null) == -480 )
 			$prepArgs[ 'lrn' ] = ($this -> data[ 'l' ]??null);
+
+		$this -> method = ( string )($this -> data[ 'm' ]??'GET');
 
 		$this -> url = ProcessQueueItemCtx::AdjustRequestUrl( ($this -> data[ 'u' ]??null), $this -> item[ 't' ], $prepArgs );
 
@@ -4314,7 +4373,7 @@ class ProcessQueueItemCtx
 
 			if( ( int )($this -> item[ 'p' ]??null) !== 10 )
 				if( ( $redirIdx = ($this -> data[ 'rdr' ]??0) ) <= 4 )
-					if( CachePostPreparePageEx( $this -> urlRedir, $this -> siteId, ( int )($this -> item[ 'p' ]??null), ($this -> data[ 'p' ]??null), $this -> hdrs, $this -> data[ 'to' ], $redirIdx + 1, ($this -> data[ 'l' ]??null) ) )
+					if( CachePostPreparePageEx( ($this -> data[ 'm' ]??null), $this -> urlRedir, $this -> siteId, ( int )($this -> item[ 'p' ]??null), ($this -> data[ 'p' ]??null), $this -> hdrs, $this -> data[ 'to' ], $redirIdx + 1, ($this -> data[ 'l' ]??null) ) )
 						$this -> immediatelyPushQueue = true;
 		}
 	}
@@ -4368,7 +4427,7 @@ class ProcessQueueItemCtx
 				unset( $aProgress, $lock );
 			}
 
-			CachePostPreparePageEx( ($this -> data[ 'u' ]??null), $this -> siteId, -480, ($this -> data[ 'p' ]??null), $this -> hdrs, $this -> data[ 'to' ], null, $this -> needLrn );
+			CachePostPreparePageEx( ($this -> data[ 'm' ]??null), ($this -> data[ 'u' ]??null), $this -> siteId, -480, ($this -> data[ 'p' ]??null), $this -> hdrs, $this -> data[ 'to' ], null, $this -> needLrn );
 			$this -> immediatelyPushQueue = true;
 		}
 		else
@@ -4420,7 +4479,7 @@ class ProcessQueueItemCtx
 
 		PluginFileValues::SetEx( PluginFileValues::GetDirVar( '' ), 'pelt', ( int )$this -> tmFinish );
 
-		if( $this -> needRepeatPage && CachePostPreparePageEx( ($this -> data[ 'u' ]??null), $this -> siteId, $priorOrig, ($this -> data[ 'p' ]??null), $this -> hdrs, $this -> data[ 'to' ], $this -> repeatIdx !== null ? ( $this -> repeatIdx + 1 ) : null, ($this -> data[ 'l' ]??null) ) )
+		if( $this -> needRepeatPage && CachePostPreparePageEx( ($this -> data[ 'm' ]??null), ($this -> data[ 'u' ]??null), $this -> siteId, $priorOrig, ($this -> data[ 'p' ]??null), $this -> hdrs, $this -> data[ 'to' ], $this -> repeatIdx !== null ? ( $this -> repeatIdx + 1 ) : null, ($this -> data[ 'l' ]??null) ) )
 			$this -> immediatelyPushQueue = true;
 
 		CachePushQueueProcessor( true, $this -> immediatelyPushQueue, $this -> hr != Gen::S_OK && Gen::HrSucc( $this -> hr ) );
@@ -4532,7 +4591,7 @@ function OnAsyncTask_CacheProcessItem( $args )
 		$ctx -> PrepareRequest();
 
 		{
-			$ctx -> requestRes = ProcessQueueItemCtx::MakeRequest( $asyncMode, $ctx -> url, $ctx -> hdrsForRequest, 30 );
+			$ctx -> requestRes = ProcessQueueItemCtx::MakeRequest( $asyncMode, $ctx -> method, $ctx -> url, $ctx -> hdrsForRequest, 30 );
 
 			$ctx -> hr = Net::GetHrFromWpRemoteGet( $ctx -> requestRes, true );
 			$ctx -> httpCode = Net::GetResponseCodeFromHr( $ctx -> hr );
@@ -4703,7 +4762,7 @@ function _CachePostPreparePageEx_StopAndRepeat( $aProgress, $id, $data = null )
 	$aProgress[ $id ] = $item;
 }
 
-function CachePostPreparePageEx( $url, $siteId, $priority, $priorityInitiator, $headers = null, $time = null, $redirIdx = null, $lrnId = null )
+function CachePostPreparePageEx( $method , $url, $siteId, $priority, $priorityInitiator, $headers = null, $time = null, $redirIdx = null, $lrnId = null )
 {
 
 	if( !$url )
@@ -4765,6 +4824,8 @@ function CachePostPreparePageEx( $url, $siteId, $priority, $priorityInitiator, $
 	}
 
 	$data = array( 'p' => $priorityInitiator, 'u' => $url, 'h' => $headers, 'v' => $viewName );
+	if( $method && $method != 'GET' )
+		$data[ 'm' ] = $method;
 	if( $redirIdx )
 		$data[ 'rdr' ] = $redirIdx;
 	if( $lrnId )
@@ -4919,7 +4980,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.7';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.8';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 

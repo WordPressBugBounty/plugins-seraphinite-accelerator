@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.7
-Stable tag: 2.26.7
+Stable tag: 2.26.8
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,22 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.26.8 =
+
+New features:
+
+* Object cache.
+
+Improvements:
+
+* Getting Vimeo thumbnail URL from 'thumbnail_url' meta field.
+* Preventing random content to avoid cache growing: Tag Groups plugin - Shuffle Box.
+* Requests cache.
+
+Fixes:
+
+* CSS parsing: If rule ends with a comma without a semicolon it breaks further rules.
 
 = 2.26.7 =
 

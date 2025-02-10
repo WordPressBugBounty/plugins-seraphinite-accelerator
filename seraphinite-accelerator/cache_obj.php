@@ -5,15 +5,6 @@ if( !defined( 'ABSPATH' ) )
 
 require_once( __DIR__ . '/common.php' );
 
-function wp_suspend_cache_changing( $suspend = null )
-{
-	static $_suspend = false;
-
-	if( is_bool( $suspend ) )
-		$_suspend = $suspend;
-	return( $_suspend );
-}
-
 function wp_cache_add_global_groups( $groups )
 {
 	global $wp_object_cache;
@@ -172,6 +163,8 @@ class WP_Object_Cache
 		if( $this -> inited )
 			return;
 
+		global $seraph_accel_settObjCache;
+
 		$this -> inited = true;
 
 		if( is_multisite() )
@@ -187,6 +180,37 @@ class WP_Object_Cache
 		$dataDir = \seraph_accel\GetCacheDir() . '/oc';
 		$this -> lock = new \seraph_accel\Lock( $dataDir . '/l', false );
 		$this -> dataDir = $dataDir . '/g';
+
+		$this -> add_global_groups( \seraph_accel\Gen::GetArrField( $seraph_accel_settObjCache, array( 'cacheObj', 'groupsGlobal' ), array() ) );
+		$this -> add_non_persistent_groups( \seraph_accel\Gen::GetArrField( $seraph_accel_settObjCache, array( 'cacheObj', 'groupsNonPersistent' ), array() ) );
+
+		add_filter( 'pre_cache_alloptions',
+            function( $alloptions )
+			{
+				unset( $alloptions[ 'cron' ] );
+                return( $alloptions );
+            }
+		, PHP_INT_MAX );
+
+		add_action( 'added_option', array( $this, '_clnWpOption' ), PHP_INT_MAX );
+		add_action( 'updated_option', array( $this, '_clnWpOption' ), PHP_INT_MAX );
+		add_action( 'deleted_option', array( $this, '_clnWpOption' ), PHP_INT_MAX );
+	}
+
+	function _clnWpOption( $option )
+	{
+		if( wp_installing() )
+			return;
+
+		$alloptions = wp_load_alloptions();
+		if( isset( $alloptions[ $option ] ) )
+			add_action( 'shutdown', array( $this, '_delWpAllOptions' ), PHP_INT_MAX - 1 );
+		unset( $alloptions );
+	}
+
+	function _delWpAllOptions()
+	{
+		$this -> delete( 'alloptions', 'options' );
 	}
 
 	protected function _getPath( $group, $key )
@@ -200,6 +224,19 @@ class WP_Object_Cache
 			$path = md5( $path );
 		else
 			$path = str_replace( array( ':', '?', '|', '&', '=', '#' ), array( '@', '@', '~', '+', '-', '@' ), $path );
+	}
+
+	protected static function _normExpiration( $expire )
+	{
+		global $seraph_accel_settObjCache;
+
+		$nMax = \seraph_accel\Gen::GetArrField( $seraph_accel_settObjCache, array( 'cacheObj', 'timeout' ), 60 );
+
+		$expire = ( int )$expire;
+		if( $expire <= 0 || $expire > $nMax )
+			$expire = $nMax;
+
+		return( $expire );
 	}
 
 	protected function _getFilePath( $aPath )
@@ -252,8 +289,6 @@ class WP_Object_Cache
 
 	private function _updateToStg( $aPath, $v )
 	{
-		return( null );
-
 		if( isset( $this -> aNonPersistentGroup[ $aPath[ 0 ] ] ) )
 			return( null );
 
@@ -321,7 +356,7 @@ class WP_Object_Cache
 		return( false );
 	}
 
-	protected function _add( $key, $data, $group = '', $expire = 0 )
+	protected function _add( $bSetExist, $key, $data, $group, $expire, $time )
 	{
 
 		if( !self::_is_valid_key( $key ) )
@@ -332,101 +367,77 @@ class WP_Object_Cache
 		$v = \seraph_accel\Gen::GetArrField( $this -> aData, $aPath );
 		if( $v === null )
 			$v = $this -> _updateFromStg( $aPath );
-		if( $v !== null )
+		if( $bSetExist ? ( $v === null ) : ( $v !== null ) )
 			return( false );
 
-		return( $this -> _set( $aPath, $data, $expire ) );
+		return( $this -> _set( $aPath, $data, $expire, $time ) );
 	}
 
 	public function add( $key, $data, $group = '', $expire = 0 )
 	{
-		if( wp_suspend_cache_addition() || wp_suspend_cache_changing() )
+		if( function_exists( 'wp_suspend_cache_addition' ) && wp_suspend_cache_addition()  )
 			return( false );
 
 		$this -> _init();
 
-		return( $this -> _add( $key, $data, $group, $expire ) );
+		return( $this -> _add( false, $key, $data, $group, self::_normExpiration( $expire ), time() ) );
 	}
 
 	public function add_multiple( array $aData, $group = '', $expire = 0 )
 	{
-		if( wp_suspend_cache_addition() || wp_suspend_cache_changing() )
+		if( function_exists( 'wp_suspend_cache_addition' ) && wp_suspend_cache_addition()  )
 			return( array_fill_keys( array_keys( $aData ), false ) );
 
 		$this -> _init();
 
+		$expire = self::_normExpiration( $expire );
+		$time = time();
+
 		$aRes = array();
 
 		foreach( $aData as $key => $data )
-			$aRes[ $key ] = $this -> _add( $key, $data, $group, $expire );
+			$aRes[ $key ] = $this -> _add( false, $key, $data, $group, $expire, $time );
 
 		return( $aRes );
 	}
 
 	public function replace( $key, $data, $group = '', $expire = 0 )
 	{
-		if( wp_suspend_cache_changing() )
-			return( false );
-
-		if( !self::_is_valid_key( $key ) )
-			return( false );
 
 		$this -> _init();
 
-		$aPath = $this -> _getPath( $group, $key );
-
-		$v = \seraph_accel\Gen::GetArrField( $this -> aData, $aPath );
-		if( $v === null )
-			$v = $this -> _updateFromStg( $aPath );
-		if( $v === null )
-			return( false );
-
-		return( $this -> _set( $aPath, $data, $expire ) );
+		return( $this -> _add( true, $key, $data, $group, self::_normExpiration( $expire ), time() ) );
 	}
 
-	public function set( $key, $data, $group = '', $expire = 0 )
+	protected function _set( $aPath, $data, $expire, $time )
 	{
-		if( wp_suspend_cache_changing() )
-			return( false );
-
-		if( !self::_is_valid_key( $key ) )
-			return( false );
-
-		$this -> _init();
-
-		return( $this -> _set( $this -> _getPath( $group, $key ), $data, $expire ) );
-	}
-
-	protected function _set( $aPath, $data, $expire, $time = null )
-	{
-		global $seraph_accel_settObjCache;
-
 		if( is_object( $data ) )
 			$data = clone $data;
 
-		if( !$expire )
-			$expire = \seraph_accel\Gen::GetArrField( $seraph_accel_settObjCache, array( 'cacheObj', 'timeout' ), 60 );
-		if( !$time )
-			$time = time();
-
-		$v = array( $data, $time + ( int )$expire );
+		$v = array( $data, $time + $expire );
 		\seraph_accel\Gen::SetArrField( $this -> aData, $aPath, $v );
 		$this -> _updateToStg( $aPath, $v );
 
 		return( true );
 	}
 
-	public function set_multiple( array $aData, $group = '', $expire = 0 )
+	public function set( $key, $data, $group = '', $expire = 0 )
 	{
-		if( wp_suspend_cache_changing() )
+
+		if( !self::_is_valid_key( $key ) )
 			return( false );
 
 		$this -> _init();
 
-		global $seraph_accel_settObjCache;
+		return( $this -> _set( $this -> _getPath( $group, $key ), $data, self::_normExpiration( $expire ), time() ) );
+	}
 
-		if( !$expire )
-			$expire = \seraph_accel\Gen::GetArrField( $seraph_accel_settObjCache, array( 'cacheObj', 'timeout' ), 60 );
+	public function set_multiple( array $aData, $group = '', $expire = 0 )
+	{
+
+		$this -> _init();
+
+		$expire = self::_normExpiration( $expire );
 		$time = time();
 
 		$aRes = array();
@@ -525,16 +536,12 @@ class WP_Object_Cache
 
 	public function incr( $key, $offset = 1, $group = '' )
 	{
-		if( wp_suspend_cache_changing() )
-			return( false );
 
 		return( $this -> _incr( $key, $offset, $group ) );
 	}
 
 	public function decr( $key, $offset = 1, $group = '' )
 	{
-		if( wp_suspend_cache_changing() )
-			return( false );
 
 		return( $this -> _incr( $key, -$offset, $group ) );
 	}

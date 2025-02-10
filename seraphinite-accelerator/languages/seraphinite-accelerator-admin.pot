@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.26.7)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.26.7\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.26.8)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.26.8\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.26.7)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.26.7\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.26.8)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.26.8\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -679,8 +679,20 @@ msgctxt "admin.Manage_Stat"
 msgid "ObjCountLbl"
 msgstr ""
 
+# Requests:
 msgctxt "admin.Manage_Stat"
 msgid "DataObjCountLbl"
+msgstr ""
+
+# Objects:
+msgctxt "admin.Manage_Stat"
+msgid "CacheObjCountLbl"
+msgstr ""
+
+# %1$s (%2$s)
+#, php-format
+msgctxt "admin.Manage_Stat"
+msgid "CountSizeVal_%1$s%2$s"
 msgstr ""
 
 # Inodes:
@@ -952,6 +964,11 @@ msgstr ""
 
 # Requests cache
 msgctxt "admin.Settings_CacheData"
+msgid "Title"
+msgstr ""
+
+# Objects cache
+msgctxt "admin.Settings_CacheObj"
 msgid "Title"
 msgstr ""
 
@@ -1409,6 +1426,27 @@ msgstr ""
 #, php-format
 msgctxt "admin.Settings_CacheData_Item"
 msgid "Timeout_%1$s%2$s%3$s"
+msgstr ""
+
+# General
+msgctxt "admin.Settings_CacheObj_Common"
+msgid "Lbl"
+msgstr ""
+
+msgctxt "admin.Settings_CacheObj_Groups"
+msgid "Lbl"
+msgstr ""
+
+msgctxt "admin.Settings_CacheObj_Groups"
+msgid "GlobalDescrLbl"
+msgstr ""
+
+msgctxt "admin.Settings_CacheObj_Groups"
+msgid "ItemsPhlr"
+msgstr ""
+
+msgctxt "admin.Settings_CacheObj_Groups"
+msgid "NonPersistentDescrLbl"
 msgstr ""
 
 # General

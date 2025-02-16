@@ -217,7 +217,7 @@ function _Process( $sites )
 	{
 		_ProcessOutHdrTrace( $sett, true, true, $seraph_accel_g_cacheSkipData[ 0 ], ($seraph_accel_g_cacheSkipData[ 1 ]??null) );
 		if( $seraph_accel_g_prepPrms !== null )
-			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'finish' => true, 'skip' => Gen::GetArrField( ($seraph_accel_g_cacheSkipData[ 1 ]??null), array( 'reason' ), '' ) ), false, false );
+			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'skip' => Gen::GetArrField( ($seraph_accel_g_cacheSkipData[ 1 ]??null), array( 'reason' ), '' ) ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( json_encode( array( '_SERVER' => $_SERVER ) ) ) ) : array() ), false, false );
 		return( Gen::S_NOTIMPL );
 	}
 
@@ -239,7 +239,7 @@ function _Process( $sites )
 
 				_ProcessOutHdrTrace( $sett, true, true, $seraph_accel_g_cacheSkipData[ 0 ], ($seraph_accel_g_cacheSkipData[ 1 ]??null) );
 				if( $seraph_accel_g_prepPrms !== null )
-					ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'finish' => true, 'skip' => $exclStatus ), false, false );
+					ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'skip' => $exclStatus ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( json_encode( array( '_SERVER' => $_SERVER ) ) ) ) : array() ), false, false );
 				return( Gen::S_NOTIMPL );
 			}
 
@@ -372,7 +372,7 @@ function _Process( $sites )
 
 			if( $seraph_accel_g_prepPrms !== null )
 			{
-				ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'finish' => true, 'skip' => 'alreadyProcessing' ), false, false );
+				ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'skip' => 'alreadyProcessing' ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( json_encode( array( '_SERVER' => $_SERVER ) ) ) ) : array() ), false, false );
 				return( Gen::S_OK );
 			}
 
@@ -520,7 +520,7 @@ function _Process( $sites )
 
 	if( $seraph_accel_g_prepPrms !== null )
 	{
-		ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'finish' => true, 'skip' => $isCip ? 'alreadyProcessing' : 'alreadyProcessed' ), false, false );
+		ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'skip' => $isCip ? 'alreadyProcessing' : 'alreadyProcessed' ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( json_encode( array( '_SERVER' => $_SERVER ) ) ) ) : array() ), false, false );
 		return( $hr );
 	}
 
@@ -588,7 +588,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.26.9;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.26.10;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -1352,7 +1352,7 @@ function _CbContentFinishSkip( $content )
 
 	if( $seraph_accel_g_prepPrms !== null )
 	{
-		ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'finish' => true, 'skip' => $skipStatus ), false, false );
+		ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'skip' => $skipStatus ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( json_encode( array( '_SERVER' => $_SERVER ) ) ) ) : array() ), false, false );
 
 		$httpCode = http_response_code();
 		if( $httpCode >= 300 && $httpCode < 400 )
@@ -1407,7 +1407,7 @@ function _CbContentFinish( $content )
 			CacheExt_Clear( GetCurRequestUrl() );
 
 		if( $seraph_accel_g_prepPrms !== null )
-			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'finish' => true, 'skip' => $skipStatus ), false, false );
+			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'skip' => $skipStatus ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( json_encode( array( '_SERVER' => $_SERVER ) ) ) ) : array() ), false, false );
 
 		if( $seraph_accel_g_noFo )
 			return( '' );
@@ -1442,7 +1442,7 @@ function _CbContentFinish( $content )
 		{
 			if( Gen::LastErrDsc_Is() )
 				$skipStatus .= ':' . rawurlencode( Gen::LastErrDsc_Get() );
-			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'finish' => true, 'skip' => $skipStatus ), false, false );
+			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'skip' => $skipStatus ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( json_encode( array( '_SERVER' => $_SERVER ) ) ) ) : array() ), false, false );
 		}
 
 		return( $content );
@@ -1452,7 +1452,7 @@ function _CbContentFinish( $content )
 		CacheExt_Clear( GetCurRequestUrl() );
 
 	if( $seraph_accel_g_prepPrms !== null )
-		ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'finish' => true, 'warns' => LastWarnDscs_Get() ), false, false );
+		ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'warns' => LastWarnDscs_Get() ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( json_encode( array( '_SERVER' => $_SERVER ) ) ) ) : array() ), false, false );
 
 	if( $seraph_accel_g_noFo )
 		return( '' );
@@ -1472,7 +1472,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( ($settCache[ 'normAgent' ]??null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = ($_SERVER[ 'HTTP_USER_AGENT' ]??'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.9';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.10';
 	}
 
 	if( ($settCache[ 'views' ]??null) )

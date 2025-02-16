@@ -1409,7 +1409,10 @@ class Gen
 		{
 			$fileHtaccess = Gen::GetFileDir( $file ) . '/.htaccess';
 			if( !@file_exists( $fileHtaccess ) )
+			{
+				Gen::MakeDir( Gen::GetFileDir( $file ), true );
 				@file_put_contents( $fileHtaccess, 'Options -Indexes' );
+			}
 		}
 
 		if( Gen::FileSize( $file ) > ( 2 * 1024 * 1024 ) )
@@ -1857,6 +1860,11 @@ class Gen
 	static function FileMTime( $file )
 	{
 		return( @file_exists( $file ) ? @filemtime( $file ) : false );
+	}
+
+	static function Constant( string $name )
+	{
+		return( defined( $name ) ? @constant( $name ) : null );
 	}
 
 	static private $_lastErrDsc = null;
@@ -3303,7 +3311,7 @@ class Net
 	static function UrlParseQuery( $query )
 	{
 		$args = array();
-		@parse_str( $query, $args );
+		@parse_str( ( string )$query, $args );
 		return( $args );
 	}
 
@@ -3512,7 +3520,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'useragent' ] ) )
-			$args[ 'useragent' ] = 'seraph-accel-Agent/2.26.9';
+			$args[ 'useragent' ] = 'seraph-accel-Agent/2.26.10';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

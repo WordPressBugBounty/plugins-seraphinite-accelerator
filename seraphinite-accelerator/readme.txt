@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.7
-Stable tag: 2.26.9
+Stable tag: 2.26.10
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,17 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.26.10 =
+
+Improvements:
+
+* Images adaptation: Added processing of 2160 px width.
+
+Fixes:
+
+* Custom styles: '@import' directive processed incorrectly if used in the non top block.
+* Large data in async tasks file while logging post update reasons.
 
 = 2.26.9 =
 

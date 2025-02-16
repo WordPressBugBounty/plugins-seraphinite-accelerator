@@ -129,13 +129,13 @@ function CacheExt_Clear( $url = null )
 				$urlComps[ 'scheme' ] = 'https';
 				$urlPurge = Net::UrlDeParse( $urlComps, 0, array( PHP_URL_QUERY, PHP_URL_FRAGMENT ) );
 				if( isset( $urlComps[ 'query' ] ) )
-					$requestRes = _CacheExt_SockDoRequest( $aSrv[ 'SERVER_ADDR' ], 'PURGE', $urlPurge, array( 'X-Purge-Regex' => '.*', 'X-VC-Purge-Key' => @constant( 'O2SWITCH_VARNISH_PURGE_KEY' ) ) );
+					$requestRes = _CacheExt_SockDoRequest( $aSrv[ 'SERVER_ADDR' ], 'PURGE', $urlPurge, array( 'X-Purge-Regex' => '.*', 'X-VC-Purge-Key' => Gen::Constant( 'O2SWITCH_VARNISH_PURGE_KEY' ) ) );
 				else
-					$requestRes = _CacheExt_SockDoRequest( $aSrv[ 'SERVER_ADDR' ], 'PURGE', $urlPurge, array( 'X-Purge-Method' => 'default', 'X-VC-Purge-Key' => @constant( 'O2SWITCH_VARNISH_PURGE_KEY' ) ) );
+					$requestRes = _CacheExt_SockDoRequest( $aSrv[ 'SERVER_ADDR' ], 'PURGE', $urlPurge, array( 'X-Purge-Method' => 'default', 'X-VC-Purge-Key' => Gen::Constant( 'O2SWITCH_VARNISH_PURGE_KEY' ) ) );
 			}
 		}
 		else
-			$requestRes = _CacheExt_SockDoRequest( $aSrv[ 'SERVER_ADDR' ], 'PURGE', Wp::GetSiteRootUrl(), array( 'X-Purge-Regex' => '.*', 'X-VC-Purge-Key' => @constant( 'O2SWITCH_VARNISH_PURGE_KEY' ) ) );
+			$requestRes = _CacheExt_SockDoRequest( $aSrv[ 'SERVER_ADDR' ], 'PURGE', Wp::GetSiteRootUrl(), array( 'X-Purge-Regex' => '.*', 'X-VC-Purge-Key' => Gen::Constant( 'O2SWITCH_VARNISH_PURGE_KEY' ) ) );
 
 		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'O2Switch: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );

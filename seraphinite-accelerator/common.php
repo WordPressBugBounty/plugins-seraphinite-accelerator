@@ -2735,6 +2735,8 @@ function ReadSce( $dataPath, $settCache, $id, $type )
 
 function CacheReadDsc( $filePath )
 {
+	if( !@file_exists( $filePath ) )
+		return( false );
 	return( @unserialize( @file_get_contents( $filePath ) ) );
 }
 
@@ -3712,7 +3714,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.9 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.10 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4205,6 +4207,7 @@ class ProcessQueueItemCtx
 	public $repeatIdx = null;
 	public $skipStatus = null;
 	public $warns = null;
+	public $infos = array();
 	public $requestRes = null;
 	public $method = null;
 	public $url = null;
@@ -4290,6 +4293,12 @@ class ProcessQueueItemCtx
 	{
 		$this -> tmFinish = microtime( true );
 
+		{
+			$sett = Plugin::SettGet();
+			if( ($sett[ 'debugInfo' ]??null) )
+				$this -> infos[] = json_encode( array( 'hdrsForRequest' => $this -> hdrsForRequest ) );
+		}
+
 		$ctlRes = ProcessCtlData_Get( $this -> fileCtl, $isLive );
 		if( Gen::GetArrField( $ctlRes, array( 'stage' ) ) )
 		{
@@ -4324,6 +4333,7 @@ class ProcessQueueItemCtx
 					$this -> skipStatus = Gen::GetArrField( $ctlRes, array( 'skip' ) );
 					$this -> hr = $this -> skipStatus ? ( Gen::StrStartsWith( $this -> skipStatus, 'err:' ) ? Gen::E_FAIL : Gen::S_FALSE ) : Gen::S_OK;
 					$this -> warns = Gen::GetArrField( $ctlRes, array( 'warns' ), array() );
+					array_splice( $this -> infos, count( $this -> infos ), 0, Gen::GetArrField( $ctlRes, array( 'infos' ), array() ) );
 					break;
 				}
 
@@ -4434,6 +4444,8 @@ class ProcessQueueItemCtx
 		{
 			if( $this -> hr == Gen::S_OK && $this -> warns )
 				$this -> data[ 'w' ] = $this -> warns;
+			if( $this -> infos )
+				$this -> data[ 'i' ] = $this -> infos;
 
 			if( isset( $this -> data[ 'hr' ] ) && $this -> data[ 'hr' ] != Gen::S_OK && $this -> urlRedir && $this -> urlRedir == ($this -> data[ 'u' ]??null) )
 			{
@@ -4980,7 +4992,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.9';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.10';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 

@@ -84,3 +84,10 @@ function &GetContentProcessCtx( $serverArgs, $sett )
 	return( $seraph_accel_g_ctxProcess );
 }
 
+function _JsClk_XpathExtFunc_ifExistsThenCssSel( $v, $cssSel )
+{
+	if( !is_array( $v ) || count( $v ) < 1 )
+		return( false );
+	return( new JsClk_ifExistsThenCssSel( $cssSel ) );
+}
+

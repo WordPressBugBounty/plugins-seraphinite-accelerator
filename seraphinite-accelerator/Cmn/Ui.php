@@ -409,26 +409,19 @@ class Ui
 	{
 
 		$res = array();
-		$lastSrcData = null;
-
-		foreach( explode( ',', $v ) as $args )
+		while( preg_match( '@,\\s@S', $v, $m, PREG_OFFSET_CAPTURE ) )
 		{
-			$args = array_map( 'trim', explode( ' ', Gen::StrReplaceWhileChanging( '  ', ' ', str_replace( array( "\t", "\r", "\n", "\0", "\x0B" ), ' ', trim( $args ) ) ) ) );
-
-			if( Ui::IsSrcAttrData( $args[ 0 ] ) )
-			{
-				$lastSrcData = $args[ 0 ];
-				continue;
-			}
-
-			if( $lastSrcData )
-			{
-				$args[ 0 ] = $lastSrcData . ',' . $args[ 0 ];
-				$lastSrcData = null;
-			}
-
-			$res[] = $args;
+			$res[] = substr( $v, 0, $m[ 0 ][ 1 ] );
+			$v = substr( $v, $m[ 0 ][ 1 ] + 1 );
 		}
+		$res[] = $v;
+
+		$res = array_map(
+			function( $resI )
+			{
+				return( array_map( 'trim', explode( ' ', Gen::StrReplaceWhileChanging( '  ', ' ', str_replace( array( "\t", "\r", "\n", "\0", "\x0B" ), ' ', trim( $resI ) ) ) ) ) );
+			}
+		, $res );
 
 		return( $res );
 	}

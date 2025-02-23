@@ -13,6 +13,9 @@ require_once( __DIR__ . '/options.php' );
 require_once( __DIR__ . '/tune.php' );
 require_once( __DIR__ . '/cache_ext.php' );
 
+if( defined( 'SERAPH_ACCEL_ADVCACHE_COMP' ) )
+	require_once( __DIR__ . '/cache.php' );
+
 Plugin::Init();
 
 function OnActivate()
@@ -38,7 +41,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.26.10', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.27', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -883,7 +886,13 @@ function _OnCheckUpdateGlob()
 		case 2:					$txt .= 'Automatic deleting'; break;
 		}
 
-		$txt .= ' due to ' . implode( ', ', array_map( function( $v ) { if( $v == 'updTerms' ) return( 'taxonomie(s)' ); return( 'UNK' ); }, array_keys( $seraph_accel_g_globUpdated ) ) ) . ' changed; scope: all';
+		$txt .= ' due to ' . implode( ', ', array_map(
+			function( $v )
+			{
+				static $g_aReason = array( 'term' => 'taxonomie(s)', 'menu' => 'menu(s)', 'elmntrTpl' => 'Elementor template(s)', 'tblPrss' => 'TablePress table(s)' );
+				return( ($g_aReason[ $v ]??'UNK') );
+			}
+		, array_keys( $seraph_accel_g_globUpdated ) ) ) . ' changed; scope: all';
 
 		LogWrite( $txt, Ui::MsgInfo, 'Cache update' );
 	}
@@ -1063,7 +1072,7 @@ function _OnUpdateGeoDb()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.26.10' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1299,7 +1308,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.26.10' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.27' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';

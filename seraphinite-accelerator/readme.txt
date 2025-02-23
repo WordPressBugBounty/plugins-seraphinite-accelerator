@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.7
-Stable tag: 2.26.10
+Stable tag: 2.27
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,23 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.27 =
+
+Improvements:
+
+* Cache clearing of Hostinger.
+* Server and cloud cache warming up.
+* Support for BatCache based hostings (Pressable, WordPress.Com).
+* Support of particular event specification in lazy interactions exclusions.
+* Updating all cache after global changes (e.g. menus, Elementor template etc.).
+* Updating cache of all languages if TranslatePress is used.
+
+Fixes:
+
+* Delayed click can be processed of element in exclusions.
+* Incorrect parsing of 'srcset' attribute containing commas in URL.
+* PHP Warning: Undefined array key 2 in \Cmn\Ext\PHP\php-css-parser\Value\Value.php.
 
 = 2.26.10 =
 

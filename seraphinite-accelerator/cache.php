@@ -5,9 +5,13 @@ namespace seraph_accel;
 if( !defined( 'ABSPATH' ) )
 	exit;
 
-require( __DIR__ . '/common.php' );
+require_once( __DIR__ . '/common.php' );
 
 global $seraph_accel_g_cacheSkipData;
+global $seraph_accel_sites;
+
+if( !$seraph_accel_sites )
+	return;
 
 $hr = _Process( $seraph_accel_sites );
 if( $hr == Gen::S_OK || Gen::HrFail( $hr ) )
@@ -63,6 +67,9 @@ function _Process( $sites )
 	$seraph_accel_g_prepPrms = CacheExtractPreparePageParams( $args );
 	if( $seraph_accel_g_prepPrms !== null )
 	{
+
+		BatCache_DontProcessCurRequest( true );
+
 		if( $seraph_accel_g_prepPrms === false )
 		{
 			http_response_code( 400 );
@@ -215,6 +222,9 @@ function _Process( $sites )
 
 	if( $seraph_accel_g_cacheSkipData )
 	{
+
+		BatCache_DontProcessCurRequest();
+
 		_ProcessOutHdrTrace( $sett, true, true, $seraph_accel_g_cacheSkipData[ 0 ], ($seraph_accel_g_cacheSkipData[ 1 ]??null) );
 		if( $seraph_accel_g_prepPrms !== null )
 			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'skip' => Gen::GetArrField( ($seraph_accel_g_cacheSkipData[ 1 ]??null), array( 'reason' ), '' ) ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( json_encode( array( '_SERVER' => $_SERVER ) ) ) ) : array() ), false, false );
@@ -223,6 +233,9 @@ function _Process( $sites )
 
 	if( GetContentProcessorForce( $sett ) !== null )
 	{
+
+		BatCache_DontProcessCurRequest();
+
 		$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => 'debugContProcForce' ) );
 
 		return( Gen::S_FALSE );
@@ -232,6 +245,9 @@ function _Process( $sites )
 		$exclStatus = ContProcGetExclStatus( $seraph_accel_g_siteId, $settCache, $path, $pathOrig, $pathIsDir, $args, $varsOut, true, $seraph_accel_g_prepPrms === null );
 		if( $exclStatus )
 		{
+
+			BatCache_DontProcessCurRequest();
+
 			$seraph_accel_g_cacheSkipData = array( 'skipped', array( 'reason' => $exclStatus ) );
 
 			if( Gen::StrStartsWith( $exclStatus, 'excl' ) )
@@ -461,7 +477,7 @@ function _Process( $sites )
 	if( $seraph_accel_g_prepPrms === null )
 	{
 
-		$reasonOutputErr;
+		$reasonOutputErr = null;
 		if( !$dsc )
 			$reasonOutputErr = 'brokenDsc';
 		else
@@ -588,7 +604,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.26.10;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.27;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -715,17 +731,20 @@ function _ProcessOutCachedData( $allowExtCache, $objSubType, $sett, $settCache, 
 			return( Gen::S_FALSE );
 		}
 
-		if( $encoding )
+		if( !defined( 'SERAPH_ACCEL_ADVCACHE_COMP' ) )
 		{
-			@ini_set( 'zlib.output_compression', 'Off' );
-			@ini_set( 'brotli.output_compression', 'Off' );
+			if( $encoding )
+			{
+				@ini_set( 'zlib.output_compression', 'Off' );
+				@ini_set( 'brotli.output_compression', 'Off' );
+			}
+
+			if( ($settCache[ 'cntLen' ]??null) && $ctxData[ 'contentLen' ] !== null )
+				@header( 'Content-Length: '. $ctxData[ 'contentLen' ] );
+
+			if( $encoding )
+				@header( 'Content-Encoding: ' . $encoding );
 		}
-
-		if( ($settCache[ 'cntLen' ]??null) && $ctxData[ 'contentLen' ] !== null )
-		    @header( 'Content-Length: '. $ctxData[ 'contentLen' ] );
-
-		if( $encoding )
-			@header( 'Content-Encoding: ' . $encoding );
 	}
 
 	if( $objSubType === null )
@@ -891,6 +910,12 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 			break;
 
 		}
+	}
+
+	if( defined( 'SERAPH_ACCEL_ADVCACHE_COMP' ) )
+	{
+		$ctxData[ 'recompress' ] = true;
+		$encoding = '';
 	}
 
 	$recompress = $ctxData[ 'recompress' ];
@@ -1403,8 +1428,8 @@ function _CbContentFinish( $content )
 
 		CacheDscWriteCancel( $skipStatus !== 'aborted' && !Gen::StrStartsWith( $skipStatus, 'lrnNeed' ), $skipStatus === 'notChanged' );
 
-		if( $skipStatus !== 'aborted' && !Gen::StrStartsWith( $skipStatus, 'lrnNeed' ) && $skipStatus !== 'notChanged' && Gen::GetArrField( $settCache, array( 'srvClr' ), false ) && function_exists( 'seraph_accel\\CacheExt_Clear' ) )
-			CacheExt_Clear( GetCurRequestUrl() );
+		if( $skipStatus !== 'aborted' && !Gen::StrStartsWith( $skipStatus, 'lrnNeed' ) && $skipStatus !== 'notChanged' )
+			CacheAdditional_UpdateCurUrl( $settCache );
 
 		if( $seraph_accel_g_prepPrms !== null )
 			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'skip' => $skipStatus ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( json_encode( array( '_SERVER' => $_SERVER ) ) ) ) : array() ), false, false );
@@ -1448,8 +1473,7 @@ function _CbContentFinish( $content )
 		return( $content );
 	}
 
-	if( Gen::GetArrField( $settCache, array( 'srvClr' ), false ) && function_exists( 'seraph_accel\\CacheExt_Clear' ) )
-		CacheExt_Clear( GetCurRequestUrl() );
+	CacheAdditional_UpdateCurUrl( $settCache );
 
 	if( $seraph_accel_g_prepPrms !== null )
 		ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'warns' => LastWarnDscs_Get() ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( json_encode( array( '_SERVER' => $_SERVER ) ) ) ) : array() ), false, false );
@@ -1472,7 +1496,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( ($settCache[ 'normAgent' ]??null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = ($_SERVER[ 'HTTP_USER_AGENT' ]??'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.10';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27';
 	}
 
 	if( ($settCache[ 'views' ]??null) )

@@ -750,8 +750,14 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $cbIsAborte
 		}
 	}
 
-	if( ( $op == 2 || $op == 0 ) && Gen::GetArrField( $sett, array( 'cache', 'srvClr' ), false ) )
-		CacheExt_Clear();
+	if( ( $op == 2 || $op == 0 ) )
+	{
+
+		BatCache_Clear();
+
+		if( Gen::GetArrField( $sett, array( 'cache', 'srvClr' ), false ) )
+			CacheExt_Clear();
+	}
 
 	if( $op == 1 )
 	{
@@ -799,6 +805,9 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $cbIsAborte
 		{
 			return( false );
 		}
+
+		BatCache_Clear();
+
 	}
 
 	if( $op == 1 || $op == 2 )
@@ -966,10 +975,8 @@ function CacheGetCurOp( $op )
 	return( PluginFileValues::Get( ( $op === 1 ) ? 'cln' : 'o' ) );
 }
 
-function CacheOpUrl_ParseUrl( $url, &$siteAddr, &$siteSubId, &$path, &$query )
+function CacheOpUrl_GetFullUrl( $url )
 {
-	global $seraph_accel_sites;
-
 	if( ($url[ 0 ]??null) === '/' && ($url[ 1 ]??null) === '/' )
 	{
 	}
@@ -979,6 +986,15 @@ function CacheOpUrl_ParseUrl( $url, &$siteAddr, &$siteSubId, &$path, &$query )
 			$url = '/' . $url;
 		$url = rtrim( Wp::GetSiteRootUrl(), '/' ) . $url;
 	}
+
+	return( $url );
+}
+
+function CacheOpUrl_ParseUrl( $url, &$siteAddr, &$siteSubId, &$path, &$query )
+{
+	global $seraph_accel_sites;
+
+	$url = CacheOpUrl_GetFullUrl( $url );
 
 	$urlComps = Net::UrlParse( $url, Net::URLPARSE_F_PATH_FIXFIRSTSLASH | Net::URLPARSE_F_PRESERVEEMPTIES );
 	if( !($urlComps[ 'scheme' ]??null) )
@@ -1156,7 +1172,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.10' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1220,11 +1236,17 @@ function OnOptDel_Sett()
 
 function CacheVerifyEnvDropin( $sett, $verifyEnvDropin = null )
 {
+	$file = WP_CONTENT_DIR . '/advanced-cache.php';
+	$cont = @file_get_contents( $file );
+
+	if( IsEnvDropinLockedBy( $file, $cont ) )
+		return( true );
+
 	if( $verifyEnvDropin === null )
 		$verifyEnvDropin = new AnyObj();
 
 	$verifyEnvDropin -> needed = str_replace( '.0,', ',', ( string )GetAdvCacheFileContent( $sett ) );
-	$verifyEnvDropin -> actual = str_replace( '.0,', ',', ( string )@file_get_contents( WP_CONTENT_DIR . '/advanced-cache.php' ) );
+	$verifyEnvDropin -> actual = str_replace( '.0,', ',', ( string )$cont );
 
 	if( $verifyEnvDropin -> actual == $verifyEnvDropin -> needed )
 		return( true );
@@ -1356,17 +1378,57 @@ function _OpCache_Invalidate( $file )
 		@opcache_invalidate( $file, true );
 }
 
+function IsEnvDropinLockedBy( $file, $cont = null )
+{
+	if( !file_exists( $file ) )
+		return( false );
+
+	if( is_writable( $file ) )
+		return( false );
+
+	if( strpos( $cont, '$batcache' ) !== false )
+		return( 'batcache' );
+
+	return( 'unk' );
+}
+
 function CacheInitEnvDropin( $sett, $init = true )
 {
 	$file = WP_CONTENT_DIR . '/advanced-cache.php';
 	$cont = @file_get_contents( $file );
+	$hr = Gen::S_OK;
+
+	if( $sLock = IsEnvDropinLockedBy( $file, $cont ) )
+	{
+		$cont = Wp::Config_GetBlock( 'seraphinite-accelerator' );
+		if( $cont === false )
+			return( Gen::E_FAIL );
+
+		$contNew = _GetAdvCacheFileContent( $sett, true, $init );
+		if( $contNew && $sLock == 'batcache' )
+		{
+			$contNew = 'define( \'SERAPH_ACCEL_ADVCACHE_COMP\', true );' . "\n" . $contNew;
+			if( $sLock == 'batcache' )
+				$contNew .= '$batcache[ \'cache_control\' ] = false; $batcache[ \'use_stale\' ] = false; $batcache[ \'times\' ] = 1; $batcache[ \'unique\' ][] = !empty( $_SERVER[ \'HTTP_USER_AGENT\'] ) && preg_match( \'/(Android|Mobile|iPod|iPhone|MobileSafari|webOS|BlackBerry|windows phone|symbian|vodafone|opera mini|windows ce|smartphone|palm|midp)/i\', $_SERVER[ \'HTTP_USER_AGENT\' ] ) ? \'mobile\' : \'desktop\';';
+			$contNew = "\n" . $contNew . "\n";
+		}
+
+		if( $cont != $contNew )
+		{
+			$hr = Gen::HrAccom( $hr, Wp::Config_SetBlock( 'seraphinite-accelerator', $contNew ) );
+			_OpCache_Invalidate( Wp::GetConfigFilePath() );
+		}
+
+		return( $hr );
+	}
+	else if( Wp::Config_GetBlock( 'seraphinite-accelerator' ) )
+		$hr = Gen::HrAccom( $hr, Wp::Config_SetBlock( 'seraphinite-accelerator', '' ) );
 
 	if( !$init && ( !$cont || strpos( $cont, '/* seraphinite-accelerator */' ) === false ) )
 		return( Gen::S_OK );
 
 	$contNew = GetAdvCacheFileContent( $sett, $init );
 
-	$hr = Gen::S_OK;
 	if( $cont != $contNew )
 	{
 		$hr = Gen::HrAccom( $hr, @file_put_contents( $file, $contNew ) !== false ? Gen::S_OK : Gen::E_FAIL );
@@ -1690,9 +1752,11 @@ function _AddSiteIdSites( &$sitesIds, $addrSite, $siteId, $availablePlugins )
 
 }
 
-function GetAdvCacheFileContent( $sett, $init = true )
+function _GetAdvCacheFileContent( $sett, $bTiny = false, $init = true )
 {
 	$content = '';
+
+	$varExportTinyFmt = array( 'indent' => '', 'elemSpace' => '', 'assignSpaceBefore' => '', 'assignSpaceAfter' => '', 'escValNl' => true );
 
 	$sitesIds = array();
 	if( Gen::DoesFuncExist( 'get_sites' ) && is_multisite() )
@@ -1716,7 +1780,7 @@ function GetAdvCacheFileContent( $sett, $init = true )
 
 				Plugin::SettCacheClear();
 				$settSite = Plugin::SettGet();
-				$content .= 'function _seraph_accel_siteSettInlineDetach_' . $siteId . '(){ return ' . var_export( $settSite, true ) . '; }' . "\n";
+				$content .= 'function _seraph_accel_siteSettInlineDetach_' . $siteId . '(){ return ' . ( $bTiny ? Gen::VarExport( $settSite, $varExportTinyFmt ) : var_export( $settSite, true ) ) . '; }' . "\n";
 			}
 
 			restore_current_blog();
@@ -1731,13 +1795,26 @@ function GetAdvCacheFileContent( $sett, $init = true )
 		{
 			$availablePlugins = Plugin::GetAvailablePlugins();
 
-			$content .= 'function seraph_accel_siteSettInlineDetach($siteId){ return ' . var_export( $sett, true ) . '; }' . "\n";
+			$content .= 'function seraph_accel_siteSettInlineDetach($siteId){ return ' . ( $bTiny ? Gen::VarExport( $sett, $varExportTinyFmt ) : var_export( $sett, true ) ) . '; }' . "\n";
 			_AddSiteIdSites( $sitesIds, Net::GetUrlWithoutProto( Gen::SetLastSlash( Wp::GetSiteRootUrl(), false ) ), 'm', $availablePlugins );
 		}
 	}
 
 	if( $content )
+		$content .= '$seraph_accel_sites = ' . ( $bTiny ? Gen::VarExport( $sitesIds, $varExportTinyFmt ) : var_export( $sitesIds, true ) ) . ';' . "\n";
+
+	return( $content );
+}
+
+function GetAdvCacheFileContent( $sett, $init = true )
+{
+	$content = _GetAdvCacheFileContent( $sett, false, $init );
+
+	if( $content )
 	{
+
+		$content = 'if( defined( \'SERAPH_ACCEL_ADVCACHE_COMP\' ) ) return;' . "\n" . $content;
+
 		$content = '<?php' . "\n\n" .
 			'/*' . "\n" .
 			'Plugin Name: Seraphinite Accelerator - Advanced Cache (Drop-in)' . "\n" .
@@ -1748,8 +1825,6 @@ function GetAdvCacheFileContent( $sett, $init = true )
 			'Author URI: https://www.s-sols.com' . "\n" .
 			'*/' . "\n\n" .
 			'/* seraphinite-accelerator */' . "\n" . $content;
-
-		$content .= '$seraph_accel_sites = ' . var_export( $sitesIds, true ) . ';' . "\n";
 
 		$content .= '@include(WP_CONTENT_DIR . \'/plugins/' . Plugin::GetCurBaseName( false ) . '/cache.php\');' . "\n";
 		$content .= '?>';

@@ -27,6 +27,10 @@ function wp_cache_init()
 {
 	global $wp_object_cache;
 	$wp_object_cache = new WP_Object_Cache();
+
+	global $batcache;
+	if( $batcache && method_exists( $batcache, 'configure_groups' ) )
+		$batcache -> configure_groups();
 }
 
 function wp_cache_add( $key, $data, $group = '', $expire = 0 )

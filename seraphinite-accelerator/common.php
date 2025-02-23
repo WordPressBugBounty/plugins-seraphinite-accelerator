@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 156;
+const PLUGIN_SETT_VER								= 158;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -997,6 +997,21 @@ function OnOptRead_Sett( $sett, $verFrom )
 		}
 	}
 
+	if( $verFrom && $verFrom < 157 )
+		Gen::SetArrField( $sett, array( 'cache', 'srvUpd' ), false );
+
+	if( $verFrom && $verFrom < 158 )
+	{
+		Gen::SetArrField( $sett, array( 'cache', 'updGlobs', 'op' ), Gen::GetArrField( $sett, array( 'cache', 'updTermsOp' ) ) );
+		unset( $sett[ 'cache' ][ 'updTermsOp' ] );
+
+		Gen::SetArrField( $sett, array( 'cache', 'updGlobs', 'terms', 'enable' ), Gen::GetArrField( $sett, array( 'cache', 'updTerms' ) ) );
+		unset( $sett[ 'cache' ][ 'updTerms' ] );
+
+		Gen::SetArrField( $sett, array( 'cache', 'updGlobs', 'terms', 'deps' ), Gen::GetArrField( $sett, array( 'cache', 'updTermsDeps' ) ) );
+		unset( $sett[ 'cache' ][ 'updTermsDeps' ] );
+	}
+
 	return( $sett );
 }
 
@@ -1109,6 +1124,7 @@ function OnOptGetDef_Sett()
 
 			'srv' => true,
 			'srvClr' => true,
+			'srvUpd' => true,
 			'nginx' => array(
 				'method'=> '3rdp',
 				'url' => '',
@@ -1153,11 +1169,29 @@ function OnOptGetDef_Sett()
 				'@^_yoast_@',
 				'@^cwg_total_subscribers@',
 				'@^_backorders$@',
+				'@^_last_seen$@',
 			),
 
-			'updTerms' => false,
-			'updTermsOp' => 2,
-			'updTermsDeps' => array( 'category', 'product_cat', 'course_cat' ),
+			'updGlobs' => array(
+				'op' => 0,
+
+				'terms' => array(
+					'enable' => false,
+					'deps' => array( 'category', 'product_cat', 'course_cat' ),
+				),
+
+				'menu' => array(
+					'enable' => false,
+				),
+
+				'elmntrTpl' => array(
+					'enable' => false,
+				),
+
+				'tblPrss' => array(
+					'enable' => false,
+				),
+			),
 
 			'updAllDeps' => array(
 				'@home',
@@ -1654,6 +1688,7 @@ function OnOptGetDef_Sett()
 				'excl' => array(
 					'ajs:.//*[contains(concat(" ",normalize-space(@class)," ")," wprm-recipe-video ")]/iframe',
 					'ajs:.//iframe[contains(@src,"/maps")]',
+					'ajs:.//iframe[contains(concat(" ",normalize-space(@class)," ")," rezdy ")]',
 				),
 				'lazy' => array(
 					'enable' => true,
@@ -1828,6 +1863,8 @@ function OnOptGetDef_Sett()
 						'.//*[contains(concat(" ",normalize-space(@class)," ")," n2-ss-slider ")]//*[contains(concat(" ",normalize-space(@class)," ")," n2-bullet ")]',
 
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," woocommerce-loop-product__link ")]',
+
+						'ifExistsThenCssSel(.//script[@id="cookieyes"],".cky-btn")',
 					),
 
 					'exclDef' => array(
@@ -1879,7 +1916,7 @@ function OnOptGetDef_Sett()
 
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," dvmm_button ")]',
 
-						'.//div[@data-thumb]//a',
+						'click:.//div[@data-thumb]//a',
 
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," searchOpen ")]',
 
@@ -3714,7 +3751,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.10 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4992,7 +5029,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.26.10';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5421,11 +5458,131 @@ function CacheExt_Clear_CopyHdrs( &$aSrv )
 		$aSrv[ 'HTTP_X_SERAPH_ACCEL_PRESSABLE_PROXIED_REQUEST' ] = $aSrv[ 'PRESSABLE_PROXIED_REQUEST' ];
 	if( isset( $aSrv[ 'WARPDRIVE_API' ] ) )
 		$aSrv[ 'HTTP_X_SERAPH_ACCEL_WARPDRIVE_API' ] = $aSrv[ 'WARPDRIVE_API' ];
+	if( isset( $aSrv[ 'H_PLATFORM' ] ) )
+		$aSrv[ 'HTTP_X_SERAPH_ACCEL_H_PLATFORM' ] = $aSrv[ 'H_PLATFORM' ];
 }
 
 function CacheExt_Clear_CopyHdrsArr()
 {
-	return( array( 'HTTP_X_LSCACHE', 'HTTP_X_ZXCS_VHOST', 'HTTP_X_SERAPH_ACCEL_CW_ALLOWED_IP', 'HTTP_X_SERAPH_ACCEL_PRESSABLE_PROXIED_REQUEST', 'HTTP_X_SERAPH_ACCEL_WARPDRIVE_API', 'HTTP_X_VARNISH' ) );
+	return( array( 'HTTP_X_LSCACHE', 'HTTP_X_ZXCS_VHOST', 'HTTP_X_SERAPH_ACCEL_CW_ALLOWED_IP', 'HTTP_X_SERAPH_ACCEL_PRESSABLE_PROXIED_REQUEST', 'HTTP_X_SERAPH_ACCEL_WARPDRIVE_API', 'HTTP_X_VARNISH', 'HTTP_X_SERAPH_ACCEL_H_PLATFORM' ) );
+}
+
+function CacheAdditional_UpdateCurUrl( $settCache )
+{
+	$url = null;
+
+	if( IsBatCacheRtm() )
+	{
+		if( $url === null )
+		    $url = GetCurRequestUrl();
+		BatCache_Clear( $url );
+	}
+
+	if( Gen::GetArrField( $settCache, array( 'srvClr' ), false ) && function_exists( 'seraph_accel\\CacheExt_Clear' ) )
+	{
+		if( $url === null )
+			$url = GetCurRequestUrl();
+		CacheExt_Clear( $url );
+	}
+
+	if( Gen::GetArrField( $settCache, array( 'srvUpd' ), false ) )
+	{
+		if( $url === null )
+			$url = GetCurRequestUrl();
+
+		$asyncMode = null;
+
+		if( $asyncMode != 'ec' )
+		{
+
+			Wp::RemoteGet( $url, array( 'timeout' => 5, 'useragent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27', 'sslverify' => false,  ) );
+		}
+	}
+}
+
+function IsBatCacheRtm()
+{
+	global $batcache;
+	return( $batcache && is_object( $batcache ) );
+}
+
+function BatCache_Clear( $url = null )
+{
+	global $batcache;
+
+	if( !$batcache )
+		return( false );
+
+	wp_cache_init();
+	$batcache -> configure_groups();
+
+	if( !isset( $batcache -> group ) )
+		return( false );
+
+	if( $url === null )
+	{
+		if( function_exists( 'wp_cache_flush_group' ) )
+		{
+			wp_cache_flush_group( $batcache -> group );
+			if( isset( $batcache -> flush_group ) )
+				wp_cache_flush_group( $batcache -> flush_group );
+		}
+		else
+			wp_cache_flush();
+
+		return( true );
+	}
+
+	$urlComps = Net::UrlParse( $url, Net::URLPARSE_F_QUERY );
+	if( !$urlComps && !isset( $urlComps[ 'host' ] ) )
+		return( false );
+
+	if( isset( $batcache -> ignored_query_args ) )
+		foreach( $batcache -> ignored_query_args as $arg )
+			unset( $urlComps[ 'query' ][ $arg ] );
+	ksort( $urlComps[ 'query' ] );
+
+	$keysOld = $batcache -> keys;
+	$batcache -> keys = array(
+		'host' => Net::GetRequestHost( array( 'SERVER_NAME' => ($urlComps[ 'host' ]??''), 'SERVER_PORT' => ($urlComps[ 'port' ]??null) ) ),
+		'method' => 'GET',
+		'path' => ($urlComps[ 'path' ]??''),
+		'query' => ($urlComps[ 'query' ]??array()),
+		'extra' => array(),
+	);
+
+	$batcache -> add_flush_keys();
+
+	$keys = $batcache -> keys;
+	$batcache -> keys = $keysOld;
+
+	if( isset( $batcache -> origin ) )
+		$keys[ 'origin' ] = $batcache -> origin;
+
+	if( ($urlComps[ 'scheme' ]??'') == 'https' )
+		$keys[ 'ssl' ] = true;
+
+	foreach( array( 'mobile', 'tablet', 'desktop' ) as $deviceType )
+	{
+		$keys[ 'extra' ] = array( $deviceType );
+		wp_cache_delete( md5( serialize( $keys ) ), $batcache -> group );
+	}
+
+	return( true );
+}
+
+function BatCache_DontProcessCurRequest( $bForce = false )
+{
+	global $batcache;
+
+	if( !$batcache )
+		return( false );
+
+	if( function_exists( 'batcache_cancel' ) )
+		\batcache_cancel();
+
+	if( $bForce )
+		wp_cache_delete( $batcache -> url_key . '_genlock', $batcache -> group );
 }
 
 function LogGetRelativeFile()

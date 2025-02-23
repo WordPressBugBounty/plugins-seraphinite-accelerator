@@ -1708,6 +1708,9 @@ class Gen
 		$fmt[ 'floatPrec' ] = Gen::GetArrField( $fmt, array( 'floatPrec' ), 15 );
 		$fmt[ 'indent' ] = Gen::GetArrField( $fmt, array( 'indent' ), "\t" );
 		$fmt[ 'elemSpace' ] = Gen::GetArrField( $fmt, array( 'elemSpace' ), "\n" );
+		$fmt[ 'assignSpaceBefore' ] = Gen::GetArrField( $fmt, array( 'assignSpaceBefore' ), ' ' );
+		$fmt[ 'assignSpaceAfter' ] = Gen::GetArrField( $fmt, array( 'assignSpaceAfter' ), ' ' );
+		$fmt[ 'escValNl' ] = Gen::GetArrField( $fmt, array( 'escValNl' ), false );
 		return( self::_VarExport( $v, $fmt, $level ) );
 	}
 
@@ -1719,15 +1722,25 @@ class Gen
 			return( $v ? 'true' : 'false' );
 		case 'integer':
 			return( ( string )$v );
-		case 'string':
-			return( '\'' . str_replace( array( '\\', '\'' ), array( '\\\\', '\\\'' ), $v ) . '\'' );
 		case 'double':
 			return( preg_replace( '@([^\\.])0+$@', '${1}', sprintf( '%.' . ( string )$fmt[ 'floatPrec' ] . 'F', $v ) ) );
+
+		case 'string':
+			$v = str_replace( array( '\\' ), array( '\\\\' ), $v );
+
+			$cQuote = '\'';
+			if( $fmt[ 'escValNl' ] && strpos( $v, "\n" ) !== false )
+			{
+				$cQuote = '"';
+				$v = str_replace( array( "\r", "\n", '$' ), array( '\\r', '\\n', '\\$' ), $v );
+			}
+
+			return( $cQuote . str_replace( $cQuote, '\\' . $cQuote, $v ) . $cQuote );
 
 		case 'array':
 			$res = 'array(' . $fmt[ 'elemSpace' ];
 			foreach( $v as $k => $vI )
-				$res .= str_repeat( $fmt[ 'indent' ], $level + 1 ) . self::_VarExport( $k, $fmt ) . ' => ' . self::_VarExport( $vI, $fmt, $level + 1 ) . ',' . $fmt[ 'elemSpace' ];
+				$res .= str_repeat( $fmt[ 'indent' ], $level + 1 ) . self::_VarExport( $k, $fmt ) . $fmt[ 'assignSpaceBefore' ] . '=>' . $fmt[ 'assignSpaceAfter' ] . self::_VarExport( $vI, $fmt, $level + 1 ) . ',' . $fmt[ 'elemSpace' ];
 			$res .= str_repeat( $fmt[ 'indent' ], $level ) . ')';
 			return( $res );
 
@@ -3520,7 +3533,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'useragent' ] ) )
-			$args[ 'useragent' ] = 'seraph-accel-Agent/2.26.10';
+			$args[ 'useragent' ] = 'seraph-accel-Agent/2.27';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -5077,6 +5090,76 @@ class Wp
 			return( $path );
 
 		return( null );
+	}
+
+	static private function _Config_GetBlockPos( $id, $cont, $aMarker )
+	{
+		$nStart = strpos( $cont, $aMarker[ 0 ] );
+		if( $nStart === false )
+			return( null );
+
+		$nStart += strlen( $aMarker[ 0 ] );
+
+		$nEnd = strpos( $cont, $aMarker[ 1 ], $nStart );
+		if( $nEnd === false )
+			return( null );
+
+		return( array( $nStart, $nEnd - $nStart ) );
+	}
+
+	static function Config_GetBlock( $id )
+	{
+		$aMarker = array( '/* BEGIN ' . $id . ' */', '/* END ' . $id . ' */' );
+
+		$file = Wp::GetConfigFilePath();
+
+		$cont = @file_get_contents( $file );
+		if( !$cont )
+			return( false );
+
+		$aPos = self::_Config_GetBlockPos( $id, $cont, $aMarker );
+		if( !$aPos )
+			return( '' );
+
+		if( preg_match( '@^\\s/\\*.*\\*/@', $cont, $m, 0, $aPos[ 0 ] ) )
+			$aPos[ 0 ] += strlen( $m[ 0 ] );
+
+		return( trim( substr( $cont, $aPos[ 0 ], $aPos[ 1 ] ) ) );
+	}
+
+	static function Config_SetBlock( $id, $content )
+	{
+		$file = Wp::GetConfigFilePath();
+		if( !$file )
+			return( Gen::E_FAIL );
+
+		if( !is_writable( $file ) )
+		    return( Gen::E_ACCESS_DENIED );
+
+		$cont = @file_get_contents( $file );
+		if( !$cont )
+			return( Gen::E_FAIL );
+
+		$aMarker = array( '/* BEGIN ' . $id . ' */', '/* END ' . $id . ' */' );
+		$aPos = self::_Config_GetBlockPos( $id, $cont, $aMarker );
+		if( !$aPos )
+		{
+			if( !$content )
+				return( Gen::S_OK );
+
+			if( !Gen::StrStartsWith( $cont, '<?php' ) )
+				return( Gen::E_DATACORRUPTED );
+
+			$cont = substr_replace( $cont, "\n\n" . $aMarker[ 0 ] . $aMarker[ 1 ] . "\n\n", 5, 0 );
+			$aPos = array( 5 + 2 + strlen( $aMarker[ 0 ] ), 0 );
+		}
+
+		$cont = substr_replace( $cont, ( $content ? ( "\n" . '/**' . "\n" . ' * The code (lines) between "BEGIN ' . $id . '" and "END ' . $id . '" are dynamically generated.' . "\n" . ' * Any changes to the directives between these markers will be overwritten.' . "\n" . ' */' ) : '' ) . $content, $aPos[ 0 ], $aPos[ 1 ] );
+
+		if( !is_integer( file_put_contents( $file, $cont, LOCK_EX ) ) )
+			return( Gen::E_FAIL );
+
+		return( Gen::S_OK );
 	}
 
 	static private function _RemoteGet_Ctx( &$url, &$args, $method )

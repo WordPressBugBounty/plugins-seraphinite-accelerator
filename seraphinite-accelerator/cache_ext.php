@@ -314,25 +314,6 @@ function CacheExt_Clear( $url = null )
 		}
 	}
 
-	if( Gen::DoesFuncExist( '\\CF\\WordPress\\Hooks::purgeCacheEverything' ) )
-	{
-		$logInfo = '';
-
-		if( $url )
-		{
-			( new CloudFlareHooksEx() ) -> purgeUrl( $url );
-			$logInfo = 'URL \'' . $url . '\' purged';
-		}
-		else
-		{
-			( new CloudFlareHooksEx() ) -> purgeCacheEverything();
-			$logInfo = 'Purged all';
-		}
-
-		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
-			LogWrite( 'CloudFlare: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
-	}
-
 	if( Gen::DoesFuncExist( '\\WPNCEasyWP\\Http\\Varnish\\VarnishCache::boot' ) )
 	{
 		$logInfo = '';
@@ -509,65 +490,6 @@ function CacheExt_Clear( $url = null )
 
 		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Pagely: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
-	}
-
-	if( ( isset( $aSrv[ 'HTTP_X_SERAPH_ACCEL_PRESSABLE_PROXIED_REQUEST' ] ) || strpos( $hostname, 'atomicsites.net' ) !== false ) )
-	{
-		$logInfo = '';
-
-		if( $url )
-		{
-			global $batcache;
-
-			if( $batcache )
-			{
-				$urlComps = Net::UrlParse( $url, Net::URLPARSE_F_QUERY );
-				if( $urlComps && isset( $urlComps[ 'host' ] ) )
-				{
-					if( isset( $batcache -> ignored_query_args ) )
-						foreach( $batcache -> ignored_query_args as $arg )
-							unset( $urlComps[ 'query' ][ $arg ] );
-					ksort( $urlComps[ 'query' ] );
-
-					$keys = array(
-						'host' => ($urlComps[ 'host' ]??''),
-						'method' => 'GET',
-						'path' => ($urlComps[ 'path' ]??''),
-						'query' => ($urlComps[ 'query' ]??''),
-						'extra' => array()
-					);
-
-					if( isset( $batcache -> origin ) )
-						$keys[ 'origin' ] = $batcache -> origin;
-
-					if( ($urlComps[ 'scheme' ]??'') == 'https' )
-						$keys[ 'ssl' ] = true;
-
-					wp_cache_init();
-					$batcache -> configure_groups();
-
-					foreach( array( 'mobile', 'tablet', 'desktop' ) as $deviceType )
-					{
-						$keys[ 'extra' ] = array( $deviceType );
-						wp_cache_delete( md5( serialize( $keys ) ), $batcache -> group );
-					}
-
-					$logInfo = 'URL \'' . $url . '\' purged';
-				}
-				else
-					$logInfo = 'URL \'' . $url . '\' invalid';
-			}
-			else
-				$logInfo = 'No instance';
-		}
-		else
-		{
-			wp_cache_flush();
-			$logInfo = 'Purged all';
-		}
-
-		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
-			LogWrite( 'Pressable: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
 	if( Gen::DoesFuncExist( '\\CDN_Clear_Cache_Api::cache_api_call' ) )
@@ -754,14 +676,6 @@ function CacheExt_Clear( $url = null )
 
 		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'WPAAS: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
-	}
-
-	if( ( defined( 'WPCOMSH_VERSION' ) ) )
-	{
-		wp_cache_flush();
-
-		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
-			LogWrite( 'WordPress.Com: Flushed', Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
 	if( Gen::DoesFuncExist( '\\Tenweb_Manager\\Helper::clear_cache' ) )
@@ -975,6 +889,51 @@ function CacheExt_Clear( $url = null )
 
 		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Servebolt Cache: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
+	}
+
+	if( ( ($aSrv[ 'HTTP_X_SERAPH_ACCEL_H_PLATFORM' ]??null) == 'Hostinger' ) )
+	{
+		wp_cache_flush();
+
+		$logInfo = 'Purged all';
+
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
+			LogWrite( 'Hostinger: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
+	}
+
+	if( IsBatCacheRtm() )
+	{
+		if( BatCache_Clear( $url ) )
+		{
+			if( $url )
+				$logInfo = 'URL \'' . $url . '\' purged';
+			else
+				$logInfo = 'Purged all';
+		}
+		else
+			$logInfo = 'Invalid state';
+
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
+			LogWrite( 'BatCache: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
+	}
+
+	if( Gen::DoesFuncExist( '\\CF\\WordPress\\Hooks::purgeCacheEverything' ) )
+	{
+		$logInfo = '';
+
+		if( $url )
+		{
+			( new CloudFlareHooksEx() ) -> purgeUrl( $url );
+			$logInfo = 'URL \'' . $url . '\' purged';
+		}
+		else
+		{
+			( new CloudFlareHooksEx() ) -> purgeCacheEverything();
+			$logInfo = 'Purged all';
+		}
+
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
+			LogWrite( 'CloudFlare: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 }
 

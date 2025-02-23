@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.26.10)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.26.10\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.27)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.26.10)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.26.10\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.27)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1205,20 +1205,39 @@ msgctxt "admin.Settings_Cache_Revalidate"
 msgid "UpdPostDelay_%1$s"
 msgstr ""
 
-# Taxonomies
-msgctxt "admin.Settings_Cache_Revalidate_UpdTerms"
+# Globals
+msgctxt "admin.Settings_Cache_Revalidate_UpdGlobs"
 msgid "Lbl"
 msgstr ""
 
-# When below taxonomies (e.g. categories, tags) are modified, then %1$s all cache:
+# When something below is changed then %1$s all cache
 #, php-format
+msgctxt "admin.Settings_Cache_Revalidate_UpdGlobs"
+msgid "OpLabel_%1$s"
+msgstr ""
+
+# Below taxonomies (e.g. categories, tags)
 msgctxt "admin.Settings_Cache_Revalidate"
-msgid "UpdTermsChk_%1$s"
+msgid "UpdTermsChk"
 msgstr ""
 
 # Taxonomy ids separated by comma
 msgctxt "admin.Settings_Cache_Revalidate"
 msgid "UpdTermsDepsPhlr"
+msgstr ""
+
+msgctxt "admin.Settings_Cache_Revalidate_UpdGlobs"
+msgid "MenuChk"
+msgstr ""
+
+# Elementor templates
+msgctxt "admin.Settings_Cache_Revalidate_UpdGlobs"
+msgid "ElmntrTplChk"
+msgstr ""
+
+# TablePress tables
+msgctxt "admin.Settings_Cache_Revalidate_UpdGlobs"
+msgid "TblPrssChk"
 msgstr ""
 
 # All update dependencies
@@ -1433,18 +1452,22 @@ msgctxt "admin.Settings_CacheObj_Common"
 msgid "Lbl"
 msgstr ""
 
+# Groups
 msgctxt "admin.Settings_CacheObj_Groups"
 msgid "Lbl"
 msgstr ""
 
+# Global:
 msgctxt "admin.Settings_CacheObj_Groups"
 msgid "GlobalDescrLbl"
 msgstr ""
 
+# Group names, each on newline
 msgctxt "admin.Settings_CacheObj_Groups"
 msgid "ItemsPhlr"
 msgstr ""
 
+# Non persistent:
 msgctxt "admin.Settings_CacheObj_Groups"
 msgid "NonPersistentDescrLbl"
 msgstr ""
@@ -1460,7 +1483,12 @@ msgctxt "admin.Settings_Cache_Srv"
 msgid "SrvChk_%1$s"
 msgstr ""
 
-# Update cache (if available)
+# Server and cloud cache updating
+msgctxt "admin.Settings_Cache_Srv"
+msgid "SrvClrChk"
+msgstr ""
+
+# Server and cloud cache warming up
 msgctxt "admin.Settings_Cache_Srv"
 msgid "SrvUpdChk"
 msgstr ""

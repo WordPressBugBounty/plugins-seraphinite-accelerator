@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.26.10' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -643,7 +643,7 @@ function _SettingsPage_Revalidate( $callbacks_args, $box )
 					}
 					$o .= ( Ui::SettBlock_Item_End() );
 
-					$o .= ( Ui::SettBlock_Item_Begin( esc_html_x( 'Lbl', 'admin.Settings_Cache_Revalidate_UpdTerms', 'seraphinite-accelerator' ) . Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Cache_Revalidate_UpdTerms' ) ) ), Ui::AdminHelpBtnModeText ), array( 'style' => array( 'display' => 'none' ) ) ) );
+					$o .= ( Ui::SettBlock_Item_Begin( esc_html_x( 'Lbl', 'admin.Settings_Cache_Revalidate_UpdGlobs', 'seraphinite-accelerator' ) . Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Cache_Revalidate_UpdGlobs' ) ) ), Ui::AdminHelpBtnModeText ), array( 'style' => array( 'display' => 'none' ) ) ) );
 					{
 						$o .= ( Ui::ToggleButton( '.blck', array( 'style' => array( 'min-width' => '7em' ) ), array( 'class' => 'ctlSpaceVAfter' ) ) );
 						$o .= ( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'blck ctlMaxSizeX', 'style' => array( 'display' => 'none' ) ) ) );
@@ -652,12 +652,55 @@ function _SettingsPage_Revalidate( $callbacks_args, $box )
 							{
 								$o .= ( Ui::TagOpen( 'td' ) );
 								{
-									$fldId = 'cache/updTerms';
-									$fldIdEx = 'cache/updTermsOp';
-									$o .= ( Ui::CheckBox( sprintf( esc_html_x( 'UpdTermsChk_%1$s', 'admin.Settings_Cache_Revalidate', 'seraphinite-accelerator' ), _SettCacheOps( $sett, $fldIdEx, 'seraph_accel' ) ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, null, '/' ), true ) );
+									$fldId = 'cache/updGlobs/op';
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'OpLabel_%1$s', 'admin.Settings_Cache_Revalidate_UpdGlobs', 'seraphinite-accelerator' ), _SettCacheOps( $sett, $fldId, 'seraph_accel' ) ) ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
 
-									$fldId = 'cache/updTermsDeps';
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/updGlobs/terms/enable';
+									$o .= ( Ui::CheckBox( esc_html_x( 'UpdTermsChk', 'admin.Settings_Cache_Revalidate', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, null, '/' ), true ) );
+
+									$fldId = 'cache/updGlobs/terms/deps';
 									$o .= ( Ui::SettTokensEditor( $fldId, Gen::GetArrField( $sett, $fldId, array(), '/' ), _x( 'UpdTermsDepsPhlr', 'admin.Settings_Cache_Revalidate', 'seraphinite-accelerator' ), 'seraph_accel', ",", 5, true ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/updGlobs/menu/enable';
+									$o .= ( Ui::CheckBox( esc_html_x( 'MenuChk', 'admin.Settings_Cache_Revalidate_UpdGlobs', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, null, '/' ), true ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/updGlobs/elmntrTpl/enable';
+									$o .= ( Ui::CheckBox( esc_html_x( 'ElmntrTplChk', 'admin.Settings_Cache_Revalidate_UpdGlobs', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, null, '/' ), true ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/updGlobs/tblPrss/enable';
+									$o .= ( Ui::CheckBox( esc_html_x( 'TblPrssChk', 'admin.Settings_Cache_Revalidate_UpdGlobs', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, null, '/' ), true ) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) );
 							}
@@ -1314,6 +1357,17 @@ function _SettingsPage_Server( $callbacks_args, $box )
 								$o .= ( Ui::TagOpen( 'td' ) );
 								{
 									$fldId = 'cache/srvClr';
+									$o .= ( Ui::CheckBox( esc_html_x( 'SrvClrChk', 'admin.Settings_Cache_Srv', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/srvUpd';
 									$o .= ( Ui::CheckBox( esc_html_x( 'SrvUpdChk', 'admin.Settings_Cache_Srv', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) );
@@ -5254,6 +5308,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'cache/srv';								Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/srvShrdTtl';						Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/srvClr';							Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'cache/srvUpd';							Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/nginx/method';					Gen::SetArrField( $sett, $fldId, Gen::SanitizeId( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
 		{ $fldId = 'cache/nginx/url';						Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
 		{ $fldId = 'cache/nginx/urlAll';					Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
@@ -5277,9 +5332,12 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'cache/updPostDeps';						Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), '/' ); }
 		{ $fldId = 'cache/updPostMeta';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/updPostMetaExcl';					Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), '/' ); }
-		{ $fldId = 'cache/updTerms';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
-		{ $fldId = 'cache/updTermsOp';						Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
-		{ $fldId = 'cache/updTermsDeps';					Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), '/' ); }
+		{ $fldId = 'cache/updGlobs/op';						Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'cache/updGlobs/terms/enable';			Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'cache/updGlobs/terms/deps';				Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), '/' ); }
+		{ $fldId = 'cache/updGlobs/menu/enable';		Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'cache/updGlobs/elmntrTpl/enable';		Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'cache/updGlobs/tblPrss/enable';			Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/updAllDeps';						Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( ($args[ 'seraph_accel/' . $fldId ]??null), null, true ), '/' ); }
 
 		{

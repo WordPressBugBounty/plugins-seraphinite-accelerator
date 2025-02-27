@@ -1172,7 +1172,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.1' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1266,9 +1266,14 @@ function CacheVerifyEnvObjDropin( $settGlob, $verifyEnvDropin = null )
 
 }
 
+function CacheGetEnvNginxConfFile()
+{
+	return( dirname( WP_CONTENT_DIR ) . '/seraph-accel-img-compr-redir.conf' );
+}
+
 function CacheVerifyEnvNginxConf( $sett )
 {
-	return( @file_get_contents( Wp::GetHomePath() . 'seraph-accel-img-compr-redir.conf' ) == CacheGetEnvNginxConf( $sett ) );
+	return( @file_get_contents( CacheGetEnvNginxConfFile() ) == CacheGetEnvNginxConf( $sett ) );
 }
 
 function _CacheGetEnvConfPrms( $sett )
@@ -1281,12 +1286,9 @@ function _CacheGetEnvConfPrms( $sett )
 	{
 		$ctxProcess = &GetContentProcessCtx( $_SERVER, $sett );
 
-		if( $ctxProcess[ 'siteRootPath' ] !== null && strpos( $dataPath, $ctxProcess[ 'siteRootPath' ] . '/' ) === 0 )
-		{
-			$dataPath = str_replace( '\\', '/', $dataPath );
-			$dataUri = $ctxProcess[ 'siteRootUri' ] . '/' . substr( $dataPath, strlen( $ctxProcess[ 'siteRootPath' ] ) + 1 );
-			$siteRootUri = $ctxProcess[ 'siteRootUri' ];
-		}
+		$dataPath = str_replace( '\\', '/', $dataPath );
+		$dataUri = $ctxProcess[ 'siteRootUri' ] . '/' . substr( $dataPath, strlen( $ctxProcess[ 'siteRootDataPath' ] ) + 1 );
+		$siteRootUri = $ctxProcess[ 'siteRootUri' ];
 
 		unset( $ctxProcess );
 	}
@@ -1488,7 +1490,7 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 		{
 			$confComprRedirBlock = CacheGetEnvNginxConf( array() );
 
-			$fileConfComprRedir = Wp::GetHomePath() . 'seraph-accel-img-compr-redir.conf';
+			$fileConfComprRedir = CacheGetEnvNginxConfFile();
 			if( @file_get_contents( $fileConfComprRedir ) !== $confComprRedirBlock )
 				@file_put_contents( $fileConfComprRedir, $confComprRedirBlock );
 		}
@@ -1681,7 +1683,7 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 	{
 		$confComprRedirBlock = CacheGetEnvNginxConf( $sett );
 
-		$fileConfComprRedir = Wp::GetHomePath() . 'seraph-accel-img-compr-redir.conf';
+		$fileConfComprRedir = CacheGetEnvNginxConfFile();
 		if( @file_get_contents( $fileConfComprRedir ) !== $confComprRedirBlock )
 			@file_put_contents( $fileConfComprRedir, $confComprRedirBlock );
 	}

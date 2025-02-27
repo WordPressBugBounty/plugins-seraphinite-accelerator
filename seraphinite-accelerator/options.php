@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.1' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -154,6 +154,12 @@ function _SettingsPage()
 	$rmtCfg = PluginRmtCfg::Get();
 	$sett = Plugin::SettGet();
 	$dtCurLoc = new \DateTime( 'now', DateTimeZone::FromOffset( Wp::GetGmtOffset() ) );
+
+	{
+		$ctxProcess = GetContentProcessCtx( $_SERVER, $sett );
+		$siteRootDataPath = $ctxProcess[ 'siteRootDataPath' ];
+		unset( $ctxProcess );
+	}
 
 	{
 		Ui::PostBoxes_MetaboxAdd( 'navigator', esc_html_x( 'Title', 'admin.Settings_Nav', 'seraphinite-accelerator' ) . Ui::Tag( 'span', Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Navigator' ) ) ), Ui::AdminHelpBtnModeBlockHeader ) ), false,
@@ -1179,6 +1185,62 @@ function _SettingsPage_CacheData( $callbacks_args, $box )
 								),
 								Gen::GetArrField( $item, $fldId, 'application/json', '/' ), true, array( 'class' => 'ctlSpaceVBefore' ) ) );
 						}
+					}
+					$o .= ( Ui::SettBlock_Item_End() );
+
+					$o .= ( Ui::SettBlock_Item_Begin( esc_html_x( 'Lbl', 'admin.Settings_Exclusions_Args', 'seraphinite-accelerator' ) . Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Exclusions_Args' ) ) ), Ui::AdminHelpBtnModeText ) ) );
+					{
+						$o .= ( Ui::ToggleButton( '.blck', array( 'style' => array( 'min-width' => '7em' ) ), array( 'class' => 'ctlSpaceVAfter' ) ) );
+						$o .= ( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'blck std', 'style' => array( 'width' => '100%', 'display' => 'none' ) ) ) );
+						{
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td', array( 'class' => 'blck' ) ) );
+								{
+									$o .= ( Ui::ComboBox(
+										$idItems . '/' . $itemKey . '/exclArgs_Mode',
+										array(
+											'exclSpec'		=> esc_html_x( 'ExclSpec', 'admin.Settings_Exclusions_Args', 'seraphinite-accelerator' ),
+											'exclAll'		=> esc_html_x( 'ExclAll', 'admin.Settings_Exclusions_Args', 'seraphinite-accelerator' ),
+										),
+										Gen::GetArrField( $item, 'exclArgsAll', false, '/' ) ? 'exclAll' : 'exclSpec', true, array( 'class' => 'ctlMaxSizeX', 'data-oninit' => 'jQuery(this).change()', 'onchange' => 'seraph_accel.Ui.ComboShowDependedItems( this, jQuery( this.parentNode ).closest( ".blck" ).first().get( 0 ) )' ) ) );
+
+									$o .= ( Ui::TagOpen( 'div', array( 'class' => 'ns-exclSpec ctlSpaceVBefore', 'style' => array( 'display' => 'none' ) ) ) );
+									{
+										$fldId = 'exclArgs';
+										$o .= ( _SettOutputArgs2Editor( $fldId, Gen::GetArrField( $item, $fldId, array(), '/' ), $idItems . '/' . $itemKey ) );
+									}
+									$o .= ( Ui::TagClose( 'div' ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td', array( 'class' => 'blck' ) ) );
+								{
+									$o .= ( Ui::ComboBox(
+										$idItems . '/' . $itemKey . '/skipArgs_Mode',
+										array(
+											'skipNo'		=> esc_html_x( 'SkipNo', 'admin.Settings_Exclusions_Args', 'seraphinite-accelerator' ),
+											'skipSpec'		=> esc_html_x( 'SkipSpec', 'admin.Settings_Exclusions_Args', 'seraphinite-accelerator' ),
+											'skipAll'		=> esc_html_x( 'SkipAll', 'admin.Settings_Exclusions_Args', 'seraphinite-accelerator' ),
+										),
+										Gen::GetArrField( $item, 'skipArgsEnable', false, '/' ) ? ( Gen::GetArrField( $item, 'skipArgsAll', false, '/' ) ? 'skipAll' : 'skipSpec' ) : 'skipNo', true, array( 'class' => 'ctlMaxSizeX', 'data-oninit' => 'jQuery(this).change()', 'onchange' => 'seraph_accel.Ui.ComboShowDependedItems( this, jQuery( this.parentNode ).closest( ".blck" ).first().get( 0 ), "nsSkip" )' ) ) );
+
+									$o .= ( Ui::TagOpen( 'div', array( 'class' => 'nsSkip-skipSpec ctlSpaceVBefore', 'style' => array( 'display' => 'none' ) ) ) );
+									{
+										$fldId = 'skipArgs';
+										$o .= ( _SettOutputArgs2Editor( $fldId, Gen::GetArrField( $item, $fldId, array(), '/' ), $idItems . '/' . $itemKey ) );
+									}
+									$o .= ( Ui::TagClose( 'div' ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+						}
+						$o .= ( Ui::SettBlock_ItemSubTbl_End() );
 					}
 					$o .= ( Ui::SettBlock_Item_End() );
 
@@ -5087,7 +5149,7 @@ function _SettingsPage_Advanced( $callbacks_args, $box )
 					$o .= ( Ui::TagOpen( 'td' ) );
 					{
 						$fldId = 'log';
-						$o .= ( Ui::CheckBox( vsprintf( esc_html_x( 'LogChk_%1$s%2$s%3$s%4$s', 'admin.Settings_Advanced_Debug', 'seraphinite-accelerator' ), array_merge( Ui::Link( array( '', '' ), Wp::GetSiteWpRootUrl( ltrim( substr( GetCacheDir(), strlen( ABSPATH ) ), "/\\" ) . LogGetRelativeFile() ), true ), Ui::Link( array( '', '' ), '#', false, null, array( 'onclick' => 'if(confirm("?"))seraph_accel.Settings._int.OnLogClear(this);return false' ) ) ) ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+						$o .= ( Ui::CheckBox( vsprintf( esc_html_x( 'LogChk_%1$s%2$s%3$s%4$s', 'admin.Settings_Advanced_Debug', 'seraphinite-accelerator' ), array_merge( Ui::Link( array( '', '' ), Wp::GetSiteWpRootUrl( ltrim( substr( GetCacheDir(), strlen( $siteRootDataPath ) ), "/\\" ) . LogGetRelativeFile() ), true ), Ui::Link( array( '', '' ), '#', false, null, array( 'onclick' => 'if(confirm("?"))seraph_accel.Settings._int.OnLogClear(this);return false' ) ) ) ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 					}
 					$o .= ( Ui::TagClose( 'td' ) );
 				}
@@ -5632,6 +5694,19 @@ function _OnSaveSettings( $args )
 					{ $fldId = 'pattern';						Gen::SetArrField( $item, $fldId, @stripslashes( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??'') ), '/' ); }
 					{ $fldId = 'type';							Gen::SetArrField( $item, $fldId, ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??''), '/' ); }
 					{ $fldId = 'mime';							Gen::SetArrField( $item, $fldId, ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??''), '/' ); }
+
+					{
+						$v = Gen::SanitizeId( $args[ $idItems . '/' . $itemKey . '/exclArgs_Mode' ] );
+						$fldId = 'exclArgsAll';					Gen::SetArrField( $item, $fldId, $v === 'exclAll', '/' );
+					}
+					{ $fldId = 'exclArgs';						Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ), true ), '/' ); }
+					{
+						$v = Gen::SanitizeId( $args[ $idItems . '/' . $itemKey . '/skipArgs_Mode' ] );
+						$fldId = 'skipArgsEnable';					Gen::SetArrField( $item, $fldId, $v !== 'skipNo', '/' );
+						$fldId = 'skipArgsAll';						Gen::SetArrField( $item, $fldId, $v === 'skipAll', '/' );
+					}
+					{ $fldId = 'skipArgs';						Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ), true ), '/' ); }
+
 					{ $fldId = 'lazyInv';						Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
 					{ $fldId = 'timeout';						Gen::SetArrField( $item, $fldId, 60 * _GetTimeoutVal( $idItems . '/' . $itemKey . '/' . $fldId, $args ), '/' ); }
 					{ $fldId = 'timeoutCln';					Gen::SetArrField( $item, $fldId, 60 * _GetTimeoutVal( $idItems . '/' . $itemKey . '/' . $fldId, $args ), '/' ); }

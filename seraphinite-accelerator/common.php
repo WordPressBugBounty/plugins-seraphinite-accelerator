@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 158;
+const PLUGIN_SETT_VER								= 159;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1012,6 +1012,16 @@ function OnOptRead_Sett( $sett, $verFrom )
 		unset( $sett[ 'cache' ][ 'updTermsDeps' ] );
 	}
 
+	if( $verFrom && $verFrom < 159 )
+	{
+		foreach( Gen::GetArrField( $sett, array( 'cache', 'data', 'items' ) ) as $k => $itemData )
+		{
+			foreach( array( 'exclArgsAll', 'exclArgs', 'skipArgsEnable', 'skipArgsAll', 'skipArgs' ) as $fld )
+				Gen::SetArrField( $itemData, array( $fld ), Gen::GetArrField( $sett, array( 'cache', $fld ) ) );
+			Gen::SetArrField( $sett, array( 'cache', 'data', 'items', $k ), $itemData );
+		}
+	}
+
 	return( $sett );
 }
 
@@ -1635,7 +1645,7 @@ function OnOptGetDef_Sett()
 				'deinlLrgSize' => 2048,
 				'redirOwn' => false,
 				'redirCacheAdapt' => false,
-				'comprAsync' => true,
+				'comprAsync' => false,
 				'webp' => array(
 					'enable' => true,
 					'redir' => true,
@@ -2561,7 +2571,7 @@ function CacheCgif( $settCache, $oiCi )
 	return( $oiCif );
 }
 
-function CacheCw( $settCache, $siteRootPath, $dataPath, $composite, $content, $type, $fileExt = null )
+function CacheCw( $settCache, $siteRootDataPath, $dataPath, $composite, $content, $type, $fileExt = null )
 {
 	if( !$fileExt )
 		$fileExt = $type;
@@ -2677,8 +2687,8 @@ function CacheCw( $settCache, $siteRootPath, $dataPath, $composite, $content, $t
 	if( !$writeOk )
 		return( null );
 
-	if( $siteRootPath !== null && strpos( $dataPath, $siteRootPath . '/' ) === 0 )
-		$relFilePath = substr( $dataPath, strlen( $siteRootPath ) + 1 ) . '/';
+	if( $siteRootDataPath !== null )
+		$relFilePath = substr( $dataPath, strlen( $siteRootDataPath ) + 1 ) . '/';
 	else
 		$relFilePath = '';
 	$relFilePath .= $oiCif . '.' . $fileExt;
@@ -2686,7 +2696,7 @@ function CacheCw( $settCache, $siteRootPath, $dataPath, $composite, $content, $t
 	return( array( 'id' => $oiCi, 'relFilePath' => $relFilePath ) );
 }
 
-function CacheCc( $settCache, $siteRootPath, $dataPath, $oiCi, $type, $fileExt = null )
+function CacheCc( $settCache, $siteRootDataPath, $dataPath, $oiCi, $type, $fileExt = null )
 {
 	if( !$fileExt )
 		$fileExt = $type;
@@ -2712,8 +2722,8 @@ function CacheCc( $settCache, $siteRootPath, $dataPath, $oiCi, $type, $fileExt =
 	if( !$readOk )
 		return( null );
 
-	if( $siteRootPath !== null && strpos( $dataPath, $siteRootPath . '/' ) === 0 )
-		$relFilePath = substr( $dataPath, strlen( $siteRootPath ) + 1 ) . '/';
+	if( $siteRootDataPath !== null )
+		$relFilePath = substr( $dataPath, strlen( $siteRootDataPath ) + 1 ) . '/';
 	else
 		$relFilePath = '';
 	$relFilePath .= $oiCif . '.' . $fileExt;
@@ -3751,7 +3761,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.1 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5029,7 +5039,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.1';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5495,7 +5505,7 @@ function CacheAdditional_UpdateCurUrl( $settCache )
 		if( $asyncMode != 'ec' )
 		{
 
-			Wp::RemoteGet( $url, array( 'timeout' => 5, 'useragent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27', 'sslverify' => false,  ) );
+			Wp::RemoteGet( $url, array( 'timeout' => 5, 'useragent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.1', 'sslverify' => false,  ) );
 		}
 	}
 }

@@ -100,7 +100,7 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 
 	if( !isset( $sett[ PluginOptions::VERPREV ] ) && ( ($_SERVER[ 'REQUEST_METHOD' ]??null) == 'GET' ) && !CacheVerifyEnvNginxConf( $sett ) )
 	{
-		call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentNginxConfNotMatch_%1$s', 'admin.Notice', 'seraphinite-accelerator' ), Wp::GetHomePath() . 'seraph-accel-img-compr-redir.conf' ) ) );
+		call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentNginxConfNotMatch_%1$s', 'admin.Notice', 'seraphinite-accelerator' ), CacheGetEnvNginxConfFile() ) ) );
 	}
 
 	if( !Gen::DoesFuncExist( 'fsockopen' ) && !Gen::DoesFuncExist( 'curl_exec' ) )

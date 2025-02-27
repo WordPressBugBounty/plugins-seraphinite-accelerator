@@ -11,15 +11,17 @@ require( __DIR__ . '/content_js.php' );
 require( __DIR__ . '/content_css.php' );
 require( __DIR__ . '/content_frm.php' );
 
-function GetContentProcessCtxEx( $serverArgs, $sett, $siteId, $siteUrl, $siteRootPath, $wpRootSubPath, $cacheDir, $scriptDebug )
+function GetContentProcessCtxEx( $serverArgs, $sett, $siteId, $siteUrl, $siteRootPath, $siteContentPath, $wpRootSubPath, $cacheDir, $scriptDebug )
 {
 	$ctx = array(
 		'siteDomainUrl' => Net::GetSiteAddrFromUrl( $siteUrl, true ),
 		'siteRootUri' => Gen::SetLastSlash( Net::Url2Uri( $siteUrl ), false ),
 		'siteRootPath' => Gen::SetLastSlash( $siteRootPath, false ),
+		'siteContPath' => Gen::SetLastSlash( $siteContentPath, false ),
+		'siteRootDataPath' => null,
+		'dataPath' => GetCacheDataDir( $cacheDir . '/s/' . $siteId ),
 		'wpRootSubPath' => $wpRootSubPath . '/',
 		'siteId' => $siteId,
-		'dataPath' => GetCacheDataDir( $cacheDir . '/s/' . $siteId ),
 		'deps' => array(),
 		'subs' => array(),
 		'subCurIdx' => 0,
@@ -33,6 +35,13 @@ function GetContentProcessCtxEx( $serverArgs, $sett, $siteId, $siteUrl, $siteRoo
 		'aCssCrit' => array(),
 
 	);
+
+	if( strpos( $ctx[ 'dataPath' ], $ctx[ 'siteRootPath' ] . '/' ) === 0 )
+		$ctx[ 'siteRootDataPath' ] = $ctx[ 'siteRootPath' ];
+	else if( strpos( $ctx[ 'dataPath' ], $ctx[ 'siteContPath' ] . '/' ) === 0 )
+		$ctx[ 'siteRootDataPath' ] = Gen::GetFileDir( $ctx[ 'siteContPath' ] );
+	else
+		$ctx[ 'siteRootDataPath' ] = $cacheDir;
 
 	$ctx[ 'compatView' ] = ContProcIsCompatView( Gen::GetArrField( $sett, array( 'cache' ), array() ), $ctx[ 'userAgent' ] );
 
@@ -78,7 +87,7 @@ function &GetContentProcessCtx( $serverArgs, $sett )
 				$siteRootPath = substr( rtrim( $siteRootPath, '\\/' ), 0, - strlen( $siteWpRootSubPath ) );
 		}
 
-		$seraph_accel_g_ctxProcess = GetContentProcessCtxEx( $serverArgs, $sett, GetSiteId(), $siteRootUrl, $siteRootPath, $siteWpRootSubPath, GetCacheDir(), defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG );
+		$seraph_accel_g_ctxProcess = GetContentProcessCtxEx( $serverArgs, $sett, GetSiteId(), $siteRootUrl, $siteRootPath, WP_CONTENT_DIR, $siteWpRootSubPath, GetCacheDir(), defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG );
 	}
 
 	return( $seraph_accel_g_ctxProcess );

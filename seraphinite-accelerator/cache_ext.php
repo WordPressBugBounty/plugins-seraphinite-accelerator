@@ -119,6 +119,22 @@ function CacheExt_Clear( $url = null )
 
 	CacheExt_Clear_CopyHdrs( $aSrv );
 
+	if( IsBatCacheRtm() )
+	{
+		if( BatCache_Clear( $url ) )
+		{
+			if( $url )
+				$logInfo = 'URL \'' . $url . '\' purged';
+			else
+				$logInfo = 'Purged all';
+		}
+		else
+			$logInfo = 'Invalid state';
+
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
+			LogWrite( 'BatCache: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
+	}
+
 	if( ( defined( 'O2SWITCH_VARNISH_PURGE_KEY' ) ) )
 	{
 		$requestRes = Gen::E_INVALIDARG;
@@ -891,6 +907,61 @@ function CacheExt_Clear( $url = null )
 			LogWrite( 'Servebolt Cache: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
+	if( ( Gen::DoesFuncExist( '\\Edge_Cache_Atomic::purge_domain' ) ) )
+	{
+		$logInfo = '';
+
+		if( $url )
+		{
+			try
+			{
+				$oPlatform = new \Edge_Cache_Atomic();
+				$actions = array( 'auto_purge_url' );
+				$aTags = array(
+					'platform'     => $oPlatform -> get_platform_type(),
+					'wp_domain'    => $oPlatform -> get_domain_name(),
+					'wp_actions'   => implode( ',', $actions ),
+					'wp_action'    => array_keys( $actions ),
+					'domain_purge' => 'no',
+					'urls_cnt'     => 1,
+					'purge_count'  => count( $actions ),
+					'batcache'     => 'success',
+				);
+				$logInfo = 'URL \'' . $url . '\' ' . ( $oPlatform -> purge_uris( array( $url ), $aTags ) ? 'purged' : 'not purged' );
+			}
+			catch( \Exception $e )
+			{
+				$logInfo = $ex -> getMessage();
+			}
+		}
+		else
+		{
+			try
+			{
+				$oPlatform = new \Edge_Cache_Atomic();
+				$actions = array( 'auto_purge_all' );
+				$aTags = array(
+					'platform'     => $oPlatform -> get_platform_type(),
+					'wp_domain'    => $oPlatform -> get_domain_name(),
+					'wp_actions'   => implode( ',', $actions ),
+					'wp_action'    => array_keys( $actions ),
+					'domain_purge' => 'yes',
+					'urls_cnt'     => 0,
+					'purge_count'  => count( $actions ),
+					'batcache'     => 'success',
+				);
+				$logInfo = ( $oPlatform -> purge_domain( $oPlatform -> get_domain_name(), $aTags ) ? 'Purged all' : 'Not purged all' );
+			}
+			catch( \Exception $e )
+			{
+				$logInfo = $ex -> getMessage();
+			}
+		}
+
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
+			LogWrite( 'Pressable Cache: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
+	}
+
 	if( ( ($aSrv[ 'HTTP_X_SERAPH_ACCEL_H_PLATFORM' ]??null) == 'Hostinger' ) )
 	{
 		wp_cache_flush();
@@ -899,22 +970,6 @@ function CacheExt_Clear( $url = null )
 
 		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Hostinger: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
-	}
-
-	if( IsBatCacheRtm() )
-	{
-		if( BatCache_Clear( $url ) )
-		{
-			if( $url )
-				$logInfo = 'URL \'' . $url . '\' purged';
-			else
-				$logInfo = 'Purged all';
-		}
-		else
-			$logInfo = 'Invalid state';
-
-		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
-			LogWrite( 'BatCache: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
 	if( Gen::DoesFuncExist( '\\CF\\WordPress\\Hooks::purgeCacheEverything' ) )

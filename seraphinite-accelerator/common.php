@@ -3761,7 +3761,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.1 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.2 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5039,7 +5039,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.1';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.2';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5477,7 +5477,7 @@ function CacheExt_Clear_CopyHdrsArr()
 	return( array( 'HTTP_X_LSCACHE', 'HTTP_X_ZXCS_VHOST', 'HTTP_X_SERAPH_ACCEL_CW_ALLOWED_IP', 'HTTP_X_SERAPH_ACCEL_PRESSABLE_PROXIED_REQUEST', 'HTTP_X_SERAPH_ACCEL_WARPDRIVE_API', 'HTTP_X_VARNISH', 'HTTP_X_SERAPH_ACCEL_H_PLATFORM' ) );
 }
 
-function CacheAdditional_UpdateCurUrl( $settCache )
+function CacheAdditional_UpdateCurUrl( $settCache, $srvUpd = false )
 {
 	$url = null;
 
@@ -5495,7 +5495,7 @@ function CacheAdditional_UpdateCurUrl( $settCache )
 		CacheExt_Clear( $url );
 	}
 
-	if( Gen::GetArrField( $settCache, array( 'srvUpd' ), false ) )
+	if( $srvUpd && Gen::GetArrField( $settCache, array( 'srvUpd' ), false ) )
 	{
 		if( $url === null )
 			$url = GetCurRequestUrl();
@@ -5505,7 +5505,7 @@ function CacheAdditional_UpdateCurUrl( $settCache )
 		if( $asyncMode != 'ec' )
 		{
 
-			Wp::RemoteGet( $url, array( 'timeout' => 5, 'useragent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.1', 'sslverify' => false,  ) );
+			Wp::RemoteGet( $url, array( 'timeout' => 5, 'useragent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.2', 'sslverify' => false,  ) );
 		}
 	}
 }

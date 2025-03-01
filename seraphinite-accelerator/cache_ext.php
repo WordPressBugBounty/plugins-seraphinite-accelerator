@@ -964,11 +964,20 @@ function CacheExt_Clear( $url = null )
 
 	if( ( ($aSrv[ 'HTTP_X_SERAPH_ACCEL_H_PLATFORM' ]??null) == 'Hostinger' ) )
 	{
-		wp_cache_flush();
+		$logInfo = '';
 
-		$logInfo = 'Purged all';
+		if( $url )
+		{
 
-		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
+		}
+		else
+		{
+			wp_cache_flush();
+
+			$logInfo = 'Purged all';
+		}
+
+		if( $logInfo && ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Hostinger: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 

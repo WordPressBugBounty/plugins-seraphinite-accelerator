@@ -3533,7 +3533,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'useragent' ] ) )
-			$args[ 'useragent' ] = 'seraph-accel-Agent/2.27.1';
+			$args[ 'useragent' ] = 'seraph-accel-Agent/2.27.2';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

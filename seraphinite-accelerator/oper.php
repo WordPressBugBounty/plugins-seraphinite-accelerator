@@ -1172,7 +1172,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.2' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.3' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1271,9 +1271,14 @@ function CacheGetEnvNginxConfFile()
 	return( dirname( WP_CONTENT_DIR ) . '/seraph-accel-img-compr-redir.conf' );
 }
 
-function CacheVerifyEnvNginxConf( $sett )
+function CacheVerifyEnvNginxConf( $settGlob, $verifyEnvDropin = null )
 {
-	return( @file_get_contents( CacheGetEnvNginxConfFile() ) == CacheGetEnvNginxConf( $sett ) );
+	if( $verifyEnvDropin === null )
+		$verifyEnvDropin = new AnyObj();
+
+	$verifyEnvDropin -> needed = CacheGetEnvNginxConf( $settGlob );
+	$verifyEnvDropin -> actual = @file_get_contents( CacheGetEnvNginxConfFile() );
+	return( $verifyEnvDropin -> actual == $verifyEnvDropin -> needed );
 }
 
 function _CacheGetEnvConfPrms( $sett )
@@ -1681,7 +1686,7 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 	}
 
 	{
-		$confComprRedirBlock = CacheGetEnvNginxConf( $sett );
+		$confComprRedirBlock = CacheGetEnvNginxConf( $settGlob );
 
 		$fileConfComprRedir = CacheGetEnvNginxConfFile();
 		if( @file_get_contents( $fileConfComprRedir ) !== $confComprRedirBlock )

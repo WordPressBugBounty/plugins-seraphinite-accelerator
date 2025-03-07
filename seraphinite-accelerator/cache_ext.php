@@ -424,7 +424,7 @@ function CacheExt_Clear( $url = null )
 			$requestRes =
 				Net::RemoteRequest
 
-				( 'POST', $urlFpcMicroservice, array( 'timeout' => 4, 'sslverify' => false, 'data' => $data, 'referer' => home_url(), 'useragent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . get_bloginfo( 'url' ), 'headers' => array( 'Accept' => 'application/json', 'Content-Type' => 'application/json', 'Content-Length' => strlen( $data ) ) ) );
+				( 'POST', $urlFpcMicroservice, array( 'timeout' => 4, 'sslverify' => false, 'data' => $data, 'referer' => home_url(), 'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . get_bloginfo( 'url' ), 'headers' => array( 'Accept' => 'application/json', 'Content-Type' => 'application/json', 'Content-Length' => strlen( $data ) ) ) );
 
 			if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 				LogWrite( 'CloudWays (CloudFlare): ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );

@@ -1022,6 +1022,25 @@ function CacheOpUrl_DeParseUrl( $siteAddr, $path, $query = null )
 	return( $url );
 }
 
+function CacheOpUrl_UpdateSrv( $cbIsAborted, $settCache, $url, $viewsHeaders, $viewId = null )
+{
+	CacheExt_Clear( $url );
+
+	if( !Gen::GetArrField( $settCache, array( 'srvUpd' ), false ) )
+		return;
+
+	$aHdrs = array();
+	foreach( $viewsHeaders as $id => $headers )
+	{
+		if( $viewId !== null && $viewId != CacheOpViewsHeadersGetViewId( $id ) )
+			continue;
+
+		$aHdrs[ $id ] = $headers;
+	}
+
+	CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted );
+}
+
 function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $proc = null, $viewId = null, $geoId = null, $userId = null, $immediatelyPushQueue = true )
 {
 	if( $cbIsAborted === true && PluginFileValues::Get( 'o' ) !== null )
@@ -1061,7 +1080,8 @@ function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $
 
 	unset( $settCacheGlobal );
 
-	$settCache = Gen::GetArrField( Plugin::SettGet(), array( 'cache' ), array() );
+	$ctx -> settCache = Gen::GetArrField( Plugin::SettGet(), array( 'cache' ), array() );
+	$ctx -> viewsHeaders = CacheOpGetViewsHeaders( $ctx -> settCache, $ctx -> viewId );
 
 	$ctx -> cbUrlOp =
 		function( $ctx, $url )
@@ -1108,7 +1128,7 @@ function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $
 				{
 
 					if( $ctx -> op == 10 )
-						CacheExt_Clear( CacheOpUrl_DeParseUrl( $ctx -> curSiteAddr, $siteRelPath, $ctx -> curQuery ) );
+						CacheOpUrl_UpdateSrv( array( $ctx, '_isAborted' ), $ctx -> settCache, CacheOpUrl_DeParseUrl( $ctx -> curSiteAddr, $siteRelPath, $ctx -> curQuery ), $ctx -> viewsHeaders, $ctx -> curViewId );
 
 				} : null
 
@@ -1130,7 +1150,7 @@ function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $
 				return;
 
 			if( $ctx -> op == 10 )
-				CacheExt_Clear( CacheOpUrl_DeParseUrl( $ctx -> curSiteAddr, $path, $ctx -> curQuery ) );
+				CacheOpUrl_UpdateSrv( array( $ctx, '_isAborted' ), $ctx -> settCache, CacheOpUrl_DeParseUrl( $ctx -> curSiteAddr, $path, $ctx -> curQuery ), $ctx -> viewsHeaders );
 
 		};
 
@@ -1172,7 +1192,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.3' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.4' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1231,7 +1251,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 function OnOptDel_Sett()
 {
-	return( CacheInitEnv( Plugin::SettGet(), Plugin::SettGetGlobal() ) );
+	return( CacheInitEnv( Plugin::SettGetGlobal(), Plugin::SettGet() ) );
 }
 
 function CacheVerifyEnvDropin( $sett, $verifyEnvDropin = null )
@@ -1271,17 +1291,17 @@ function CacheGetEnvNginxConfFile()
 	return( dirname( WP_CONTENT_DIR ) . '/seraph-accel-img-compr-redir.conf' );
 }
 
-function CacheVerifyEnvNginxConf( $settGlob, $verifyEnvDropin = null )
+function CacheVerifyEnvNginxConf( $settGlob, $sett, $verifyEnvDropin = null )
 {
 	if( $verifyEnvDropin === null )
 		$verifyEnvDropin = new AnyObj();
 
-	$verifyEnvDropin -> needed = CacheGetEnvNginxConf( $settGlob );
+	$verifyEnvDropin -> needed = CacheGetEnvNginxConf( $settGlob, $sett );
 	$verifyEnvDropin -> actual = @file_get_contents( CacheGetEnvNginxConfFile() );
 	return( $verifyEnvDropin -> actual == $verifyEnvDropin -> needed );
 }
 
-function _CacheGetEnvConfPrms( $sett )
+function _CacheGetEnvConfPrms( $settGlob, $sett, $init )
 {
 	$imgTypesCnvFrom_RegExpEnum = implode( '|', array( 'jpe','jpg','jpeg','png','gif','bmp', 'webp','avif' ) );
 
@@ -1289,7 +1309,17 @@ function _CacheGetEnvConfPrms( $sett )
 	$dataUri = null;
 	$dataPath = GetCacheDir();
 	{
+		$bCurBlogRevert = false;
+		if( is_multisite() && defined( 'BLOG_ID_CURRENT_SITE' ) && get_current_blog_id() != BLOG_ID_CURRENT_SITE )
+		{
+			switch_to_blog( BLOG_ID_CURRENT_SITE );
+			$bCurBlogRevert = true;
+		}
+
 		$ctxProcess = &GetContentProcessCtx( $_SERVER, $sett );
+
+		if( $bCurBlogRevert )
+			restore_current_blog();
 
 		$dataPath = str_replace( '\\', '/', $dataPath );
 		$dataUri = $ctxProcess[ 'siteRootUri' ] . '/' . substr( $dataPath, strlen( $ctxProcess[ 'siteRootDataPath' ] ) + 1 );
@@ -1298,60 +1328,172 @@ function _CacheGetEnvConfPrms( $sett )
 		unset( $ctxProcess );
 	}
 
-	return( array( 'imgTypesCnvFrom_RegExpEnum' => $imgTypesCnvFrom_RegExpEnum, 'siteRootUri' => $siteRootUri, 'dataUri' => $dataUri, 'dataPath' => $dataPath ) );
+	$ctxMs = new AnyObj();
+	$ctxMs -> settAgg = array();
+	$ctxMs -> aSite = array();
+	$ctxMs -> cb =
+		function( $ctxMs, $siteId, $site, $sett, $availablePlugins )
+		{
+			$info = array(
+				'addr' => Net::GetUrlWithoutProto( Gen::SetLastSlash( Wp::GetSiteRootUrl(), true ) ),
+				'sett' => array(),
+			);
+
+			Gen::SetArrField( $info[ 'sett' ], array( 'contPr', 'img' ), Gen::GetArrField( $sett, array( 'contPr', 'img' ), array() ) );
+
+			if( Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptAsync' ), false ) )
+				Gen::SetArrField( $ctxMs -> settAgg, array( 'contPr', 'img', 'szAdaptAsync' ), true );
+			if( Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) )
+				Gen::SetArrField( $ctxMs -> settAgg, array( 'contPr', 'img', 'szAdaptOnDemand' ), true );
+			if( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) )
+				Gen::SetArrField( $ctxMs -> settAgg, array( 'hdrTrace' ), true );
+
+			foreach( array_reverse( array( 'webp','avif' ) ) as $comprType )
+				if( Gen::GetArrField( $sett, array( 'contPr', 'img', $comprType, 'redir' ), false ) )
+					Gen::SetArrField( $ctxMs -> settAgg, array( 'contPr', 'img', $comprType, 'redir' ), true );
+
+			if( Gen::GetArrField( $sett, array( 'cacheBr', 'enable' ), false ) )
+			{
+				Gen::SetArrField( $ctxMs -> settAgg, array( 'cacheBr', 'enable' ), true );
+
+				if( ( $v = Gen::GetArrField( $sett, array( 'cacheBr', 'timeout' ), 0 ) ) > Gen::GetArrField( $ctxMs -> settAgg, array( 'cacheBr', 'timeout' ), 0 ) )
+					Gen::SetArrField( $ctxMs -> settAgg, array( 'cacheBr', 'timeout' ), $v );
+			}
+
+			$ctxMs -> aSite[ $siteId ] = $info;
+		}
+	;
+
+	$bMultiSite = _DropInInit_EnumSites( array( $ctxMs, 'cb' ), $sett, $init );
+
+	return( array( 'imgTypesCnvFrom_RegExpEnum' => $imgTypesCnvFrom_RegExpEnum, 'siteRootUri' => $siteRootUri, 'dataUri' => $dataUri, 'dataPath' => $dataPath, 'ctxMs' => $ctxMs, 'bMultiSite' => $bMultiSite ) );
 }
 
-function CacheGetEnvNginxConf( $sett )
+function _CacheGetEnvNginxConf_GetSiteExpr( $aSite, $exprNegative = 'set $site "";', $exprPositive = null )
 {
-	extract( _CacheGetEnvConfPrms( $sett ) );
+	$expr = '';
+
+	if( isset( $aSite[ 'm' ] ) )
+	{
+		$expr .= ' if ($addrSite ~* ^[\\w\\-\\.]*\\.' . preg_quote( $aSite[ 'm' ] ) . ') { set $site "${site}S"; }';
+		unset( $aSite[ 'm' ] );
+	}
+
+	$expr = ( $aSite ? ( ' if ($addrSite ~* ^[\\w\\-\\.]*\\.(?:' . implode( '|', array_map( 'preg_quote', $aSite ) ) . ')) { set $site "${site}S"; }' ) : '' ) . ' if ($siteSub != "") { set $site "${site}A"; }' . $expr;
+
+	$expr = 'set $site "";' . $expr;
+
+	if( is_string( $exprNegative ) )
+		$expr .= ' if ($site ~ ^(?:$|[^S])) { ' . $exprNegative . ' }';
+	if( is_string( $exprPositive ) )
+		$expr .= ' if ($site ~ ^S) { ' . $exprPositive . ' }';
+
+	return( $expr );
+}
+
+function CacheGetEnvNginxConf( $settGlob, $sett, $init = true )
+{
+
+	extract( _CacheGetEnvConfPrms( $settGlob, $sett, $init ) );
 
 	$confComprRedirBlock = '';
 
-	if( !Gen::GetArrField( $sett, array( 'contPr', 'img', 'redirOwn' ), false ) )
+	if( !Gen::GetArrField( $settGlob, array( 'contPr', 'img', 'redirOwn' ), false ) )
 	{
-		$bAiRedir = ( Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptAsync' ), false ) || Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) ) && $dataUri;
+		$bAiRedir = ( Gen::GetArrField( $ctxMs -> settAgg, array( 'contPr', 'img', 'szAdaptAsync' ), false ) || Gen::GetArrField( $ctxMs -> settAgg, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) ) && $dataUri;
 		if( $bAiRedir )
 		{
 			$confComprRedirBlock .=
-				"\t" . 'set $file_ai "";' . "\n\t" . 'if ($arg_seraph_accel_ai ~* ^([\w\-]+)\.([\w\-]+)$) { set $arg_seraph_accel_ai ""; set $ai_s "$1"; set $ai_f "$2"; set $file_ai "' . $dataPath . '/s/${ai_s}/ai/${ai_f}.${file_ext}"; }' . "\n\t" . 'if (-f $file_ai) { rewrite . ' . $dataUri . '/s/${ai_s}/ai/${ai_f}.${file_ext}; set $file_ai ""; break; }' . "\n" .
+				"\t" . 'set $file_ai "";' . "\n\t" . 'if ($arg_seraph_accel_ai ~* ^([\w\-]+)\.([\w\-]+)$) { set $arg_seraph_accel_ai ""; set $ai_s "$1"; set $ai_f "$2"; set $file_ai "' . $dataPath . '/s/${ai_s}/ai/${ai_f}.${file_ext}"; }' . "\n\t" . 'if (-f $file_ai) { rewrite . ' . $dataUri . '/s/${ai_s}/ai/${ai_f}.${file_ext}; set $file_ai ""; }' . "\n" .
 				'';
 
-			if( Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) )
+			if( Gen::GetArrField( $ctxMs -> settAgg, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) )
+			{
+				if( $bMultiSite )
+				{
+					$aSitesMatch = array();
+					foreach( $ctxMs -> aSite as $siteId => $info )
+						if( Gen::GetArrField( $info[ 'sett' ], array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) )
+							$aSitesMatch[ $siteId ] = $info[ 'addr' ];
+
+					if( count( $aSitesMatch ) != count( $ctxMs -> aSite ) )
+						$confComprRedirBlock .=	"\t" . _CacheGetEnvNginxConf_GetSiteExpr( $aSitesMatch, 'set $file_ai "";' ) . "\n";
+				}
+
 				$confComprRedirBlock .=
-					"\t" . 'if ($file_ai) { rewrite ^(.*)$ ' . str_replace( array( '.seraph_accel_gi.', '.ai.' ), array( '$1', '${ai_s}.${ai_f}' ), Net::UrlDeParse( array( 'path' => $siteRootUri . '/', 'query' => Image_MakeOwnRedirUrlArgsEx( '.seraph_accel_gi.', '.ai.' ) ), Net::URLPARSE_F_PRESERVEEMPTIES ) ) . '&intrnl=1 last; break; }' . "\n" .
+					"\t" . 'if ($file_ai) { rewrite ^(.*)$ ' . str_replace( array( '.seraph_accel_gi.', '.ai.' ), array( '$1', '${ai_s}.${ai_f}' ), Net::UrlDeParse( array( 'path' => $siteRootUri . '/', 'query' => Image_MakeOwnRedirUrlArgsEx( '.seraph_accel_gi.', '.ai.' ) ), Net::URLPARSE_F_PRESERVEEMPTIES ) ) . '&intrnl=${ai_s} last; break; }' . "\n" .
 					'';
+			}
 		}
 
-		$redirCacheAdapt = Gen::GetArrField( $sett, array( 'contPr', 'img', 'redirCacheAdapt' ), false );
+		$redirCacheAdapt = Gen::GetArrField( $settGlob, array( 'contPr', 'img', 'redirCacheAdapt' ), false );
 
-		$redir = false;
+		$aRedir = array();
 		foreach( array_reverse( array( 'webp','avif' ) ) as $comprType )
 		{
-			if( !Gen::GetArrField( $sett, array( 'contPr', 'img', $comprType, 'redir' ), false ) )
+			if( !Gen::GetArrField( $ctxMs -> settAgg, array( 'contPr', 'img', $comprType, 'redir' ), false ) )
 				continue;
-
-			$redir = true;
 
 			if( $confComprRedirBlock )
 				$confComprRedirBlock .= "\n";
 
 			$confComprRedirBlock .=
-				"\t" . '# ' . $comprType . '' . "\n\t" . 'types { image/' . $comprType . ' ' . $comprType . '; }' . "\n\t" . 'set $' . $comprType . '_redir "";' . "\n\t" . 'if ($http_accept ~* "image\\/' . $comprType . '") { set $' . $comprType . '_redir "${' . $comprType . '_redir}A"; }' . "\n\t" . 'if (-f $request_filename.' . $comprType . ') { set $' . $comprType . '_redir "${' . $comprType . '_redir}F"; set $any_redir "R"; }' . "\n\t" . 'if ($' . $comprType . '_redir = "AF") { add_header Vary Accept;' . ( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) ? ' add_header X-Seraph-Accel-Cache "state=preoptimized; redir=conf;";' : '' ) . ' rewrite (.*) $1.' . $comprType . ( $redirCacheAdapt ? ' redirect;' : '' ) .' break; }' . "\n" .
+				"\t" . '# ' . $comprType . '' . "\n\t" . 'types { image/' . $comprType . ' ' . $comprType . '; }' . "\n\t" . 'set $' . $comprType . '_redir "";' . "\n\t" . 'if ($http_accept ~* "image\\/' . $comprType . '") { set $' . $comprType . '_redir "${' . $comprType . '_redir}A"; }' . "\n\t" . 'if (-f $request_filename.' . $comprType . ') { set $' . $comprType . '_redir "${' . $comprType . '_redir}F"; set $any_redir "R"; }' . "\n" .
+				'';
+
+			$aSitesMatch = array();
+			foreach( $ctxMs -> aSite as $siteId => $info )
+				if( Gen::GetArrField( $info[ 'sett' ], array( 'contPr', 'img', $comprType, 'redir' ), false ) )
+				{
+					$aSitesMatch[ $siteId ] = $info[ 'addr' ];
+					$aRedir[ $siteId ] = $info[ 'addr' ];
+				}
+
+			if( $bMultiSite && count( $aSitesMatch ) != count( $ctxMs -> aSite ) )
+				$confComprRedirBlock .=	"\t" . _CacheGetEnvNginxConf_GetSiteExpr( $aSitesMatch, 'set $' . $comprType . '_redir "";' ) . "\n";
+
+			$confComprRedirBlock .=
+				"\t" . 'if ($' . $comprType . '_redir = "AF") { add_header Vary Accept;' . ( Gen::GetArrField( $ctxMs -> settAgg, array( 'hdrTrace' ), false ) ? ' add_header X-Seraph-Accel-Cache "state=preoptimized; redir=conf;";' : '' ) . ' rewrite (.*) $1.' . $comprType . ( $redirCacheAdapt ? ' redirect;' : '' ) .' break; }' . "\n" .
 				'';
 		}
 
-		if( $redir )
+		if( $aRedir || $bAiRedir )
 		{
-			$confComprRedirBlock =
-				"\t" . 'set $any_redir "";' . "\n" .
-				( $bAiRedir ? ( "\t" . 'set $file_ext "$1";' . "\n" ) : '' ) .
-				"\n" .
-				$confComprRedirBlock .
-				'';
+			$confComprRedirBlockPrefix = '';
 
-			$confComprRedirBlock .=
-				"\n\t" . 'if ($any_redir = "") { add_header Vary Accept;' . ( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) ? ' add_header X-Seraph-Accel-Cache "state=original; redir=conf;";' : '' ) . ' }' . "\n" .
-				'';
+			if( $aRedir )
+				$confComprRedirBlockPrefix .= "\t" . 'set $any_redir "";' . "\n";
+
+			if( $bAiRedir )
+				$confComprRedirBlockPrefix .= "\t" . 'set $file_ext "$1";' . "\n";
+
+			if( $bMultiSite )
+			{
+				$confComprRedirBlockPrefix .= "\t" . 'set $addrSite ".${host}${request_uri}"; set $siteSub "";';
+
+				$aSubSites = array();
+				foreach( $ctxMs -> aSite as $siteId => $info )
+					if( $siteId != 'm' )
+						$aSubSites[] = $info[ 'addr' ];
+
+				if( $aSubSites )
+					$confComprRedirBlockPrefix .= ' if ($addrSite ~* ^[\\w\\-\\.]*\\.(?:' . implode( '|', array_map( 'preg_quote', $aSubSites ) ) . ')) { set $siteSub "Y"; }';
+
+				$confComprRedirBlockPrefix .= "\n";
+			}
+
+			$confComprRedirBlock = $confComprRedirBlockPrefix . "\n" . $confComprRedirBlock;
+
+			if( $aRedir )
+			{
+				$confComprRedirBlock .=
+					"\n" .
+					( $bMultiSite && count( $aRedir ) != count( $ctxMs -> aSite ) ? ( "\t" . _CacheGetEnvNginxConf_GetSiteExpr( $aRedir, 'set $any_redir "N";' ) . "\n" ) : '' ) .
+					"\t" . 'if ($any_redir = "") { add_header Vary Accept;' . ( Gen::GetArrField( $ctxMs -> settAgg, array( 'hdrTrace' ), false ) ? ' add_header X-Seraph-Accel-Cache "state=original; redir=conf;";' : '' ) . ' }' . "\n" .
+					'';
+			}
+
+			unset( $confComprRedirBlockPrefix );
 		}
 	}
 
@@ -1473,7 +1615,7 @@ function IsWpCacheActive()
 	return( defined( 'WP_CACHE' ) && WP_CACHE );
 }
 
-function CacheInitEnv( $sett, $settGlob, $init = true )
+function CacheInitEnv( $settGlob, $sett, $init = true )
 {
 	$cacheEnable = Gen::GetArrField( $sett, 'cache/enable', true, '/' );
 
@@ -1493,7 +1635,7 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 			Gen::HtAccess_SetBlock( 'seraphinite-accelerator', '' );
 
 		{
-			$confComprRedirBlock = CacheGetEnvNginxConf( array() );
+			$confComprRedirBlock = CacheGetEnvNginxConf( $settGlob, $sett, false );
 
 			$fileConfComprRedir = CacheGetEnvNginxConfFile();
 			if( @file_get_contents( $fileConfComprRedir ) !== $confComprRedirBlock )
@@ -1520,16 +1662,16 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 
 	$hr = Gen::HrAccom( $hr, CacheInitEnvObjDropin( $settGlob, Gen::GetArrField( $settGlob, array( 'cacheObj', 'enable' ), false ) ) );
 
-	extract( _CacheGetEnvConfPrms( $sett ) );
+	extract( _CacheGetEnvConfPrms( $settGlob, $sett, $init ) );
 
-	if( Gen::HtAccess_IsSupported() )
+	if( $aHtAccessSoft = Gen::HtAccess_IsSupported() )
 	{
 
 		$htaccessBlock = '';
 
-		if( Gen::GetArrField( $sett, 'cacheBr/enable', false, '/' ) )
+		if( Gen::GetArrField( $ctxMs -> settAgg, array( 'cacheBr', 'enable' ), false ) )
 		{
-			$tmStr = '"access plus ' . Gen::GetArrField( $sett, 'cacheBr/timeout', 0, '/' ) . ' minutes"';
+			$tmStr = '"access plus ' . Gen::GetArrField( $ctxMs -> settAgg, array( 'cacheBr', 'timeout' ), 0 ) . ' minutes"';
 
 			$htaccessBlock .=
 				'<IfModule mod_mime.c>' . "\n\t" . 'AddType image/avif .avif' . "\n\t" . 'AddType image/webp .webp' . "\n\t" . 'AddType application/font-woff2 .woff2' . "\n\t" . 'AddType application/x-font-opentype .otf' . "\n" .
@@ -1538,7 +1680,7 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 				'</IfModule>' . "\n" .
 				'';
 
-			if( !Gen::GetArrField( $sett, array( 'cache', 'chkNotMdfSince' ), false ) )
+			if( !Gen::GetArrField( $settGlob, array( 'cache', 'chkNotMdfSince' ), false ) )
 			{
 
 				$htaccessBlock .=
@@ -1549,35 +1691,35 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 			}
 		}
 
-		if( !Gen::GetArrField( $sett, array( 'contPr', 'img', 'redirOwn' ), false ) )
+		if( !Gen::GetArrField( $settGlob, array( 'contPr', 'img', 'redirOwn' ), false ) )
 		{
-			if( ( Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptAsync' ), false ) || Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) ) && $dataUri )
+			if( ( Gen::GetArrField( $ctxMs -> settAgg, array( 'contPr', 'img', 'szAdaptAsync' ), false ) || Gen::GetArrField( $ctxMs -> settAgg, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) ) && $dataUri )
 			{
 				$htaccessBlock .=
 					'<IfModule mod_rewrite.c>' . "\n\t" . 'RewriteEngine On' . "\n\t" . 'RewriteCond %{REQUEST_URI}?%{QUERY_STRING} \\.(' . $imgTypesCnvFrom_RegExpEnum . ')\\?(|.*\\&)seraph_accel_ai=([\\w\\-]+)\\.([\\w\\-]+)(\\&.*$|$) [NC]' . "\n\t" . 'RewriteCond "' . $dataPath . '/s/%3/ai/%4.%1" -f' . "\n\t" . 'RewriteRule . ' . $dataUri . '/s/%3/ai/%4.%1?%2%5 [L]' . "\n" .
 					'</IfModule>' . "\n" .
 					'';
 
-				if( Gen::GetArrField( $sett, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) )
+				if( Gen::GetArrField( $ctxMs -> settAgg, array( 'contPr', 'img', 'szAdaptOnDemand' ), false ) )
 					$htaccessBlock .=
-						'<IfModule mod_rewrite.c>' . "\n\t" . 'RewriteEngine On' . "\n\t" . 'RewriteCond %{THE_REQUEST} (?:\\w+\\s)?([^?]+\\.(' . $imgTypesCnvFrom_RegExpEnum . '))\\?(|.*\\&)seraph_accel_ai=([\\w\\-]+)\\.([\\w\\-]+)(\\&[^\\s]*) [NC]' . "\n\t" . 'RewriteCond "' . $dataPath . '/s/%4/ai/%5.%2" !-f' . "\n\t" . 'RewriteRule . ' . str_replace( array( '.seraph_accel_gi.', '.ai.' ), array( '%1', '%4.%5' ), Net::UrlDeParse( array( 'path' => $siteRootUri . '/', 'query' => Image_MakeOwnRedirUrlArgsEx( '.seraph_accel_gi.', '.ai.' ) ), Net::URLPARSE_F_PRESERVEEMPTIES ) ) . '&intrnl=1&%3%6 [L,END]' . "\n" .
+						'<IfModule mod_rewrite.c>' . "\n\t" . 'RewriteEngine On' . "\n\t" . 'RewriteCond %{REQUEST_URI}?%{QUERY_STRING} ([^?]+\\.(' . $imgTypesCnvFrom_RegExpEnum . '))\\?(|.*\\&)seraph_accel_ai=([\\w\\-]+)\\.([\\w\\-]+)(\\&[^\\s]*) [NC]' . "\n\t" . 'RewriteCond "' . $dataPath . '/s/%4/ai/%5.%2" !-f' . "\n\t" . 'RewriteRule . ' . str_replace( array( '.seraph_accel_gi.', '.ai.' ), array( '%1', '%4.%5' ), Net::UrlDeParse( array( 'path' => $siteRootUri . '/', 'query' => Image_MakeOwnRedirUrlArgsEx( '.seraph_accel_gi.', '.ai.' ) ), Net::URLPARSE_F_PRESERVEEMPTIES ) ) . '&intrnl=%4&%3%6 [L,' . ( version_compare( $aHtAccessSoft[ Gen::HTACCESS_SOFT_VER ], '2.4.57', '>=' ) ? 'BCTLS,END' : 'R=302' ) . ']' . "\n" .
 						'</IfModule>' . "\n" .
 						'';
 			}
 
-			$redirCacheAdapt = Gen::GetArrField( $sett, array( 'contPr', 'img', 'redirCacheAdapt' ), false );
+			$redirCacheAdapt = Gen::GetArrField( $settGlob, array( 'contPr', 'img', 'redirCacheAdapt' ), false );
 
 			$htaccessBlockRedir = '';
 			foreach( array_reverse( array( 'webp','avif' ) ) as $comprType )
 			{
-				if( !Gen::GetArrField( $sett, array( 'contPr', 'img', $comprType, 'redir' ), false ) )
+				if( !Gen::GetArrField( $ctxMs -> settAgg, array( 'contPr', 'img', $comprType, 'redir' ), false ) )
 					continue;
 
 				$htaccessBlockRedir .=
 					'<IfModule mod_rewrite.c>' . "\n\t" . 'RewriteEngine On' . "\n\t" . 'RewriteCond %{HTTP_ACCEPT} image\\/' . $comprType . "\n\t" . 'RewriteCond %{REQUEST_FILENAME} \\.(' . $imgTypesCnvFrom_RegExpEnum . ')$' . "\n\t" . 'RewriteCond %{REQUEST_FILENAME}.' . $comprType . ' -f' . "\n\t" . 'RewriteRule ^(.*)\\.(' . $imgTypesCnvFrom_RegExpEnum . ')$ $1\\.$2\\.' . $comprType . ' [QSA' . ( $redirCacheAdapt ? ',R' : '' ) . ']' . "\n" .
 					'</IfModule>' . "\n" .
 					'<IfModule mod_headers.c>' . "\n\t" . '<FilesMatch \\.(' . $imgTypesCnvFrom_RegExpEnum . ')\\.' . $comprType . '$>' . "\n\t\t" . 'Header merge Vary Accept' . "\n" .
-					( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) && !( @preg_match( '@IdeaWebServer@i', ($_SERVER[ 'SERVER_SOFTWARE' ]??'') ) ) ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=preoptimized; redir=htaccess;"' . "\n" : '' ) .
+					( Gen::GetArrField( $ctxMs -> settAgg, array( 'hdrTrace' ), false ) && ($aHtAccessSoft[ Gen::HTACCESS_SOFT_SUBNAME ]??null) != 'ideawebserver' ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=preoptimized; redir=htaccess;"' . "\n" : '' ) .
 					"\t" . '</FilesMatch>' . "\n" .
 					'</IfModule>' . "\n" .
 					'';
@@ -1587,7 +1729,7 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 			{
 				$htaccessBlock .=
 					'<IfModule mod_headers.c>' . "\n\t" . '<FilesMatch \\.(' . $imgTypesCnvFrom_RegExpEnum . ')$>' . "\n\t\t" . 'Header merge Vary Accept' . "\n" .
-					( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) && !( @preg_match( '@IdeaWebServer@i', ($_SERVER[ 'SERVER_SOFTWARE' ]??'') ) ) ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=original; redir=htaccess;"' . "\n" : '' ) .
+					( Gen::GetArrField( $ctxMs -> settAgg, array( 'hdrTrace' ), false ) && ($aHtAccessSoft[ Gen::HTACCESS_SOFT_SUBNAME ]??null) != 'ideawebserver' ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=original; redir=htaccess;"' . "\n" : '' ) .
 					"\t" . '</FilesMatch>' . "\n" .
 					'</IfModule>' . "\n" .
 					$htaccessBlockRedir;
@@ -1595,7 +1737,7 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 		}
 
 		{
-			$encs = Gen::GetArrField( $sett, array( 'cache', 'encs' ), array() );
+			$encs = Gen::GetArrField( $settGlob, array( 'cache', 'encs' ), array() );
 			$mimeTypes = array(
 				'text/plain',
 
@@ -1654,25 +1796,25 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 			}
 		}
 
-		if( UseGzAssets( Gen::GetArrField( $sett, array( 'cache' ), array() ) ) )
+		if( UseGzAssets( Gen::GetArrField( $settGlob, array( 'cache' ), array() ) ) )
 		{
-			$dataComprs = Gen::GetArrField( $sett, array( 'cache', 'dataCompr' ), array() );
+			$dataComprs = Gen::GetArrField( $settGlob, array( 'cache', 'dataCompr' ), array() );
 
 			if( in_array( 'brotli', $dataComprs ) )
 			{
 				$htaccessBlock .=
 					'<IfModule mod_headers.c>' . "\n\t" . '<IfModule mod_rewrite.c>' . "\n\t\t" . 'RewriteEngine On' . "\n\t\t" . 'RewriteCond %{HTTP:Accept-Encoding} (^|\\W)br(\\W|$)' . "\n\t\t" . 'RewriteCond %{REQUEST_FILENAME} \\.(css|js)$' . "\n\t\t" . 'RewriteCond %{REQUEST_FILENAME}.br -f' . "\n\t\t" . 'RewriteRule ^(.*)\\.(css|js)$ $1\\.$2\\.br [QSA]' . "\n\t\t" . 'RewriteRule \\.css\\.br$ - [T=text/css,E=no-gzip:1,E=no-brotli:1]' . "\n\t\t" . 'RewriteRule \\.js\\.br$ - [T=application/javascript,E=no-gzip:1,E=no-brotli:1]' . "\n\t" . '</IfModule>' . "\n\t" . '<FilesMatch \\.(js|css)\\.br$>' . "\n\t\t" . 'Header set Content-Encoding br' . "\n\t\t" . 'Header merge Vary Accept-Encoding' . "\n" .
-					( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) && !( @preg_match( '@IdeaWebServer@i', ($_SERVER[ 'SERVER_SOFTWARE' ]??'') ) ) ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=precompressed; redir=htaccess;"' . "\n" : '' ) .
+					( Gen::GetArrField( $ctxMs -> settAgg, array( 'hdrTrace' ), false ) && ($aHtAccessSoft[ Gen::HTACCESS_SOFT_SUBNAME ]??null) != 'ideawebserver' ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=precompressed; redir=htaccess;"' . "\n" : '' ) .
 					"\t" . '</FilesMatch>' . "\n" .
 					'</IfModule>' . "\n" .
 					'';
 			}
 
-			if( in_array( 'deflate', $dataComprs ) && !( @preg_match( '@IdeaWebServer@i', ($_SERVER[ 'SERVER_SOFTWARE' ]??'') ) ) )
+			if( in_array( 'deflate', $dataComprs ) && ($aHtAccessSoft[ Gen::HTACCESS_SOFT_SUBNAME ]??null) != 'ideawebserver' )
 			{
 				$htaccessBlock .=
 					'<IfModule mod_headers.c>' . "\n\t" . '<IfModule mod_rewrite.c>' . "\n\t\t" . 'RewriteEngine On' . "\n\t\t" . 'RewriteCond %{HTTP:Accept-Encoding} (^|\\W)gzip(\\W|$)' . "\n\t\t" . 'RewriteCond %{REQUEST_FILENAME} \\.(css|js)$' . "\n\t\t" . 'RewriteCond %{REQUEST_FILENAME}.gz -f' . "\n\t\t" . 'RewriteRule ^(.*)\\.(css|js)$ $1\\.$2\\.gz [QSA]' . "\n\t\t" . 'RewriteRule \\.css\\.gz$ - [T=text/css,E=no-gzip:1,E=no-brotli:1]' . "\n\t\t" . 'RewriteRule \\.js\\.gz$ - [T=application/javascript,E=no-gzip:1,E=no-brotli:1]' . "\n\t" . '</IfModule>' . "\n\t" . '<FilesMatch \\.(js|css)\\.gz$>' . "\n\t\t" . 'Header set Content-Encoding gzip' . "\n\t\t" . 'Header merge Vary Accept-Encoding' . "\n" .
-					( Gen::GetArrField( $sett, array( 'hdrTrace' ), false ) && !( @preg_match( '@IdeaWebServer@i', ($_SERVER[ 'SERVER_SOFTWARE' ]??'') ) ) ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=precompressed; redir=htaccess;"' . "\n" : '' ) .
+					( Gen::GetArrField( $ctxMs -> settAgg, array( 'hdrTrace' ), false ) && ($aHtAccessSoft[ Gen::HTACCESS_SOFT_SUBNAME ]??null) != 'ideawebserver' ? "\t\t" . 'Header set X-Seraph-Accel-Cache "state=precompressed; redir=htaccess;"' . "\n" : '' ) .
 					"\t" . '</FilesMatch>' . "\n" .
 					'</IfModule>' . "\n" .
 					'';
@@ -1686,7 +1828,7 @@ function CacheInitEnv( $sett, $settGlob, $init = true )
 	}
 
 	{
-		$confComprRedirBlock = CacheGetEnvNginxConf( $settGlob );
+		$confComprRedirBlock = CacheGetEnvNginxConf( $settGlob, $sett );
 
 		$fileConfComprRedir = CacheGetEnvNginxConfFile();
 		if( @file_get_contents( $fileConfComprRedir ) !== $confComprRedirBlock )
@@ -1759,58 +1901,80 @@ function _AddSiteIdSites( &$sitesIds, $addrSite, $siteId, $availablePlugins )
 
 }
 
-function _GetAdvCacheFileContent( $sett, $bTiny = false, $init = true )
+function _DropInInit_EnumSites( $cb, $sett, $init = true )
 {
-	$content = '';
 
-	$varExportTinyFmt = array( 'indent' => '', 'elemSpace' => '', 'assignSpaceBefore' => '', 'assignSpaceAfter' => '', 'escValNl' => true );
-
-	$sitesIds = array();
-	if( Gen::DoesFuncExist( 'get_sites' ) && is_multisite() )
+	if( !Gen::DoesFuncExist( 'get_sites' ) || !is_multisite() )
 	{
-		$idPlg = Plugin::GetCurBaseName( false );
-		$idBlog = get_current_blog_id();
-		foreach( get_sites() as $site )
-		{
-			if( !$init && $idBlog == $site -> blog_id )
-				continue;
+		$settSite = $init ? $sett : null;
+		call_user_func( $cb, 'm', null, $settSite, $settSite ? Plugin::GetAvailablePlugins() : array() );
+		return( null );
+	}
 
+	$idPlg = Plugin::GetCurBaseName( false );
+	$idBlog = get_current_blog_id();
+	foreach( get_sites() as $site )
+	{
+		if( $idBlog != $site -> blog_id )
 			switch_to_blog( $site -> blog_id );
 
-			$availablePlugins = Plugin::GetAvailablePlugins();
+		$availablePlugins = Plugin::GetAvailablePlugins();
 
+		$settSite = null;
+		if( $idBlog != $site -> blog_id )
+		{
 			if( in_array( $idPlg, $availablePlugins ) )
 			{
-				$addrSite = strtolower( Net::GetUrlWithoutProto( Gen::SetLastSlash( Wp::GetSiteRootUrl(), false ) ) );
-				$siteId = GetSiteId( $site );
-				_AddSiteIdSites( $sitesIds, $addrSite, $siteId, $availablePlugins );
-
 				Plugin::SettCacheClear();
 				$settSite = Plugin::SettGet();
-				$content .= 'function _seraph_accel_siteSettInlineDetach_' . $siteId . '(){ return ' . ( $bTiny ? Gen::VarExport( $settSite, $varExportTinyFmt ) : var_export( $settSite, true ) ) . '; }' . "\n";
 			}
+		}
+		else if( $init )
+			$settSite = $sett;
 
+		call_user_func( $cb, GetSiteId( $site ), $site, $settSite, $settSite ? $availablePlugins : array() );
+
+		if( $idBlog != $site -> blog_id )
 			restore_current_blog();
-		}
-
-		if( $content )
-			$content .= 'function seraph_accel_siteSettInlineDetach($siteId){ $fn = \'_seraph_accel_siteSettInlineDetach_\' . $siteId; return function_exists($fn) ? call_user_func($fn) : null; }' . "\n";
 	}
-	else
-	{
-		if( $init )
+
+	return( true );
+}
+
+function _GetAdvCacheFileContent( $sett, $bTiny = false, $init = true )
+{
+	$ctxMs = new AnyObj();
+	$ctxMs -> bTiny = $bTiny;
+	$ctxMs -> varExportTinyFmt = array( 'indent' => '', 'elemSpace' => '', 'assignSpaceBefore' => '', 'assignSpaceAfter' => '', 'escValNl' => true );
+	$ctxMs -> sitesIds = array();
+	$ctxMs -> content = '';
+	$ctxMs -> cb =
+		function( $ctxMs, $siteId, $site, $sett, $availablePlugins )
 		{
-			$availablePlugins = Plugin::GetAvailablePlugins();
+			if( !$sett )
+				return;
 
-			$content .= 'function seraph_accel_siteSettInlineDetach($siteId){ return ' . ( $bTiny ? Gen::VarExport( $sett, $varExportTinyFmt ) : var_export( $sett, true ) ) . '; }' . "\n";
-			_AddSiteIdSites( $sitesIds, Net::GetUrlWithoutProto( Gen::SetLastSlash( Wp::GetSiteRootUrl(), false ) ), 'm', $availablePlugins );
+			$addrSite = strtolower( Net::GetUrlWithoutProto( Gen::SetLastSlash( Wp::GetSiteRootUrl(), false ) ) );
+			_AddSiteIdSites( $ctxMs -> sitesIds, $addrSite, $siteId, $availablePlugins );
+
+			$sSett = $ctxMs -> bTiny ? Gen::VarExport( $sett, $ctxMs -> varExportTinyFmt ) : var_export( $sett, true );
+			if( $site )
+				$ctxMs -> content .= 'function _seraph_accel_siteSettInlineDetach_' . $siteId . '(){ return ' . $sSett . '; }' . "\n";
+			else
+				$ctxMs -> content .= 'function seraph_accel_siteSettInlineDetach($siteId){ return ' . $sSett . '; }' . "\n";
 		}
+	;
+
+	if( _DropInInit_EnumSites( array( $ctxMs, 'cb' ), $sett, $init ) )
+	{
+		if( $ctxMs -> content )
+			$ctxMs -> content .= 'function seraph_accel_siteSettInlineDetach($siteId){ $fn = \'_seraph_accel_siteSettInlineDetach_\' . $siteId; return function_exists($fn) ? call_user_func($fn) : null; }' . "\n";
 	}
 
-	if( $content )
-		$content .= '$seraph_accel_sites = ' . ( $bTiny ? Gen::VarExport( $sitesIds, $varExportTinyFmt ) : var_export( $sitesIds, true ) ) . ';' . "\n";
+	if( $ctxMs -> content )
+		$ctxMs -> content .= '$seraph_accel_sites = ' . ( $ctxMs -> bTiny ? Gen::VarExport( $ctxMs -> sitesIds, $ctxMs -> varExportTinyFmt ) : var_export( $ctxMs -> sitesIds, true ) ) . ';' . "\n";
 
-	return( $content );
+	return( $ctxMs -> content );
 }
 
 function GetAdvCacheFileContent( $sett, $init = true )

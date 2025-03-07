@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 159;
+const PLUGIN_SETT_VER								= 161;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1135,6 +1135,7 @@ function OnOptGetDef_Sett()
 			'srv' => true,
 			'srvClr' => true,
 			'srvUpd' => true,
+			'srvUpdTimeout' => 5,
 			'nginx' => array(
 				'method'=> '3rdp',
 				'url' => '',
@@ -1631,6 +1632,7 @@ function OnOptGetDef_Sett()
 				'items' => array(
 					'sa:.//*[contains(concat(" ",normalize-space(@class)," ")," wpforms-container ")]',
 					'sa:.//*[contains(concat(" ",normalize-space(@class)," ")," wfacp_checkout_form ")]',
+					'sa:.//form[contains(concat(" ",normalize-space(@class)," ")," wpcf7-form ")]',
 				),
 			),
 
@@ -1843,6 +1845,7 @@ function OnOptGetDef_Sett()
 					'src:@\\.hsforms\\.net\\W@',
 					'src:@//cdnjs\\.cloudflare\\.com/ajax/libs/bodymovin/[\\d\\.]+/lottie\\.@',
 					'src:@/plugins/zippy-form/public/js/flatpickr\\.@',
+					'id:@^wd-swiper-library-js@',
 				),
 
 				'min' => false,
@@ -3761,7 +3764,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.3 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.4 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5039,7 +5042,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.3';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.4';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5477,8 +5480,62 @@ function CacheExt_Clear_CopyHdrsArr()
 	return( array( 'HTTP_X_LSCACHE', 'HTTP_X_ZXCS_VHOST', 'HTTP_X_SERAPH_ACCEL_CW_ALLOWED_IP', 'HTTP_X_SERAPH_ACCEL_PRESSABLE_PROXIED_REQUEST', 'HTTP_X_SERAPH_ACCEL_WARPDRIVE_API', 'HTTP_X_VARNISH', 'HTTP_X_SERAPH_ACCEL_H_PLATFORM' ) );
 }
 
+function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = null )
+{
+
+	$asyncMode = null;
+
+	if( $asyncMode == 'ec' )
+		return;
+
+	$srvUpdTimeout = Gen::GetArrField( $settCache, array( 'srvUpdTimeout' ), 5 );
+	foreach( $aHdrs as $hdrsId => $headers )
+	{
+		if( !isset( $headers[ 'User-Agent' ] ) )
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.4');
+		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
+
+		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )
+			$headers[ 'X-Real-Ip' ] = $headers[ 'X-Forwarded-For' ] = $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ];
+
+		$bProcess = true;
+		$tmStart = microtime( true );
+		for( ;; )
+		{
+			$requestRes = Wp::RemoteGet( $url, array( 'timeout' => $srvUpdTimeout, 'headers' => $headers, 'sslverify' => false,  ) );
+			if( Net::GetHrFromWpRemoteGet( $requestRes ) !== Gen::S_OK )
+			{
+				$bProcess = false;
+				break;
+			}
+
+			$cacheStatusCf = wp_remote_retrieve_header( $requestRes, 'cf-cache-status' );
+
+			if( $cacheStatusCf != 'MISS' && $cacheStatusCf != 'EXPIRED' )
+				break;
+
+			if( ( microtime( true ) - $tmStart > $srvUpdTimeout ) || ( $cbIsAborted && call_user_func( $cbIsAborted ) ) )
+			{
+				$bProcess = false;
+				break;
+			}
+
+			sleep( 1 );
+		}
+
+		if( !$bProcess )
+			break;
+	}
+}
+
 function CacheAdditional_UpdateCurUrl( $settCache, $srvUpd = false )
 {
+	global $seraph_accel_g_simpCacheMode;
+
+	if( $seraph_accel_g_simpCacheMode !== null )
+
+		return;
+
 	$url = null;
 
 	if( IsBatCacheRtm() )
@@ -5500,13 +5557,10 @@ function CacheAdditional_UpdateCurUrl( $settCache, $srvUpd = false )
 		if( $url === null )
 			$url = GetCurRequestUrl();
 
-		$asyncMode = null;
+		global $seraph_accel_g_ctxCache;
 
-		if( $asyncMode != 'ec' )
-		{
-
-			Wp::RemoteGet( $url, array( 'timeout' => 5, 'useragent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.3', 'sslverify' => false,  ) );
-		}
+		$aHdrs = array( $seraph_accel_g_ctxCache !== null ? $seraph_accel_g_ctxCache -> viewId : 'cur' => Net::GetRequestHeaders() );
+		CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs );
 	}
 }
 

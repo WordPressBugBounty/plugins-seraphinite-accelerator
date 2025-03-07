@@ -99,7 +99,7 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 	}
 
 	$verifyEnvDropin = new AnyObj();
-	if( !isset( $sett[ PluginOptions::VERPREV ] ) && ( ($_SERVER[ 'REQUEST_METHOD' ]??null) == 'GET' ) && !CacheVerifyEnvNginxConf( $settGlob, $verifyEnvDropin ) )
+	if( !isset( $sett[ PluginOptions::VERPREV ] ) && ( ($_SERVER[ 'REQUEST_METHOD' ]??null) == 'GET' ) && !CacheVerifyEnvNginxConf( $settGlob, $sett, $verifyEnvDropin ) )
 	{
 
 		call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDropinNotMatch_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), Gen::GetFileDir( CacheGetEnvNginxConfFile() ), Gen::GetFileName( CacheGetEnvNginxConfFile() ) ) . ( $ext ? '' : sprintf( Wp::safe_html_x( 'ContentDropinNotMatchEx_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), GetCodeViewHtmlBlock( $verifyEnvDropin -> needed ), GetCodeViewHtmlBlock( $verifyEnvDropin -> actual ) ) ) ) );

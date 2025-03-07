@@ -152,6 +152,11 @@ class WP_Object_Cache
 	{
 	}
 
+	function __destruct()
+	{
+
+	}
+
 	public function add_global_groups( $groups )
 	{
 		$this -> aGlobalGroup = array_merge( $this -> aGlobalGroup, array_fill_keys( ( array )$groups, true ) );
@@ -252,8 +257,6 @@ class WP_Object_Cache
 
 	private function _updateFromStg( $aPath )
 	{
-		if( isset( $this -> aNonPersistentGroup[ $aPath[ 0 ] ] ) )
-			return( \seraph_accel\Gen::GetArrField( $this -> aData, $aPath ) );
 
 		$file = $this -> _getFilePath( $aPath );
 
@@ -289,12 +292,11 @@ class WP_Object_Cache
 			\seraph_accel\Gen::UnsetArrField( $this -> aData, $aPath );
 
 		return( $v );
+
 	}
 
 	private function _updateToStg( $aPath, $v )
 	{
-		if( isset( $this -> aNonPersistentGroup[ $aPath[ 0 ] ] ) )
-			return( null );
 
 		$file = $this -> _getFilePath( $aPath );
 
@@ -327,6 +329,7 @@ class WP_Object_Cache
 			$this -> lock -> Release();
 
 		return( $res );
+
 	}
 
 	public function __get( $name )
@@ -367,14 +370,15 @@ class WP_Object_Cache
 			return( false );
 
 		$aPath = $this -> _getPath( $group, $key );
+		$bNonPersistentGroup = isset( $this -> aNonPersistentGroup[ $aPath[ 0 ] ] );
 
 		$v = \seraph_accel\Gen::GetArrField( $this -> aData, $aPath );
-		if( $v === null )
+		if( $v === null && !$bNonPersistentGroup )
 			$v = $this -> _updateFromStg( $aPath );
 		if( $bSetExist ? ( $v === null ) : ( $v !== null ) )
 			return( false );
 
-		return( $this -> _set( $aPath, $data, $expire, $time ) );
+		return( $this -> _set( $aPath, $bNonPersistentGroup, $data, $expire, $time ) );
 	}
 
 	public function add( $key, $data, $group = '', $expire = 0 )
@@ -413,14 +417,15 @@ class WP_Object_Cache
 		return( $this -> _add( true, $key, $data, $group, self::_normExpiration( $expire ), time() ) );
 	}
 
-	protected function _set( $aPath, $data, $expire, $time )
+	protected function _set( $aPath, $bNonPersistentGroup, $data, $expire, $time )
 	{
 		if( is_object( $data ) )
 			$data = clone $data;
 
 		$v = array( $data, $time + $expire );
 		\seraph_accel\Gen::SetArrField( $this -> aData, $aPath, $v );
-		$this -> _updateToStg( $aPath, $v );
+		if( !$bNonPersistentGroup )
+			$this -> _updateToStg( $aPath, $v );
 
 		return( true );
 	}
@@ -433,7 +438,9 @@ class WP_Object_Cache
 
 		$this -> _init();
 
-		return( $this -> _set( $this -> _getPath( $group, $key ), $data, self::_normExpiration( $expire ), time() ) );
+		$aPath = $this -> _getPath( $group, $key );
+		$bNonPersistentGroup = isset( $this -> aNonPersistentGroup[ $aPath[ 0 ] ] );
+		return( $this -> _set( $aPath, $bNonPersistentGroup, $data, self::_normExpiration( $expire ), time() ) );
 	}
 
 	public function set_multiple( array $aData, $group = '', $expire = 0 )
@@ -447,7 +454,11 @@ class WP_Object_Cache
 		$aRes = array();
 
 		foreach( $aData as $key => $data )
-			$aRes[ $key ] = self::_is_valid_key( $key ) ? $this -> _set( $this -> _getPath( $group, $key ), $data, $expire, $time ) : false;
+		{
+			$aPath = $this -> _getPath( $group, $key );
+			$bNonPersistentGroup = isset( $this -> aNonPersistentGroup[ $aPath[ 0 ] ] );
+			$aRes[ $key ] = self::_is_valid_key( $key ) ? $this -> _set( $aPath, $bNonPersistentGroup, $data, $expire, $time ) : false;
+		}
 
 		return( $aRes );
 	}
@@ -460,14 +471,17 @@ class WP_Object_Cache
 		$this -> _init();
 
 		$aPath = $this -> _getPath( $group, $key );
+		$bNonPersistentGroup = isset( $this -> aNonPersistentGroup[ $aPath[ 0 ] ] );
 
 		$v = null;
-		if( $force )
+
+		if( $force && !$bNonPersistentGroup )
 			$v = $this -> _updateFromStg( $aPath );
 		else
+
 		{
 			$v = \seraph_accel\Gen::GetArrField( $this -> aData, $aPath );
-			if( $v === null )
+			if( $v === null && !$bNonPersistentGroup )
 				$v = $this -> _updateFromStg( $aPath );
 		}
 
@@ -475,7 +489,8 @@ class WP_Object_Cache
 		{
 			\seraph_accel\Gen::UnsetArrField( $this -> aData, $aPath );
 			$v = null;
-			$this -> _updateToStg( $aPath, null );
+			if( !$bNonPersistentGroup )
+				$this -> _updateToStg( $aPath, null );
 		}
 
 		if( $v === null )
@@ -514,15 +529,17 @@ class WP_Object_Cache
 		$this -> _init();
 
 		$aPath = $this -> _getPath( $group, $key );
+		$bNonPersistentGroup = isset( $this -> aNonPersistentGroup[ $aPath[ 0 ] ] );
 
 		$v = \seraph_accel\Gen::GetArrField( $this -> aData, $aPath );
-		if( $v === null )
+		if( $v === null && !$bNonPersistentGroup )
 			$v = $this -> _updateFromStg( $aPath );
 		if( $v === null )
 			return( false );
 
 		\seraph_accel\Gen::UnsetArrField( $this -> aData, $aPath );
-		$this -> _updateToStg( $aPath, null );
+		if( !$bNonPersistentGroup )
+			$this -> _updateToStg( $aPath, null );
 		return( true );
 	}
 
@@ -557,13 +574,14 @@ class WP_Object_Cache
 
 		$this -> _init();
 
-		$aPath = $this -> _getPath( $group, $key );
-
 		if( $this -> lock -> Acquire() === false )
 			return( false );
 
+		$aPath = $this -> _getPath( $group, $key );
+		$bNonPersistentGroup = isset( $this -> aNonPersistentGroup[ $aPath[ 0 ] ] );
+
 		$v = \seraph_accel\Gen::GetArrField( $this -> aData, $aPath );
-		if( $v === null )
+		if( $v === null && !$bNonPersistentGroup )
 			$v = $this -> _updateFromStg( $aPath );
 		if( $v === null )
 		{
@@ -579,8 +597,11 @@ class WP_Object_Cache
 			$v[ 0 ] = 0;
 
 		\seraph_accel\Gen::SetArrField( $this -> aData, $aPath, $v );
-		$this -> _updateToStg( $aPath, $v );
+		if( !$bNonPersistentGroup )
+			$this -> _updateToStg( $aPath, $v );
+
 		$this -> lock -> Release();
+
 		return( $v[ 0 ] );
 	}
 
@@ -591,9 +612,12 @@ class WP_Object_Cache
 		$this -> aData = array();
 
 		if( $this -> lock -> Acquire() )
+
 		{
 			\seraph_accel\Gen::DelDir( $this -> dataDir, false );
+
 			$this -> lock -> Release();
+
 		}
 
 		return( true );
@@ -608,9 +632,12 @@ class WP_Object_Cache
 		\seraph_accel\Gen::UnsetArrField( $this -> aData, array( $aPath[ 0 ] ) );
 
 		if( $this -> lock -> Acquire() )
+
 		{
 			\seraph_accel\Gen::DelDir( $this -> dataDir . '/' . $aPath[ 0 ] );
+
 			$this -> lock -> Release();
+
 		}
 
 		return( true );

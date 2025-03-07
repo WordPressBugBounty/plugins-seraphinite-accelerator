@@ -502,10 +502,27 @@ class Gen
 		return( $dataNew );
 	}
 
+	const HTACCESS_SOFT_NAME = 0;
+	const HTACCESS_SOFT_VER = 1;
+	const HTACCESS_SOFT_SUBNAME = 2;
+
 	static function HtAccess_IsSupported()
 	{
 
-		return( !!Gen::CallFunc( 'apache_get_version' ) || preg_match( '@apache@i', isset( $_SERVER[ 'SERVER_SOFTWARE' ] ) ? $_SERVER[ 'SERVER_SOFTWARE' ] : '' ) || preg_match( '@litespeed@i', isset( $_SERVER[ 'SERVER_SOFTWARE' ] ) ? $_SERVER[ 'SERVER_SOFTWARE' ] : '' ) );
+		$sVer = Gen::CallFunc( 'apache_get_version' );
+		if( !$sVer )
+			$sVer = ($_SERVER[ 'SERVER_SOFTWARE' ]??null);
+
+		if( !is_string( $sVer ) )
+			return( false );
+
+		if( !preg_match( '@(apache|litespeed)(?:/([\\d\\.]+))?@i', $sVer, $m ) )
+			return( false );
+
+		$res = array( Gen::HTACCESS_SOFT_NAME => strtolower( $m[ 1 ] ), Gen::HTACCESS_SOFT_VER => ($m[ 2 ]??'0') );
+		if( preg_match( '@IdeaWebServer@i', $sVer ) )
+			$res[ Gen::HTACCESS_SOFT_SUBNAME ] = 'ideawebserver';
+		return( $res );
 	}
 
 	static function HtAccess_GetBlock( $id )
@@ -3532,8 +3549,8 @@ class Net
 
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
-		if( !isset( $args[ 'useragent' ] ) )
-			$args[ 'useragent' ] = 'seraph-accel-Agent/2.27.3';
+		if( !isset( $args[ 'user-agent' ] ) )
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.4';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -3549,7 +3566,7 @@ class Net
 		curl_setopt( $hCurl, CURLOPT_SSL_VERIFYPEER, false );
 		if( $method === 'POST' )
 			curl_setopt( $hCurl, CURLOPT_POST, true );
-		curl_setopt( $hCurl, CURLOPT_USERAGENT, $args[ 'useragent' ] );
+		curl_setopt( $hCurl, CURLOPT_USERAGENT, $args[ 'user-agent' ] );
 		if( isset( $args[ 'referer' ] ) )
 			curl_setopt( $hCurl, CURLOPT_REFERER, $args[ 'referer' ] );
 		curl_setopt( $hCurl, CURLOPT_TIMEOUT, $args[ 'timeout' ] );
@@ -5197,8 +5214,8 @@ class Wp
 					$obj -> method = $type;
 
 				$obj -> headers_sent = ( array )$headers;
-				if( isset( $options[ 'useragent' ] ) )
-					$obj -> headers_sent[ 'User-Agent' ] = $options[ 'useragent' ];
+				if( isset( $options[ 'user-agent' ] ) )
+					$obj -> headers_sent[ 'User-Agent' ] = $options[ 'user-agent' ];
 			};
 
 		$obj -> setHooks =

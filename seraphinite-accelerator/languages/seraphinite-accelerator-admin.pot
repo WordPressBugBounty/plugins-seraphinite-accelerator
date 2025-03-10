@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.27.4)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.27.4\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.27.5)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27.5\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.27.4)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.27.4\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.27.5)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27.5\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -967,7 +967,7 @@ msgctxt "admin.Settings_CacheData"
 msgid "Title"
 msgstr ""
 
-# Objects cache
+# Objects cache (beta)
 msgctxt "admin.Settings_CacheObj"
 msgid "Title"
 msgstr ""
@@ -1519,7 +1519,7 @@ msgctxt "admin.Settings_Cache_Srv"
 msgid "SrvClrChk"
 msgstr ""
 
-# Server and cloud cache warming up
+# Server and cloud cache warming up for a maximum %1$s second(s)
 #, php-format
 msgctxt "admin.Settings_Cache_Srv"
 msgid "SrvUpdChk_%1$s"
@@ -2438,6 +2438,11 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "JetCrslPstChk"
 msgstr ""
 
+# Multi View from Divi
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "DiviMvChk"
+msgstr ""
+
 # Image's Multi View from Divi
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "DiviMvImgChk"
@@ -2456,6 +2461,10 @@ msgstr ""
 # Full Width Header's Multi View from Divi
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "DiviMvFwHdrChk"
+msgstr ""
+
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "DiviSldChk"
 msgstr ""
 
 # Video-box from Divi

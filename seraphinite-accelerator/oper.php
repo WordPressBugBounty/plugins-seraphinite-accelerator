@@ -929,9 +929,9 @@ function CacheOpPost( $postId, $reason, $priority = 0, $proc = null, $cbIsAborte
 		$txt = '';
 		switch( $op )
 		{
-		case 0:		$txt .= 'Automatic revalidation'; break;
+		case 0:		$txt .= $priority == 4 ? 'Scheduled automatic revalidation' : 'Automatic revalidation'; break;
 		case 3:	$txt .= 'Automatic revalidation if needed'; break;
-		case 2:				$txt .= 'Automatic deleting'; break;
+		case 2:				$txt .= $priority == 4 ? 'Scheduled automatic deleting' : 'Automatic deleting'; break;
 		}
 
 		$txt .= ' due to post with ID ' . $postId . ' ';
@@ -1192,7 +1192,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.5' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.6' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{

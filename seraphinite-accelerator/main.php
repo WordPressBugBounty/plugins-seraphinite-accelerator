@@ -41,7 +41,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.27.5', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.27.6', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -397,13 +397,34 @@ function _OnOptionUpdated_PermalinkManagerUris( $option, $value, $valueOld )
 
 function _OnPostMetaUpdated( $postId, $metaKey, $metaValue )
 {
+	global $seraph_accel_g_postUpdated;
+	global $seraph_accel_g_postUpdateSche;
+
 	$sett = Plugin::SettGet();
 
 	foreach( Gen::GetArrField( $sett, array( 'cache', 'updPostMetaExcl' ), array() ) as $exclPattern )
-		if( @preg_match( $exclPattern, ( string )$metaKey ) )
-			return;
+	{
+		$tmSch = null;
+		if( Gen::StrStartsWith( $exclPattern, 'sch:' ) )
+		{
+			$tmSch = is_string( $metaValue ) ? strtotime( $metaValue ) : false;
+			$exclPattern = substr( $exclPattern, 4 );
+		}
+		else if( Gen::StrStartsWith( $exclPattern, 'schLoc:' ) )
+		{
+			$tmSch = is_string( $metaValue ) ? strtotime( $metaValue ) : false;
+			if( $tmSch )
+				$tmSch -= Wp::GetGmtOffset();
+			$exclPattern = substr( $exclPattern, 7 );
+		}
 
-	global $seraph_accel_g_postUpdated;
+		if( @preg_match( $exclPattern, ( string )$metaKey ) )
+		{
+			if( $tmSch !== null )
+				$seraph_accel_g_postUpdateSche[ $postId ][ 'meta' ][ $metaKey ] = $tmSch;
+			return;
+		}
+	}
 
 	$seraph_accel_g_postUpdated[ $postId ][ 'v' ] = false;
 	$seraph_accel_g_postUpdated[ $postId ][ 'r' ][ 'metas' ][ $metaKey ] = true;
@@ -633,6 +654,7 @@ function _OnCheckUpdatePost()
 	global $seraph_accel_g_aDelUrls;
 	global $seraph_accel_g_postUpdated;
 	global $seraph_accel_g_postUpdatedSync;
+	global $seraph_accel_g_postUpdateSche;
 
 	if( $seraph_accel_g_aDelUrls )
 	{
@@ -671,18 +693,64 @@ function _OnCheckUpdatePost()
 
 	if( $seraph_accel_g_postUpdated )
 		Plugin::AsyncFastTaskPost( 'CheckUpdatePostProcessAdd', array( 'a' => $seraph_accel_g_postUpdated ), 2 * 60 * 60, Plugin::ASYNCTASK_PUSH_AUTO );
+
+	if( $seraph_accel_g_postUpdateSche )
+	{
+		foreach( $seraph_accel_g_postUpdateSche as $postId => $aReasons )
+		{
+			foreach( $aReasons as $reasonType => $aReason )
+			{
+				foreach( $aReason as $reason => $tmSche )
+				{
+					$args = array( 'i' => $postId, 'r' => array( $reasonType, $reason ) );
+					$fnCheck =
+						function( $args, $argsPrev )
+						{
+							if( $args[ 'i' ] !== Gen::GetArrField( $argsPrev, array( 'i' ), 0 ) )
+								return( null );
+							if( $args[ 'r' ] !== Gen::GetArrField( $argsPrev, array( 'r' ), array() ) )
+								return( null );
+							return( $args );
+						};
+
+					if( $tmSche )
+						Plugin::AsyncFastTaskPost( 'CheckUpdatePostProcessSche', $args, array( $tmSche, 2 * 60 * 60 ), Plugin::ASYNCTASK_PUSH_AUTO, $fnCheck );
+					else
+						Plugin::AsyncTaskDel( 'CheckUpdatePostProcessSche', $aArg, $fnCheck );
+
+					if( Gen::GetArrField( Plugin::SettGet(), array( 'log' ), false ) && Gen::GetArrField( Plugin::SettGet(), array( 'logScope', 'upd' ), false ) )
+					{
+						$txt = 'Scheduled automatic updating ';
+						if( $tmSche )
+							$txt .= 'set at ' . gmdate( 'd M Y H:i:s', $tmSche ) . ' GMT';
+						else
+							$txt .= 'deleted';
+
+						$txt .= ' due to post with ID ' . $postId . ' changed: ' . json_encode( $args[ 'r' ] );
+
+						LogWrite( $txt, Ui::MsgInfo, 'Cache update' );
+					}
+				}
+			}
+		}
+	}
 }
 
 function _CheckUpdatePostProcess( $aPostUpdated, $proc = null, $cbIsAborted = false )
 {
 	foreach( $aPostUpdated as $postId => $postIdVal )
 	{
+		$priority = 5;
 		$reason = null;
 		if( is_array( $postIdVal ) )
 		{
 			$reason = ($postIdVal[ 'r' ]??null);
 			if( is_array( $reason ) )
+			{
+				if( isset( $reason[ 'sch' ] ) )
+					$priority = 4;
 				$reason = @json_encode( $reason );
+			}
 			$postIdVal = ($postIdVal[ 'v' ]??false);
 		}
 
@@ -693,7 +761,7 @@ function _CheckUpdatePostProcess( $aPostUpdated, $proc = null, $cbIsAborted = fa
 				$postIdVal = true;
 		}
 
-		if( $postIdVal && CacheOpPost( $postId, $reason, 5, $proc, $cbIsAborted, 30 ) === false )
+		if( $postIdVal && CacheOpPost( $postId, $reason, $priority, $proc, $cbIsAborted, 30 ) === false )
 			return( false );
 	}
 }
@@ -844,6 +912,18 @@ function OnAsyncTask_CheckUpdatePostProcessAddPostponed( $args )
 	$lock -> Release();
 
 	_CheckUpdatePostProcessAdd( $aPostUpdated );
+}
+
+function OnAsyncTask_CheckUpdatePostProcessSche( $args )
+{
+	Gen::SetTimeLimit( 1800 );
+	Gen::GarbageCollectorEnable( false );
+
+	$postId = Gen::GetArrField( $args, array( 'i' ), 0 );
+	$aRsn = Gen::GetArrField( $args, array( 'r' ), array() );
+
+	$aPostUpdated = array( $postId => array( 'v' => false, 'r' => array( 'sch' => array( Gen::GetArrField( $aRsn, 0, '' ) => Gen::GetArrField( $aRsn, 1, '' ) ) ) ) );
+	Plugin::AsyncFastTaskPost( 'CheckUpdatePostProcessAdd', array( 'a' => $aPostUpdated ), 2 * 60 * 60, Plugin::ASYNCTASK_PUSH_AUTO );
 }
 
 function OnAsyncTask_CheckPostProcess( $args )
@@ -1072,7 +1152,7 @@ function _OnUpdateGeoDb()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.5' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.6' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1308,7 +1388,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.27.5' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.27.6' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';

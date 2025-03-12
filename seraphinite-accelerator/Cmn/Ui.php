@@ -409,10 +409,12 @@ class Ui
 	{
 
 		$res = array();
-		while( preg_match( '@,\\s@S', $v, $m, PREG_OFFSET_CAPTURE ) )
+		while( preg_match( '@(?:\\s[\\d.]+[wx](,)|(,\\s))@S', $v, $m, PREG_OFFSET_CAPTURE ) )
 		{
-			$res[] = substr( $v, 0, $m[ 0 ][ 1 ] );
-			$v = substr( $v, $m[ 0 ][ 1 ] + 1 );
+			if( $m[ 1 ][ 1 ] === -1 )
+				$m[ 1 ] = $m[ 2 ];
+			$res[] = substr( $v, 0, $m[ 1 ][ 1 ] );
+			$v = substr( $v, $m[ 1 ][ 1 ] + strlen( $m[ 1 ][ 0 ] ) );
 		}
 		$res[] = $v;
 

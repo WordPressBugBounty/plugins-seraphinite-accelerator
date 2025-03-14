@@ -3208,6 +3208,14 @@ class Net
 		return( is_array( $hdrs ) ? $hdrs : array() );
 	}
 
+	static function GetHeaderFromWpRemoteRequestRes( $requestRes, $name )
+	{
+		$hdr = wp_remote_retrieve_header( $requestRes, $name );
+		if( is_array( $hdr ) )
+			$hdr = ($hdr[ 0 ]??null);
+		return( is_string( $hdr ) ? $hdr : '' );
+	}
+
 	static function GetSiteAddrFromUrl( $url, $withScheme = false )
 	{
 		$siteUrlParts = @parse_url( $url );
@@ -3550,7 +3558,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.6';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.7';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

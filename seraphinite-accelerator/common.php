@@ -1400,6 +1400,12 @@ function OnOptGetDef_Sett()
 
 				array(
 					'enable' => true,
+					'name' => 'Aelia Currency Switcher',
+					'cookies' => array( 'aelia_cs_selected_currency' ),
+				),
+
+				array(
+					'enable' => true,
 					'name' => 'GDPR Cookie Consent',
 					'cookies' => array( 'viewed_cookie_policy', 'cli_user_preference' ),
 				),
@@ -3772,7 +3778,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.6 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.7 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4423,7 +4429,7 @@ class ProcessQueueItemCtx
 			}
 		}
 
-		$this -> urlRedir = $this -> requestRes ? trim( wp_remote_retrieve_header( $this -> requestRes, 'location' ) ) : null;
+		$this -> urlRedir = $this -> requestRes ? trim( Net::GetHeaderFromWpRemoteRequestRes( $this -> requestRes, 'location' ) ) : null;
 		if( !$this -> urlRedir && $this -> skipStatus && preg_match( '@^httpCode\\:(?:301|302|307|308)\\:@', $this -> skipStatus ) )
 			$this -> urlRedir = rawurldecode( substr( $this -> skipStatus, 13 ) );
 
@@ -5050,7 +5056,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.6';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.7';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5070,7 +5076,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 		return( false );
 	}
 
-	$contMimeType = ( string )wp_remote_retrieve_header( $res, 'content-type' );
+	$contMimeType = ( string )Net::GetHeaderFromWpRemoteRequestRes( $res, 'content-type' );
 	$cont = wp_remote_retrieve_body( $res );
 
 	if( ( $nPos = strpos( $contMimeType, ';' ) ) !== false )
@@ -5080,18 +5086,18 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 	if( $extCacheId !== null )
 	{
 
-		$contCacheTtl = Gen::ParseProps( ( string )wp_remote_retrieve_header( $res, 'cache-control' ), ',' );
+		$contCacheTtl = Gen::ParseProps( ( string )Net::GetHeaderFromWpRemoteRequestRes( $res, 'cache-control' ), ',' );
 		if( isset( $contCacheTtl[ 'no-cache' ] ) || isset( $contCacheTtl[ 'no-store' ] ) )
 			$contCacheTtl = 5 * 60;
 		else if( isset( $contCacheTtl[ 's-maxage' ] ) )
-			$contCacheTtl = ( int )$contCacheTtl[ 's-maxage' ] - ( int )wp_remote_retrieve_header( $res, 'age' );
+			$contCacheTtl = ( int )$contCacheTtl[ 's-maxage' ] - ( int )Net::GetHeaderFromWpRemoteRequestRes( $res, 'age' );
 		else if( isset( $contCacheTtl[ 'max-age' ] ) )
-			$contCacheTtl = ( int )$contCacheTtl[ 'max-age' ] - ( int )wp_remote_retrieve_header( $res, 'age' );
+			$contCacheTtl = ( int )$contCacheTtl[ 'max-age' ] - ( int )Net::GetHeaderFromWpRemoteRequestRes( $res, 'age' );
 		else
 		{
-			if( $contCacheTtl = ( string )wp_remote_retrieve_header( $res, 'expires' ) )
+			if( $contCacheTtl = ( string )Net::GetHeaderFromWpRemoteRequestRes( $res, 'expires' ) )
 			{
-				if( $sDate = ( string )wp_remote_retrieve_header( $res, 'date' ) )
+				if( $sDate = ( string )Net::GetHeaderFromWpRemoteRequestRes( $res, 'date' ) )
 					$contCacheTtl = Net::GetTimeFromHdrVal( $contCacheTtl ) - Net::GetTimeFromHdrVal( $sDate );
 				else
 					$contCacheTtl = Net::GetTimeFromHdrVal( $contCacheTtl ) - time();
@@ -5500,7 +5506,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.6');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.7');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )
@@ -5517,7 +5523,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 				break;
 			}
 
-			$cacheStatusCf = wp_remote_retrieve_header( $requestRes, 'cf-cache-status' );
+			$cacheStatusCf = Net::GetHeaderFromWpRemoteRequestRes( $requestRes, 'cf-cache-status' );
 
 			if( $cacheStatusCf != 'MISS' && $cacheStatusCf != 'EXPIRED' )
 				break;

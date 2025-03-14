@@ -489,7 +489,7 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 			}
 			else
 			{
-				$contMimeType = ( string )wp_remote_retrieve_header( $requestRes, 'content-type' );
+				$contMimeType = ( string )Net::GetHeaderFromWpRemoteRequestRes( $requestRes, 'content-type' );
 
 				if( strpos( $contMimeType, $contMimeTypeTest ) === false )
 					call_user_func_array( $cb, array( Gen::SevWarn, vsprintf( Wp::safe_html_x( 'ImgConvRedir_NotActive_%1$s%2$s%3$s%4$s%5$s', 'admin.Notice', 'seraphinite-accelerator' ), array_merge( Ui::Link( array( '', '' ), Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Images_Compr' ), true, array(  ) ), array( $comprType, $optionText, esc_html_x( 'RedirOwnChk', 'admin.Settings_Images_Compr', 'seraphinite-accelerator' ) ) ) ) ) );

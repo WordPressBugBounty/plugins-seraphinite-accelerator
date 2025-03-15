@@ -3,6 +3,8 @@
 if( !defined( 'ABSPATH' ) )
 	exit;
 
+if( !defined( 'SERAPH_ACCEL_PLUGIN_DIR' ) ) define( 'SERAPH_ACCEL_PLUGIN_DIR', __DIR__ ); else if( SERAPH_ACCEL_PLUGIN_DIR != __DIR__ ) return;
+
 require_once( __DIR__ . '/common.php' );
 
 function wp_cache_add_global_groups( $groups )

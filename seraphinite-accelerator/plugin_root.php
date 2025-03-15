@@ -5,7 +5,7 @@ Plugin URI: http://wordpress.org/plugins/seraphinite-accelerator
 Description: Turns on site high speed to be attractive for people and search engines.
 Text Domain: seraphinite-accelerator
 Domain Path: /languages
-Version: 2.27.7
+Version: 2.27.8
 Author: Seraphinite Solutions
 Author URI: https://www.s-sols.com
 License: GPLv2 or later (if another license is not provided)
@@ -15,10 +15,11 @@ Requires at least: 4.5
 
 
 
-if( defined( 'SERAPH_ACCEL_VER' ) )
-	return;
+// #######################################################################
 
-define( 'SERAPH_ACCEL_VER', '2.27.7' );
+if( !defined( 'SERAPH_ACCEL_PLUGIN_DIR' ) ) define( 'SERAPH_ACCEL_PLUGIN_DIR', __DIR__ ); else if( SERAPH_ACCEL_PLUGIN_DIR != __DIR__ ) return;
+
+// #######################################################################
 
 include( __DIR__ . '/main.php' );
 

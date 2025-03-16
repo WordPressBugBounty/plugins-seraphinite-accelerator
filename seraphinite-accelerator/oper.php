@@ -1192,7 +1192,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.8' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.9' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1522,6 +1522,9 @@ function CacheGetEnvNginxConf( $settGlob, $sett, $init = true )
 
 function _OpCache_Invalidate( $file )
 {
+	global $seraph_accel_g_phpCfgFileChangedInCurrentSession;
+
+	$seraph_accel_g_phpCfgFileChangedInCurrentSession = true;
 
 	if( function_exists( 'opcache_invalidate' ) )
 		@opcache_invalidate( $file, true );
@@ -1653,8 +1656,8 @@ function CacheInitEnv( $settGlob, $sett, $init = true )
 		if( !IsWpCacheActive() )
 		{
 			$hr = Gen::HrAccom( $hr, Php::File_SetDefineVal( Wp::GetConfigFilePath(), 'WP_CACHE', true ) );
-			if( Gen::HrSucc( $hr ) )
-			    @define( 'WP_CACHE', true );
+			_OpCache_Invalidate( Wp::GetConfigFilePath() );
+
 		}
 
 		$hr = Gen::HrAccom( $hr, Gen::MakeDir( GetCacheDir(), true ) );

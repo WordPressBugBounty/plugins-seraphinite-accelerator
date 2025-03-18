@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 163;
+const PLUGIN_SETT_VER								= 164;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1033,6 +1033,43 @@ function OnOptRead_Sett( $sett, $verFrom )
 		Gen::SetArrField( $sett, array( 'contPr', 'cp', 'elmntrWdgtEaelCntdwn' ), false );
 	}
 
+	if( $verFrom && $verFrom < 164 )
+	{
+		Gen::SetArrField( $sett, array( 'contPr', 'img', 'szAdaptDprMin' ), 100 );
+		Gen::SetArrField( $sett, array( 'contPr', 'img', 'lazy', 'plchRast' ), true );
+
+		{
+			$fld = array( 'cache', 'viewsCompatGrps', 0, 'agents' );
+			$a = Gen::GetArrField( $sett, $fld, array() );
+			_UpdTokensArr( $a, array(
+				'@\\Wmsie \\d+\\.\\d+\\W@' =>
+					'@\\Wmsie \\d+\\.\\d+\\W@i',
+
+				'@\\Wtrident/\\d+\\.\\d+\\W@' =>
+					'@\\Wtrident/\\d+\\.\\d+\\W@i',
+
+				'@\\Wyandexmetrika/\\d+\\.\\d+\\W@' =>
+					'@\\Wyandexmetrika/\\d+\\.\\d+\\W@i',
+
+				'@\\Wgoogleadsenseinfeed\\W@' =>
+					'@\\Wgoogleadsenseinfeed\\W@i',
+
+				'!@\\Wchrome/\\d+\\W@ & @(?:\\W|^)safari/([\\d\\.]+)(?:\\W|$)@ < 603.3.8' =>
+					'!@\\WChrome/\\d+\\W@i & @(?:\\W|^)Safari/([\\d\\.]+)(?:\\W|$)@i < 603.3.8',
+
+				'@\\sMac\\sOS\\sX\\s([\\d\\_]+)@i < 10.12.6' =>
+					'!@\\WChrome/\\d+\\W@i & @\\sMac\\sOS\\sX\\s([\\d\\_]+)@i < 10.12.6',
+
+				'!@\\Wchrome/\\d+\\W@ & @(?:\\W|^)safari/([\\d\\.]+)(?:\\W|$)@' =>
+					'!@\\WChrome/\\d+\\W@i & @(?:\\W|^)Safari/([\\d\\.]+)(?:\\W|$)@i',
+
+				'@\\sMac\\sOS\\sX\\s([\\d\\_]+)@i' =>
+					'!@\\WChrome/\\d+\\W@i & @\\sMac\\sOS\\sX\\s([\\d\\_]+)@i',
+			) );
+			Gen::SetArrField( $sett, $fld, $a );
+		}
+	}
+
 	return( $sett );
 }
 
@@ -1277,7 +1314,7 @@ function OnOptGetDef_Sett()
 			'urisExcl' => array(
 				'/checkout/',
 				'@.*sitemap\.xsl$@',
-				'@page/@',
+				'@(?:^|/)page/@',
 			),
 			'exclAgents' => array(
 				'printfriendly',
@@ -1351,12 +1388,12 @@ function OnOptGetDef_Sett()
 					'enable' => true,
 					'id' => 'c',
 					'agents' => array(
-						'@\\Wmsie \\d+\\.\\d+\\W@',
-						'@\\Wtrident/\\d+\\.\\d+\\W@',
-						'@\\Wyandexmetrika/\\d+\\.\\d+\\W@',
-						'@\\Wgoogleadsenseinfeed\\W@',
-						'!@\\Wchrome/\\d+\\W@ & @(?:\\W|^)safari/([\\d\\.]+)(?:\\W|$)@ < 603.3.8',
-						'@\\sMac\\sOS\\sX\\s([\\d\\_]+)@i < 10.12.6',
+						'@\\Wmsie \\d+\\.\\d+\\W@i',
+						'@\\Wtrident/\\d+\\.\\d+\\W@i',
+						'@\\Wyandexmetrika/\\d+\\.\\d+\\W@i',
+						'@\\Wgoogleadsenseinfeed\\W@i',
+						'!@\\WChrome/\\d+\\W@i & @(?:\\W|^)Safari/([\\d\\.]+)(?:\\W|$)@i < 603.3.8',
+						'!@\\WChrome/\\d+\\W@i & @\\sMac\\sOS\\sX\\s([\\d\\_]+)@i < 10.12.6',
 					),
 				),
 
@@ -1691,6 +1728,7 @@ function OnOptGetDef_Sett()
 				),
 				'szAdaptBgCxMin' => 0,
 				'szAdaptDpr' => true,
+				'szAdaptDprMin' => 100,
 				'excl' => array(
 					'.//svg[contains(concat(" ",normalize-space(@class)," ")," lottgen ")][contains(concat(" ",normalize-space(@class)," ")," js-lzl-ing ")]/image',
 				),
@@ -1699,6 +1737,7 @@ function OnOptGetDef_Sett()
 					'load' => true,
 					'own' => true,
 					'smoothAppear' => true,
+					'plchRast' => true,
 					'del3rd' => true,
 					'excl' => array(
 
@@ -2931,6 +2970,9 @@ function CacheDoCronAndEndRequest()
 	if( !Gen::CloseCurRequestSessionForContinueBgWork() )
 		return( false );
 
+	@error_reporting( E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR | E_RECOVERABLE_ERROR );
+	@ini_set( 'display_errors', 'Off' );
+
 	add_action( 'wp_loaded', function() { if( Wp::GetFilters( 'init', 'wp_cron' ) ) wp_cron(); exit(); }, -999999 );
 	return( true );
 }
@@ -3784,7 +3826,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.10 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.11 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5062,7 +5104,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.10';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.11';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5512,7 +5554,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.10');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.11');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

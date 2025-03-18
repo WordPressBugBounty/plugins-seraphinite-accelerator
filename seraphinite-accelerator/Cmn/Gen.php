@@ -3558,7 +3558,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.10';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.11';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -3834,7 +3834,7 @@ class HtmlNd
 	static function ChildrenIter( $children )
 	{
 		if( !$children )
-			return( $children );
+			return( array() );
 
 		if( $children -> length !== 1 )
 			return( $children );

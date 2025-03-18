@@ -41,7 +41,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.27.10', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.27.11', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -191,10 +191,26 @@ function OnInit( $isAdminMode )
 
 	Gen::SetTempDirFunc( 'seraph_accel\\Wp::GetTempDir' );
 
-	if( Gen::GetArrField( $sett, 'cache/viewsGeo/enable', false, '/' ) )
+	if( Gen::GetArrField( $sett, 'cache', 'viewsGeo', 'enable' ) )
 	{
-		add_action( 'woocommerce_geoip_updater', 'seraph_accel\\_OnUpdateGeoDb' );
+		add_action( 'init',
+			function()
+			{
+				$svc = ExtDb_GetWooMaxMindGeolocationSvc();
+				$dbIP2CFile = $svc ? $svc -> get_database_service() -> get_database_path() : null;
+
+				if( $dbIP2CFile )
+				{
+					add_action( 'woocommerce_geoip_updater', 'seraph_accel\\_OnUpdateGeoDb_Mm_Start', -9999 );
+					Plugin::AsyncTaskDel( 'ExtDbUpdSche' );
+				}
+				else
+					Plugin::AsyncTaskPost( 'ExtDbUpdSche', null, array( time() + 7 * 24 * 60 * 60, 24 * 60 * 60 ), false, function( $args, $argsPrev ) { return( false ); } );
+			}
+		);
 	}
+	else
+		Plugin::AsyncTaskDel( 'ExtDbUpdSche' );
 
 	if( $cacheEnable && Gen::GetArrField( $sett, array( 'cache', 'useTimeoutClnForWpNonce' ), false ) )
 	{
@@ -1044,17 +1060,26 @@ function _OnContentTest( $buffer )
 	return( $buffer );
 }
 
-function ExtDbUpd()
+function ExtDb_GetWooMaxMindGeolocationSvc()
 {
-	if( !Wp::GetFilters( 'woocommerce_geoip_updater', 'seraph_accel\\_OnUpdateGeoDb' ) )
-		add_action( 'woocommerce_geoip_updater', 'seraph_accel\\_OnUpdateGeoDb' );
-	do_action( 'woocommerce_geoip_updater', null );
+	return( Gen::GetArrField( Wp::GetFilters( 'woocommerce_get_geolocation', array( 'WC_Integration_MaxMind_Geolocation', 'get_geolocation' ) ), array( 0, 'f', 0 ) ) );
 }
 
-function _OnUpdateGeoDb()
+function ExtDbUpd()
 {
-	$svc = Gen::GetArrField( Wp::GetFilters( 'woocommerce_get_geolocation', array( 'WC_Integration_MaxMind_Geolocation', 'get_geolocation' ) ), array( 0, 'f', 0 ) );
-	$apiKey = $svc ? $svc -> get_option( 'license_key' ) : null;
+	$svc = ExtDb_GetWooMaxMindGeolocationSvc();
+	$dbIP2CFile = $svc ? $svc -> get_database_service() -> get_database_path() : null;
+
+	if( $dbIP2CFile )
+	{
+		if( !Wp::GetFilters( 'woocommerce_geoip_updater', 'seraph_accel\\_OnUpdateGeoDb_Mm_Start' ) )
+			add_action( 'woocommerce_geoip_updater', 'seraph_accel\\_OnUpdateGeoDb_Mm_Start', -9999 );
+		do_action( 'woocommerce_geoip_updater', null );
+
+		return;
+	}
+
+	$apiKey = Gen::GetArrField( Plugin::SettGet(), array( 'cache', 'viewsGeo', 'apiKeyMmDb' ) );
 	if( !$apiKey )
 		return;
 
@@ -1063,25 +1088,83 @@ function _OnUpdateGeoDb()
 
 	PluginFileValues::SetEx( PluginFileValues::GetDirVar( 'm' ), 'edbu', true );
 
-	$requestRes = Wp::RemoteGet( 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&suffix=zip&license_key=' . urlencode( wc_clean( $apiKey ) ) );
-	$hr = Net::GetHrFromWpRemoteGet( $requestRes, true );
-	if( $hr != Gen::S_OK )
-	{
-		PluginFileValues::DelEx( PluginFileValues::GetDirVar( 'm' ), 'edbu' );
-		return;
-	}
-
 	$dirTmp = GetCacheDir() . '/tmp/mmdb';
-	$fileTmp = $dirTmp . '/db.zip';
-
 	Gen::MakeDir( $dirTmp, true );
 	Gen::DelDir( $dirTmp, false );
 
-	if( !@file_put_contents( $fileTmp, wp_remote_retrieve_body( $requestRes ) ) )
-	{
-		PluginFileValues::DelEx( PluginFileValues::GetDirVar( 'm' ), 'edbu' );
+	Gen::MakeDir( dirname( GetCacheDir() . '/db/mm/ip2c.mmdb' ), true );
+	$lock = new Lock( GetCacheDir() . '/db/l', false );
+
+	_UpdateGeoDb_MmIP2C( $dirTmp, $lock, $apiKey );
+	_UpdateGeoDb_MmC2IP( $dirTmp, $lock, $apiKey );
+
+	Gen::DelDir( $dirTmp );
+
+	PluginFileValues::DelEx( PluginFileValues::GetDirVar( 'm' ), 'edbu' );
+}
+
+function _UpdateGeoDb_MmIP2C( $dirTmp, $lock, $apiKey )
+{
+	$ext = 'tar.gz';
+
+	$requestRes = Wp::RemoteGet( 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&suffix=' . $ext . '&license_key=' . urlencode( $apiKey ) );
+	$hr = Net::GetHrFromWpRemoteGet( $requestRes, true );
+	if( $hr != Gen::S_OK )
 		return;
+
+	$fileTmp = $dirTmp . '/db-IP2C.' . $ext;
+
+	if( !@file_put_contents( $fileTmp, wp_remote_retrieve_body( $requestRes ) ) )
+		return;
+
+	try
+	{
+		$file = new \PharData( $fileTmp );
+		$file -> extractTo( $dirTmp, null, true );
+		unset( $file );
 	}
+	catch ( Exception $exception )
+	{
+
+	}
+	@unlink( $fileTmp );
+
+	$dirDbRoot = null;
+	Gen::DirEnum( $dirTmp, $dirDbRoot,
+		function( $path, $item, &$dirDbRoot )
+		{
+			$path = $path . '/' . $item;
+			if( @is_dir( $path ) )
+			{
+				$dirDbRoot = $item;
+				return( false );
+			}
+
+			return( true );
+		}
+	);
+
+	$data = @file_get_contents( $dirTmp . '/' . $dirDbRoot . '/GeoLite2-Country.mmdb' );
+
+	if( !is_string( $data ) )
+		return;
+
+	_FileWriteTmpAndReplace( GetCacheDir() . '/db/mm/ip2c.mmdb', null, $data, null, $lock );
+}
+
+function _UpdateGeoDb_MmC2IP( $dirTmp, $lock, $apiKey )
+{
+	$ext = 'zip';
+
+	$requestRes = Wp::RemoteGet( 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&suffix=' . $ext . '&license_key=' . urlencode( $apiKey ) );
+	$hr = Net::GetHrFromWpRemoteGet( $requestRes, true );
+	if( $hr != Gen::S_OK )
+		return;
+
+	$fileTmp = $dirTmp . '/db-C2IP.' . $ext;
+
+	if( !@file_put_contents( $fileTmp, wp_remote_retrieve_body( $requestRes ) ) )
+		return;
 
 	try
 	{
@@ -1145,14 +1228,45 @@ function _OnUpdateGeoDb()
 		$oDataLocations -> Release(); unset( $oDataLocations );
 	}
 
-	Gen::DelDir( $dirTmp );
-
-	Gen::MakeDir( dirname( GetCacheDir() . '/db/mm/c2ip-v1.dat' ), true );
-
 	ksort( $aRegionsIp );
 
-	$lock = new Lock( GetCacheDir() . '/db/l', false );
 	_FileWriteTmpAndReplace( GetCacheDir() . '/db/mm/c2ip-v1.dat', null, @serialize( $aRegionsIp ), null, $lock );
+}
+
+function _OnUpdateGeoDb_Mm_Start()
+{
+	if( PluginFileValues::GetEx( PluginFileValues::GetDirVar( 'm' ), 'edbu' ) )
+		return;
+
+	PluginFileValues::SetEx( PluginFileValues::GetDirVar( 'm' ), 'edbu', true );
+
+	add_action( 'woocommerce_geoip_updater', 'seraph_accel\\_OnUpdateGeoDb_Mm_C2IP' );
+	add_action( 'woocommerce_geoip_updater', 'seraph_accel\\_OnUpdateGeoDb_Mm_Finish', 9999 );
+}
+
+function _OnUpdateGeoDb_Mm_C2IP()
+{
+	$svc = ExtDb_GetWooMaxMindGeolocationSvc();
+	$apiKey = $svc ? $svc -> get_option( 'license_key' ) : null;
+	if( !$apiKey )
+		return;
+
+	$dirTmp = GetCacheDir() . '/tmp/mmdb';
+	Gen::MakeDir( $dirTmp, true );
+	Gen::DelDir( $dirTmp, false );
+
+	Gen::MakeDir( dirname( GetCacheDir() . '/db/mm/c2ip-v1.dat' ), true );
+	$lock = new Lock( GetCacheDir() . '/db/l', false );
+
+	_UpdateGeoDb_MmC2IP( $dirTmp, $lock, wc_clean( $apiKey ) );
+
+	Gen::DelDir( $dirTmp );
+}
+
+function _OnUpdateGeoDb_Mm_Finish()
+{
+	remove_action( 'woocommerce_geoip_updater', 'seraph_accel\\_OnUpdateGeoDb_Mm_C2IP' );
+	remove_action( 'woocommerce_geoip_updater', 'seraph_accel\\_OnUpdateGeoDb_Mm_Finish', 9999 );
 
 	PluginFileValues::DelEx( PluginFileValues::GetDirVar( 'm' ), 'edbu' );
 }
@@ -1160,7 +1274,7 @@ function _OnUpdateGeoDb()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.10' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.11' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1396,7 +1510,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.27.10' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.27.11' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -1719,20 +1833,29 @@ function GetStatusData( $siteId )
 	{
 		$aDbFileTm = array();
 
-		{
-			$svc = Gen::GetArrField( Wp::GetFilters( 'woocommerce_get_geolocation', array( 'WC_Integration_MaxMind_Geolocation', 'get_geolocation' ) ), array( 0, 'f', 0 ) );
-			$aDbFileTm[ 'GeoIP (MaxMind)' ] = $svc ? Images_ProcessSrcEx_FileMTime( $svc -> get_database_service() -> get_database_path() ) : null;
-		}
+		$svc = ExtDb_GetWooMaxMindGeolocationSvc();
+		$dbIP2CFile = $svc ? $svc -> get_database_service() -> get_database_path() : null;
 
+		if( $dbIP2CFile )
 		{
-			$aDbFileTm[ 'GeoIP (MaxMind-C2IP)' ] = Images_ProcessSrcEx_FileMTime( GetCacheDir() . '/db/mm/c2ip-v1.dat' );
+			$tmNextRun = wp_get_scheduled_event( 'woocommerce_geoip_updater' );
+			if( $tmNextRun )
+				$tmNextRun = $tmNextRun -> timestamp + ($tmNextRun -> interval??0);
 		}
+		else
+			$tmNextRun = Plugin::AsyncTaskGetTime( 'ExtDbUpdSche', null, true );
+
+		if( !$dbIP2CFile )
+			$dbIP2CFile = GetCacheDir() . '/db/mm/ip2c.mmdb';
+
+		$aDbFileTm[ 'GeoIP (MaxMind)' ] = Images_ProcessSrcEx_FileMTime( $dbIP2CFile );
+		$aDbFileTm[ 'GeoIP (MaxMind-C2IP)' ] = Images_ProcessSrcEx_FileMTime( GetCacheDir() . '/db/mm/c2ip-v1.dat' );
 
 		$aDbFileTmDisp = array();
 		foreach( $aDbFileTm as $dbId => $dbFileTm )
 			$aDbFileTmDisp[] = sprintf( Plugin::GetPluginString( 'NameToDetails_%1$s%2$s' ), Ui::Tag( 'strong', $dbId ), $dbFileTm ? date_i18n( DateTime::RFC2822, $dbFileTm ) : esc_html_x( 'GeoDbNone', 'admin.Manage_Status', 'seraphinite-accelerator' ) );
 
-		$info[ 'cont' ][ 'extDb' ] = implode( Plugin::GetPluginString( 'ListTokenSep' ), $aDbFileTmDisp );
+		$info[ 'cont' ][ 'extDb' ] = implode( Plugin::GetPluginString( 'ListTokenSep' ), $aDbFileTmDisp ) . '<br>' . sprintf( Wp::SanitizeHtml( _x( 'ScheExtDbUpdDscr_%1$s', 'admin.Manage_Status', 'seraphinite-accelerator' ) ), $tmNextRun ? date_i18n( DateTime::RFC2822, $tmNextRun + $dtCurLoc -> getOffset() ) : Wp::GetLocString( 'None' ) );
 	}
 
 	return( $info );
@@ -1887,6 +2010,11 @@ function OnAsyncTask_ExtDbUpd( $args )
 	Gen::GarbageCollectorEnable( false );
 
 	ExtDbUpd();
+}
+
+function OnAsyncTask_ExtDbUpdSche( $args )
+{
+	OnAsyncTask_ExtDbUpd( $args );
 }
 
 function OnAdminApi_ExtDbUpdBegin( $args )

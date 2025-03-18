@@ -427,6 +427,20 @@ class Img
 		return( Gen::S_OK );
 	}
 
+	static function CreateCopyScale( $h, $cx, $cy, $mode = IMG_BILINEAR_FIXED )
+	{
+		if( !$h || !$cx || !$cy )
+			return( null );
+
+		$hNew = @imagescale( $h, $cx, $cy, $mode );
+		if( $hNew === false && $mode != IMG_BILINEAR_FIXED )
+			$hNew = @imagescale( $h, $cx, $cy, IMG_BILINEAR_FIXED );
+		if( $hNew === false )
+			return( null );
+
+		return( $hNew );
+	}
+
 	static function CreateCopyResample( $h, $sizeDst, $rcSrc = null, $rcDst = null, $bgClr = null )
 	{
 		if( !$sizeDst[ 'cx' ] || !$sizeDst[ 'cy' ] )

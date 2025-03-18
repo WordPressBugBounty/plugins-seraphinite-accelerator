@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.10' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.11' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1304,7 +1304,7 @@ function _SettingsPage_CacheData( $callbacks_args, $box )
 			get_defined_vars(), array( 'class' => 'ctlMaxSizeX' )
 		) );
 
-		$o .= ( Ui::Tag( 'div', Ui::ItemsList_OperateBtns( $itemsListPrms, array( 'class' => 'ctlSpaceAfter', 'style' => array( 'margin-left' => 0 ) ) ), array( 'class' => 'ctlSpaceVBefore', 'data-oninit' => 'seraph_accel.Settings._int.views = ' . @json_encode( $aViews ) ) ) );
+		$o .= ( Ui::Tag( 'div', Ui::ItemsList_OperateBtns( $itemsListPrms, array( 'class' => 'ctlSpaceAfter', 'style' => array( 'margin-left' => 0 ) ) ), array( 'class' => 'ctlSpaceVBefore' ) ) );
 	}
 
 	echo( $o );
@@ -1804,6 +1804,16 @@ function _SettingsPage_Views( $callbacks_args, $box )
 						$o .= ( Ui::ToggleButton( '.blck', array( 'style' => array( 'min-width' => '7em' ) ), array( 'class' => 'ctlSpaceVAfter' ) ) );
 						$o .= ( Ui::TagOpen( 'div', array( 'class' => 'blck', 'style' => array( 'display' => 'none' ) ) ) );
 						{
+							$svc = ExtDb_GetWooMaxMindGeolocationSvc();
+							$dbIP2CFile = $svc ? $svc -> get_database_service() -> get_database_path() : null;
+
+							$o .= ( Ui::TagOpen( 'div', array( 'style' => array( 'display' => $dbIP2CFile ? 'none' : null ) ) ) );
+							{
+								$fldId = 'cache/viewsGeo/apiKeyMmDb';
+								$o .= ( Ui::Label( sprintf( esc_html_x( 'ApiKeyMmDbLbl_%1$s', 'admin.Settings_Views_Geo', 'seraphinite-accelerator' ), Ui::InputBox( 'password', 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, '', '/' ), array( 'style' => array( 'width' => '10em' ) ), true ) ) ) );
+							}
+							$o .= ( Ui::TagClose( 'div' ) );
+
 							{
 								$fldId = 'cache/viewsGeo/enable';
 								$o .= ( Ui::CheckBox( esc_html_x( 'EnableChk', 'admin.Settings_Views_Geo', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
@@ -2763,7 +2773,10 @@ function _SettingsPage_Images( $callbacks_args, $box )
 					$o .= ( Ui::TagOpen( 'td' ) );
 					{
 						$fldId = 'contPr/img/szAdaptDpr';
-						$o .= ( Ui::CheckBox( esc_html_x( 'DprChk', 'admin.Settings_Images_Adapt', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+						$fldIdEx = 'contPr/img/szAdaptDprMin';
+						$o .= ( Ui::CheckBox( sprintf( esc_html_x( 'DprChk_%1$s', 'admin.Settings_Images_Adapt', 'seraphinite-accelerator' ),
+							Ui::NumberBox( 'seraph_accel/' . $fldIdEx, Gen::NormVal( Gen::GetArrField( $sett, $fldIdEx, 0, '/' ), array( 'min' => 100 ) ) / 100, array( 'min' => '1', 'step' => '0.1', 'style' => array( 'width' => '5em' ) ), true )
+						), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 					}
 					$o .= ( Ui::TagClose( 'td' ) );
 				}
@@ -2852,6 +2865,17 @@ function _SettingsPage_Images( $callbacks_args, $box )
 					{
 						$fldId = 'contPr/img/lazy/smoothAppear';
 						$o .= ( Ui::CheckBox( esc_html_x( 'SmoothAppearChk', 'admin.Settings_Images_Lazy', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+					}
+					$o .= ( Ui::TagClose( 'td' ) );
+				}
+				$o .= ( Ui::TagClose( 'tr' ) );
+
+				$o .= ( Ui::TagOpen( 'tr' ) );
+				{
+					$o .= ( Ui::TagOpen( 'td', array( 'style' => array( 'padding-left' => '3em' ) ) ) );
+					{
+						$fldId = 'contPr/img/lazy/plchRast';
+						$o .= ( Ui::CheckBox( esc_html_x( 'PlchRastChk', 'admin.Settings_Images_Lazy', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 					}
 					$o .= ( Ui::TagClose( 'td' ) );
 				}
@@ -5626,15 +5650,32 @@ function _OnSaveSettings( $args )
 		}
 
 		{
-			$fldId = 'cache/viewsGeo/enable';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' );
-
-			if( Gen::GetArrField( $sett, array( 'cache', 'viewsGeo', 'enable' ), false ) && !Gen::GetArrField( $settPrev, array( 'cache', 'viewsGeo', 'enable' ), false ) )
 			{
-				if( !Images_ProcessSrcEx_FileMTime( GetCacheDir() . '/db/mm/c2ip-v1.dat' ) )
-					ExtDbUpd();
+				$fldId = 'cache/viewsGeo/apiKeyMmDb';				Gen::SetArrField( $sett, $fldId, Wp::SanitizeText( $args[ 'seraph_accel/' . $fldId ] ), '/' );
+			}
 
+			$dbIP2CFile = null;
+			{
+				$svc = ExtDb_GetWooMaxMindGeolocationSvc();
+				$dbIP2CFile = $svc ? $svc -> get_database_service() -> get_database_path() : null;
+				Gen::SetArrField( $sett, 'cache/viewsGeo/fileMmDb', $dbIP2CFile, '/' );
+
+				if( !$dbIP2CFile )
+					$dbIP2CFile = GetCacheDir() . '/db/mm/ip2c.mmdb';
+			}
+
+			{
+				$fldId = 'cache/viewsGeo/enable';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' );
+
+				if( Gen::GetArrField( $sett, array( 'cache', 'viewsGeo', 'enable' ), false ) && !Gen::GetArrField( $settPrev, array( 'cache', 'viewsGeo', 'enable' ), false ) )
+				{
+					if( !Images_ProcessSrcEx_FileMTime( $dbIP2CFile ) || !Images_ProcessSrcEx_FileMTime( GetCacheDir() . '/db/mm/c2ip-v1.dat' ) )
+						ExtDbUpd();
+
+				}
 			}
 		}
+
 		{
 			$fldId = 'cache/viewsGeo/grps';
 			Gen::SetArrField( $sett, $fldId, _ViewsGeo_Normalize( $sett, Ui::ItemsList_GetSaveItems( 'seraph_accel/' . $fldId, '/', $args,
@@ -5795,6 +5836,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'contPr/img/szAdaptExcl';				Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( $args[ 'seraph_accel/' . $fldId ], 'seraph_accel\\Wp::SanitizeXPath', true ), '/' ); }
 		{ $fldId = 'contPr/img/szAdaptBgCxMin';				Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/img/szAdaptDpr';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/img/szAdaptDprMin';				Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] * 100 ), '/' ); }
 
 		{ $fldId = 'contPr/img/szAdaptAsync';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/img/szAdaptOnDemand';			Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
@@ -5803,6 +5845,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'contPr/img/lazy/load';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/img/lazy/own';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/img/lazy/smoothAppear';			Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/img/lazy/plchRast';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/img/lazy/del3rd';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/img/lazy/excl';					Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( $args[ 'seraph_accel/' . $fldId ], 'seraph_accel\\Wp::SanitizeXPath', true ), '/' ); }
 		{ $fldId = 'contPr/img/cacheExt';					Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( $args[ 'seraph_accel/' . $fldId ], null, true ), '/' ); }
@@ -6128,12 +6171,6 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'logScope/requestSkipped';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'logScope/requestSkippedAdmin';			Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'logScope/requestBots';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
-	}
-
-	{
-		$svc = Gen::GetArrField( Wp::GetFilters( 'woocommerce_get_geolocation', array( 'WC_Integration_MaxMind_Geolocation', 'get_geolocation' ) ), array( 0, 'f', 0 ) );
-		$dbFile = $svc ? $svc -> get_database_service() -> get_database_path() : null;
-		Gen::SetArrField( $sett, 'cache/viewsGeo/fileMmDb', $dbFile, '/' );
 	}
 
 	{

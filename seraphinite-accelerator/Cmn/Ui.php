@@ -1364,6 +1364,22 @@ class Ui
 		return( Ui::Tag( 'style', $content, $attrs ) );
 	}
 
+	static function StyleMediaMinMax( $min, $max )
+	{
+		$res = '';
+
+		if( $min )
+			$res .= '(min-width: ' . ( string )$min . 'px)';
+
+		if( $min && $max )
+			$res .= ' and ';
+
+		if( $max )
+			$res .= '(max-width: ' . ( string )$max . 'px)';
+
+		return( $res );
+	}
+
 	static function TagGetPos( $tag, $data, $offset = 0 )
 	{
 		$posBegin = Ui::TagBeginGetPos( $tag, $data, $offset );

@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.11' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.12' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -3539,6 +3539,12 @@ function _SettingsPage_Frames( $callbacks_args, $box )
 
 						function( $sett )
 						{
+							$fldId = 'contPr/cp/wooOuPrdGal';
+							return( Ui::CheckBox( esc_html_x( 'WooOuPrdGalChk', 'admin.Settings_Frames_ContParts', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+						},
+
+						function( $sett )
+						{
 							$fldId = 'contPr/cp/wooJs';
 							return( Ui::CheckBox( esc_html_x( 'WooJsChk', 'admin.Settings_Frames_ContParts', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 						},
@@ -5360,6 +5366,7 @@ function _OnSaveSettings( $args )
 	$tmCur = time();
 
 	$sett = $settPrev = Plugin::SettGet();
+	$dbIP2CFile = null;
 
 	if( $adminMsModes[ 'global' ] )
 	{
@@ -5654,7 +5661,6 @@ function _OnSaveSettings( $args )
 				$fldId = 'cache/viewsGeo/apiKeyMmDb';				Gen::SetArrField( $sett, $fldId, Wp::SanitizeText( $args[ 'seraph_accel/' . $fldId ] ), '/' );
 			}
 
-			$dbIP2CFile = null;
 			{
 				$svc = ExtDb_GetWooMaxMindGeolocationSvc();
 				$dbIP2CFile = $svc ? $svc -> get_database_service() -> get_database_path() : null;
@@ -5666,13 +5672,6 @@ function _OnSaveSettings( $args )
 
 			{
 				$fldId = 'cache/viewsGeo/enable';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' );
-
-				if( Gen::GetArrField( $sett, array( 'cache', 'viewsGeo', 'enable' ), false ) && !Gen::GetArrField( $settPrev, array( 'cache', 'viewsGeo', 'enable' ), false ) )
-				{
-					if( !Images_ProcessSrcEx_FileMTime( $dbIP2CFile ) || !Images_ProcessSrcEx_FileMTime( GetCacheDir() . '/db/mm/c2ip-v1.dat' ) )
-						ExtDbUpd();
-
-				}
 			}
 		}
 
@@ -5945,6 +5944,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'contPr/cp/woodmartPrcFlt';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/wooPrcFlt';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/wbwPrdFlt';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/cp/wooOuPrdGal';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/wooJs';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/wpStrs';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/txpTagGrps';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
@@ -6249,6 +6249,13 @@ function _OnSaveSettings( $args )
 	}
 
 	$hr = ApplySettings( $sett );
+
+	if( Gen::GetArrField( $sett, array( 'cache', 'viewsGeo', 'enable' ), false ) )
+	{
+		if( !Images_ProcessSrcEx_FileMTime( $dbIP2CFile ) || !Images_ProcessSrcEx_FileMTime( GetCacheDir() . '/db/mm/c2ip-v1.dat' ) )
+			ExtDbUpd();
+
+	}
 
 	{
 		$cronEnable = isset( $args[ 'seraph_accel/cronEnable' ] );

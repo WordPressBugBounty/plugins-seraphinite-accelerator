@@ -1279,6 +1279,14 @@ class Gen
 			next( $array );
 	}
 
+	static function ArrMap( array $arr, $cbItem )
+	{
+		$a = array();
+		foreach( $arr as $k => $v )
+			$a[] = call_user_func_array( $cbItem, array( $k, $v ) );
+		return( $a );
+	}
+
 	static function GetCurRequestTime( $serverArgs = null )
 	{
 		if( $serverArgs === null )
@@ -3558,7 +3566,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.12';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.13';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

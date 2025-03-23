@@ -41,7 +41,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.27.12', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.27.13', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -357,20 +357,6 @@ function OnInit( $isAdminMode )
 			}
 		);
 	}
-
-	if( ($settContPr[ 'enable' ]??null) && !Gen::GetArrField( $sett, array( 'emojiIcons' ), true, '/' ) )
-		add_action( 'wp_loaded',
-			function()
-			{
-				remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
-				remove_action( 'wp_print_styles', 'print_emoji_styles' );
-				remove_filter( 'the_content_feed', 'wp_staticize_emoji' );
-				remove_filter( 'comment_text_rss', 'wp_staticize_emoji' );
-				remove_filter( 'wp_mail', 'wp_staticize_emoji_for_email' );
-				add_filter( 'emoji_svg_url', '__return_false' );
-
-			}
-	);
 
 }
 
@@ -1274,7 +1260,7 @@ function _OnUpdateGeoDb_Mm_Finish()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.12' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.13' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1510,7 +1496,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.27.12' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.27.13' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -2225,6 +2211,11 @@ function MsgUnpackLocIds( $v )
 	esc_html_x( 'CssParseTrace_ErrMed', 'admin.Msg', 'seraphinite-accelerator' );
 	esc_html_x( 'CssParseTrace_ErrLow', 'admin.Msg', 'seraphinite-accelerator' );
 	esc_html_x( 'JsUrlWrongType_%1$s%2$s', 'admin.Msg', 'seraphinite-accelerator' );
+	esc_html_x( 'NameToDetails_%1$s%2$s', 'admin.Msg', 'seraphinite-accelerator' );
+	esc_html_x( 'HdrsForRequest', 'admin.Msg', 'seraphinite-accelerator' );
+	esc_html_x( 'SrvArgs', 'admin.Msg', 'seraphinite-accelerator' );
+	esc_html_x( 'ProcStat', 'admin.Msg', 'seraphinite-accelerator' );
+	esc_html_x( 'TimeDurSec_%1$s', 'admin.Msg', 'seraphinite-accelerator' );
 }
 
 function OnAsyncTask_CacheRevalidateAll( $args )

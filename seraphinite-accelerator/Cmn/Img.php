@@ -300,6 +300,7 @@ class Img
 			return( Gen::E_UNSUPPORTED );
 
 		$res = Gen::CallFunc( $fn, $args );
+
 		if( !$fileIsTmp )
 		{
 			if( $res )

@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 165;
+const PLUGIN_SETT_VER								= 166;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1075,6 +1075,12 @@ function OnOptRead_Sett( $sett, $verFrom )
 	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'wooOuPrdGal' ), false );
 	}
 
+	if( $verFrom && $verFrom < 166 )
+	{
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'wooPrdGallSldBde' ), false );
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'elmntrWdgtAniHdln' ), false );
+	}
+
 	return( $sett );
 }
 
@@ -1830,6 +1836,7 @@ function OnOptGetDef_Sett()
 				'elmntrWdgtLott' => true,
 				'elmntrWdgtPrmLott' => true,
 				'nktrLott' => true,
+				'elmntrWdgtAniHdln' => true,
 				'elmntrStck' => false,
 				'elmntrShe' => false,
 				'elmntrStrtch' => true,
@@ -1896,6 +1903,7 @@ function OnOptGetDef_Sett()
 				'prstPlr' => true,
 				'grnshftPbAosOnceAni' => true,
 				'grnshftPbAosAni' => true,
+				'wooPrdGallSldBde' => true,
 
 			),
 
@@ -1968,6 +1976,7 @@ function OnOptGetDef_Sett()
 
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," ajax_add_to_cart ")]',
 						'.//button[contains(concat(" ",normalize-space(@class)," ")," single_add_to_cart_button ")]',
+						'.//button[contains(concat(" ",normalize-space(@class)," ")," addtocart_btn ")]',
 
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," dt-mobile-menu-icon ")]',
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," submit ")]',
@@ -3837,7 +3846,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.12 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.13 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4176,14 +4185,19 @@ function CachePushQueueProcessor( $next = false, $immediately = false, $shortInt
 
 }
 
-function ContentProcess_IsAborted( $settCache = null )
+function ContentProcess_IsAborted( $ctxProcess = null, $settCache = null )
 {
 	global $seraph_accel_g_prepPrms;
 
 	if( $seraph_accel_g_prepPrms === null )
 		return;
 
-	return( !Gen::SliceExecTime( ($settCache[ 'procWorkInt' ]??null), ($settCache[ 'procPauseInt' ]??null), 2,
+	if( ($ctxProcess[ 'mode' ]??0) & 4 )
+		$procPauseInt = ($settCache[ 'procPauseInt' ]??null);
+	else
+		$procPauseInt = 0;
+
+	return( !Gen::SliceExecTime( ($settCache[ 'procWorkInt' ]??null), $procPauseInt, 2,
 		function()
 		{
 			global $seraph_accel_g_prepPrms;
@@ -4419,7 +4433,7 @@ class ProcessQueueItemCtx
 		{
 			$sett = Plugin::SettGet();
 			if( ($sett[ 'debugInfo' ]??null) )
-				$this -> infos[] = json_encode( array( 'hdrsForRequest' => $this -> hdrsForRequest ) );
+				$this -> infos[ LocId::Pack( 'HdrsForRequest' ) ] = PackKvArrInfo( $this -> hdrsForRequest );
 		}
 
 		$ctlRes = ProcessCtlData_Get( $this -> fileCtl, $isLive );
@@ -4456,7 +4470,7 @@ class ProcessQueueItemCtx
 					$this -> skipStatus = Gen::GetArrField( $ctlRes, array( 'skip' ) );
 					$this -> hr = $this -> skipStatus ? ( Gen::StrStartsWith( $this -> skipStatus, 'err:' ) ? Gen::E_FAIL : Gen::S_FALSE ) : Gen::S_OK;
 					$this -> warns = Gen::GetArrField( $ctlRes, array( 'warns' ), array() );
-					array_splice( $this -> infos, count( $this -> infos ), 0, Gen::GetArrField( $ctlRes, array( 'infos' ), array() ) );
+					Gen::ArrSplice( $this -> infos, count( $this -> infos ), 0, Gen::GetArrField( $ctlRes, array( 'infos' ), array() ) );
 					break;
 				}
 
@@ -4621,6 +4635,13 @@ class ProcessQueueItemCtx
 
 	}
 
+}
+
+function PackKvArrInfo( $a )
+{
+	if( !$a )
+		return( null );
+	return( Gen::ArrMap( $a, function( $k, $v ) { return( LocId::Pack( 'NameToDetails_%1$s%2$s', null, array( ( string )$k, is_string( $v ) ? $v : json_encode( $v ) ) ) ); } ) );
 }
 
 function OnAsyncTask_CacheProcessItem( $args )
@@ -5115,7 +5136,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.12';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.13';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5565,7 +5586,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.12');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.13');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

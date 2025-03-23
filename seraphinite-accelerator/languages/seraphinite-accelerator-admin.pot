@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.27.12)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.27.12\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.27.13)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27.13\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.27.12)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.27.12\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.27.13)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27.13\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -825,6 +825,33 @@ msgstr ""
 #, php-format
 msgctxt "admin.Msg"
 msgid "JsUrlWrongType_%1$s%2$s"
+msgstr ""
+
+# %1$s: %2$s
+#, php-format
+msgctxt "admin.Msg"
+msgid "NameToDetails_%1$s%2$s"
+msgstr ""
+
+# Headers for request
+msgctxt "admin.Msg"
+msgid "HdrsForRequest"
+msgstr ""
+
+# Server arguments
+msgctxt "admin.Msg"
+msgid "SrvArgs"
+msgstr ""
+
+# Processing statistics
+msgctxt "admin.Msg"
+msgid "ProcStat"
+msgstr ""
+
+# %1$s second(s)
+#, php-format
+msgctxt "admin.Msg"
+msgid "TimeDurSec_%1$s"
 msgstr ""
 
 # Geo location
@@ -2266,7 +2293,7 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "ElmntrWdgtImgCrslChk"
 msgstr ""
 
-# Woo Product Images Widget of Elementor
+# Product Images Widget of WooCommerce from Elementor
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "ElmntrWdgtWooPrdImgsChk"
 msgstr ""
@@ -2299,6 +2326,10 @@ msgstr ""
 # Lottie Widget of Nectar
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "NktrLottChk"
+msgstr ""
+
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "ElmntrWdgtAniHdlnChk"
 msgstr ""
 
 # Sticky elements of Elementor
@@ -2409,6 +2440,11 @@ msgstr ""
 # Revolution Slider 6.7-*
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "SldRev7Chk"
+msgstr ""
+
+# Product gallery images of WooCommerce from Breakdance
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "WooPrdGallSldBdeChk"
 msgstr ""
 
 # Thumbnail of tagDiv
@@ -2606,6 +2642,7 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "WbwPrdFltChk"
 msgstr ""
 
+# Product gallery from Oxy Ultimate Woo
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "WooOuPrdGalChk"
 msgstr ""

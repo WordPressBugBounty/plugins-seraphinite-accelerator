@@ -2079,6 +2079,7 @@ class Lock
 
 	function GetErrDescr()
 	{
+
 		$dir = Gen::GetFileDir( $this -> file );
 		return( @is_writable( $dir ) ? LocId::Pack( 'FileModifyErr_%1$s', 'Common', array( $this -> file ) ) : LocId::Pack( 'DirWriteErr_%1$s', 'Common', array( $dir ) ) );
 	}
@@ -3566,7 +3567,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.13';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.15';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

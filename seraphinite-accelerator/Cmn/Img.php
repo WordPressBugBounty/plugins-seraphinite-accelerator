@@ -442,7 +442,7 @@ class Img
 		return( $hNew );
 	}
 
-	static function CreateCopyResample( $h, $sizeDst, $rcSrc = null, $rcDst = null, $bgClr = null )
+	static function CreateCopyResample( $h, $sizeDst, $rcSrc = null, $rcDst = null, $bgClr = null, $mode = IMG_BILINEAR_FIXED )
 	{
 		if( !$sizeDst[ 'cx' ] || !$sizeDst[ 'cy' ] )
 			return( null );
@@ -454,6 +454,8 @@ class Img
 		if( !$rcDst )
 			$rcDst = array( 'x' => 0, 'y' => 0, 'cx' => $sizeDst[ 'cx' ], 'cy' => $sizeDst[ 'cy' ] );
 
+		if( function_exists( 'imagesetinterpolation' ) )
+			@imagesetinterpolation( $hNew, $mode );
 		@imagesavealpha( $hNew, true );
 
 		$hClr = @imagecolorallocatealpha( $hNew, 0, 0, 0, 127 );

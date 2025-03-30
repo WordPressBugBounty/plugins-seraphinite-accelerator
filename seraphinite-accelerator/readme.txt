@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.7
-Stable tag: 2.27.16
+Stable tag: 2.27.17
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -162,11 +162,19 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 
 == Changelog ==
 
+= 2.27.17 =
+
+Improvements:
+
+* Normalizing tags near 'DOCTYPE'.
+* Product gallery images of WooCommerce.
+* Product gallery images thumbnails of WooCommerce from FlatSome theme.
+
 = 2.27.16 =
 
 Improvements:
 
-* Product gallery images thumbnails height of WooCommerce from Astra.
+* Product gallery images thumbnails height of WooCommerce from Astra theme.
 
 Fixes:
 
@@ -178,7 +186,7 @@ Fixes:
 Improvements:
 
 * Product gallery images of WooCommerce.
-* Product gallery images thumbnails height of WooCommerce from Astra.
+* Product gallery images thumbnails height of WooCommerce from Astra theme.
 
 = 2.27.14 =
 

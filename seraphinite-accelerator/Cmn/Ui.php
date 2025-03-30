@@ -1401,7 +1401,7 @@ class Ui
 				return( false );
 			$pos = $pos[ 0 ][ 1 ];
 
-			if( $bSkipComments && substr( $data, $pos + 1, 1 ) == '!' )
+			if( $bSkipComments && substr( $data, $pos + 1, 2 ) == '!-' )
 			{
 				$offset = strpos( $data, '-->', $pos + 4 );
 				if( $offset === false )
@@ -1461,6 +1461,15 @@ class Ui
 		$n = strlen( $tag[ 0 ] );
 		$posEnd = $pos + $n;
 		return( array( $pos, $posEnd, $n ) );
+	}
+
+	static function TagOffsetPos( &$tagPos, $offset = 0 )
+	{
+		if( $tagPos )
+		{
+			$tagPos[ 0 ] += $offset;
+			$tagPos[ 1 ] += $offset;
+		}
 	}
 
 	static function SettTokensEditor( $fldId, $v, $placeholder, $ns, $sep = "\n", $height = 5, $masked = false )

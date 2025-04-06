@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.17' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.18' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -2480,6 +2480,91 @@ function _SettingsPage_Html( $callbacks_args, $box )
 							$o .= ( Ui::Tag( 'p', Ui::ItemsList_OperateBtns( $itemsListPrms, array( 'class' => 'ctlSpaceAfter ctlSpaceVBefore' ) ) ) );
 						}
 						$o .= ( Ui::TagClose( 'div' ) );
+					}
+					$o .= ( Ui::SettBlock_Item_End() );
+
+					$o .= ( Ui::SettBlock_Item_Begin( esc_html_x( 'Lbl', 'admin.Settings_Html_RandCorr', 'seraphinite-accelerator' ) . Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Html_RandCorr' ) ) ), Ui::AdminHelpBtnModeText ) ) );
+					{
+						$o .= ( Ui::ToggleButton( '.blck', array( 'style' => array( 'min-width' => '7em' ) ), array( 'class' => 'ctlSpaceVAfter' ) ) );
+						$o .= ( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'blck ctlMaxSizeX', 'style' => array( 'display' => 'none' ) ) ) );
+						{
+							$o .= Ui::TableCells(
+								array(
+									function( $sett )
+									{
+										$fldId = 'contPr/rc/thmFltsm';
+										return( Ui::CheckBox( esc_html_x( 'ThmFltsmChk', 'admin.Settings_Html_RandCorr', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+									},
+
+									function( $sett )
+									{
+										$fldId = 'contPr/rc/gglTrn';
+										return( Ui::CheckBox( esc_html_x( 'GglTrnChk', 'admin.Settings_Html_RandCorr', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+									},
+
+									function( $sett )
+									{
+										$fldId = 'contPr/rc/aksmtAs';
+										return( Ui::CheckBox( esc_html_x( 'AksmtAsChk', 'admin.Settings_Html_RandCorr', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+									},
+
+									function( $sett )
+									{
+										$fldId = 'contPr/rc/advWooSrch';
+										return( Ui::CheckBox( esc_html_x( 'AdvWooSrchChk', 'admin.Settings_Html_RandCorr', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+									},
+
+									function( $sett )
+									{
+										$fldId = 'contPr/rc/jetMblMnu';
+										return( Ui::CheckBox( esc_html_x( 'JetMblMnuChk', 'admin.Settings_Html_RandCorr', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+									},
+
+									function( $sett )
+									{
+										$fldId = 'contPr/rc/wpelLnk';
+										return( Ui::CheckBox( esc_html_x( 'WpelLnkChk', 'admin.Settings_Html_RandCorr', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+									},
+
+									function( $sett )
+									{
+										$fldId = 'contPr/rc/cfTrnstl';
+										return( Ui::CheckBox( esc_html_x( 'CfTrnstlChk', 'admin.Settings_Html_RandCorr', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+									},
+
+									function( $sett )
+									{
+										$fldId = 'contPr/rc/tagGrpsShfflBx';
+										return( Ui::CheckBox( esc_html_x( 'TagGrpsShfflBxChk', 'admin.Settings_Html_RandCorr', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+									},
+
+									function( $sett )
+									{
+										$fldId = 'contPr/rc/g5Ere';
+										return( Ui::CheckBox( esc_html_x( 'G5EreChk', 'admin.Settings_Html_RandCorr', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+									},
+
+									function( $sett )
+									{
+										$fldId = 'contPr/rc/elmntrTrx';
+										return( Ui::CheckBox( esc_html_x( 'ElmntrTrxChk', 'admin.Settings_Html_RandCorr', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+									},
+
+									function( $sett )
+									{
+										$fldId = 'contPr/rc/thmXStr';
+										return( Ui::CheckBox( esc_html_x( 'ThmXStrChk', 'admin.Settings_Html_RandCorr', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+									},
+
+									function( $sett )
+									{
+										$fldId = 'contPr/rc/wooPrdQnt';
+										return( Ui::CheckBox( esc_html_x( 'WooPrdQntChk', 'admin.Settings_Html_RandCorr', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+									},
+								)
+							, $sett, 3 );
+						}
+						$o .= ( Ui::SettBlock_ItemSubTbl_End() );
 					}
 					$o .= ( Ui::SettBlock_Item_End() );
 
@@ -6083,6 +6168,19 @@ function _OnSaveSettings( $args )
 				}
 			), '/' );
 		}
+
+		{ $fldId = 'contPr/rc/thmFltsm';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/rc/gglTrn';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/rc/aksmtAs';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/rc/advWooSrch';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/rc/jetMblMnu';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/rc/wpelLnk';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/rc/cfTrnstl';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/rc/tagGrpsShfflBx';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/rc/g5Ere';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/rc/elmntrTrx';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/rc/thmXStr';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/rc/wooPrdQnt';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 
 		{
 			$fldId = 'contPr/css/custom';

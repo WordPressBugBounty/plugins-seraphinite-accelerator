@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.27.17)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.27.17\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.27.18)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27.18\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.27.17)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.27.17\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.27.18)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27.18\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1977,6 +1977,70 @@ msgctxt "admin.Settings_Html_Rpl"
 msgid "FindExprPhlr"
 msgstr ""
 
+# Corrections for random content
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "Lbl"
+msgstr ""
+
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "ThmFltsmChk"
+msgstr ""
+
+# Google Translate
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "GglTrnChk"
+msgstr ""
+
+# Akismet Anti-Spam
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "AksmtAsChk"
+msgstr ""
+
+# Advanced Woo Search
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "AdvWooSrchChk"
+msgstr ""
+
+# Mobile Menu from Jet
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "JetMblMnuChk"
+msgstr ""
+
+# WPEL links
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "WpelLnkChk"
+msgstr ""
+
+# CloudFlare Turnstile
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "CfTrnstlChk"
+msgstr ""
+
+# Tag Groups Shuffle Box from TaxoPress
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "TagGrpsShfflBxChk"
+msgstr ""
+
+# G5 ERE
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "G5EreChk"
+msgstr ""
+
+# TRX Addons for Elementor
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "ElmntrTrxChk"
+msgstr ""
+
+# XStore Theme
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "ThmXStrChk"
+msgstr ""
+
+# Product Quantity from WooCommerce
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "WooPrdQntChk"
+msgstr ""
+
 # Smooth appearing
 msgctxt "admin.Settings_Images_Lazy"
 msgid "SmoothAppearChk"
@@ -2443,11 +2507,12 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "WooPrdGallChk"
 msgstr ""
 
-# Product gallery images thumbnails height of WooCommerce from Astra
+# Product gallery images thumbnails height of WooCommerce from Astra theme
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "WooPrdGallAstrThmbsHeightChk"
 msgstr ""
 
+# Product gallery images thumbnails of WooCommerce from FlatSome theme
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "WooPrdGallFltsmThmbsChk"
 msgstr ""

@@ -1685,8 +1685,21 @@ class Gen
 			{
 				if( $sQuote === '' )
 					$sQuote = $c;
-				else if( $sQuote === $c && $cPrev !== '\\' )
-					$sQuote = '';
+				else if( $sQuote === $c )
+				{
+					if( $cPrev !== '\\' )
+						$sQuote = '';
+					else if( $c === '\'' )
+						$data[ $i ] = "\x02";
+				}
+				else
+				{
+					if( $c === '\'' )
+						$data[ $i ] = "\x02";
+					else if( $c === '"' && $cPrev !== '\\' )
+						$data[ $i ] = "\x03";
+				}
+
 				continue;
 			}
 
@@ -1697,18 +1710,37 @@ class Gen
 		$data = str_replace( array( '\'' ), array( '"' ), preg_replace( '@([\\s\\,\\{])(\\w+):@', '$1"$2":', $data ) );
 		$data = preg_replace( '@([\'"}])\\s*,\\s*}@', '$1}', $data );
 		$data = str_replace( array( "\t", "\r", "\n" ), ' ', $data );
-		$data = str_replace( "\x01", ':', $data );
+		$data = str_replace( array( "\x01", "\x02", "\x03" ), array( ':', '\'', '\\"' ), $data );
 		return( $data );
 	}
 
-	static function JsonGetEndPos( $posStart, $data )
+	static function JsonGetStartEndPos( $pos, $data, $dir = 1 )
 	{
-		$n = 0;
-		for( $pos = $posStart; $pos < strlen( $data ); $pos++ )
+		$l = strlen( $data );
+		if( !$l )
+			return( null );
+
+		$aScp = null;
+		switch( $data[ $pos ] )
 		{
-			if( $data[ $pos ] == '{' )
+			case '{':	$aScp = array( '{', '}' ); break;
+			case '[':	$aScp = array( '[', ']' ); break;
+			case '"':	$aScp = array( '"', '"' ); break;
+			case '\'':	$aScp = array( '\'', '\'' ); break;
+		}
+
+		if( !$aScp )
+			return( null );
+
+		$n = 0;
+		for( ; $pos < $l && $pos >= 0; $pos += $dir )
+		{
+			if( $pos > 0 && $data[ $pos - 1 ] == '\\' )
+				continue;
+
+			if( $data[ $pos ] == $aScp[ 0 ] && ( !$n || $aScp[ 0 ] != $aScp[ 1 ] ) )
 				$n++;
-			else if( $data[ $pos ] == '}' )
+			else if( $data[ $pos ] == $aScp[ 1 ] )
 			{
 				$n--;
 				if( !$n )
@@ -1716,7 +1748,17 @@ class Gen
 			}
 		}
 
-		return( $n ? null : ( $pos + 1 ) );
+		return( $n ? null : ( $pos + ( $dir > 0 ? 1 : 0 ) ) );
+	}
+
+	static function JsonGetEndPos( $posStart, $data )
+	{
+		return( Gen::JsonGetStartEndPos( $posStart, $data, 1 ) );
+	}
+
+	static function JsonGetStartPos( $posEnd, $data )
+	{
+		return( Gen::JsonGetStartEndPos( $posEnd, $data, -1 ) );
 	}
 
 	static function VarCmp( $v1, $v2 )
@@ -3567,7 +3609,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.17';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.18';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

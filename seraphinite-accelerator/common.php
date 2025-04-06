@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 169;
+const PLUGIN_SETT_VER								= 170;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1687,6 +1687,7 @@ function OnOptGetDef_Sett()
 					'.//img/@loading',
 					'.//iframe/@loading',
 					'.//link[@rel="preload"][@as="font"][not(self::node()[@seraph-accel-crit="1"])]',
+					'.//link[@rel="modulepreload"][not(self::node()[@seraph-accel-crit="1"])]',
 				),
 			),
 			'rpl' => array(
@@ -1702,6 +1703,21 @@ function OnOptGetDef_Sett()
 						'data' => ''
 					)
 				),
+			),
+
+			'rc' => array(
+				'thmFltsm' => true,
+				'gglTrn' => true,
+				'aksmtAs' => true,
+				'advWooSrch' => true,
+				'jetMblMnu' => true,
+				'wpelLnk' => true,
+				'cfTrnstl' => true,
+				'tagGrpsShfflBx' => true,
+				'g5Ere' => true,
+				'elmntrTrx' => true,
+				'thmXStr' => true,
+				'wooPrdQnt' => true,
 			),
 
 			'lazy' => array(
@@ -2036,6 +2052,8 @@ function OnOptGetDef_Sett()
 						'.//img[contains(concat(" ",normalize-space(@class)," ")," swiper-slide-image ")]',
 
 						'.//*[contains(concat(" ",normalize-space(@class)," ")," e-click ")]',
+
+						'click:.//presto-player | .//presto-player-js-lzl-ing || .//presto-playlist | .//presto-playlist-js-lzl-ing',
 					),
 				),
 
@@ -2066,6 +2084,8 @@ function OnOptGetDef_Sett()
 						'body:@\\WTypekit\\.load\\(@',
 
 						'body:@\\Wdocument\\s*\\.\\s*querySelector\\s*\\(\\s*"\\.jdgm-rev-widg"\\s*\\)@',
+
+						'id:@^uagb-@',
 					),
 
 					'timeout' => array(
@@ -2494,24 +2514,42 @@ function GetCacheCurUserSession( $siteId, $defForce = false )
 		return( $seraph_accel_g_sessInfo );
 
 	$secure = is_ssl();
-	$cookie = Gen::SanitizeTextData( ($_COOKIE[ ( $secure ? '__Secure-' : '' ) . 'wp_seraph_accel_sess_' . $siteId ]??null) );
+
+	$cookieName = ( $secure ? '__Secure-' : '' ) . 'wp_seraph_accel_sess_' . $siteId;
+	$cookie = Gen::SanitizeTextData( ($_COOKIE[ $cookieName ]??null) );
 	if( empty( $cookie ) && $secure )
-		$cookie = Gen::SanitizeTextData( ($_COOKIE[ 'wp_seraph_accel_sess_' . $siteId ]??null) );
+	{
+		$cookieName = 'wp_seraph_accel_sess_' . $siteId;
+		$cookie = Gen::SanitizeTextData( ($_COOKIE[ $cookieName ]??null) );
+	}
+
 	if( empty( $cookie ) )
+	{
+
 		return( $seraph_accel_g_sessInfo = $sessInfoDef );
+	}
 
 	$cookie_elements = explode( '|', $cookie );
 	if( count( $cookie_elements ) !== 5 )
+	{
+
 		return( $seraph_accel_g_sessInfo = $sessInfoDef );
+	}
 
 	list( $userSessionId, $sessionId, $userId, $expiration, $hmac ) = $cookie_elements;
 
 	if( $expiration && time() > $expiration )
+	{
+
 		return( $seraph_accel_g_sessInfo = $sessInfoDef );
+	}
 
 	$hmacCheck = _GetCacheCurUserSessionHash( $sessionId, $userSessionId, $userId, $expiration );
 	if( $hmac !== $hmacCheck )
+	{
+
 		return( $seraph_accel_g_sessInfo = $sessInfoDef );
+	}
 
 	return( $seraph_accel_g_sessInfo = array( 'sessId' => $sessionId, 'userSessId' => $userSessionId, 'userId' => $userId, 'expiration' => $expiration ) );
 }
@@ -3579,7 +3617,10 @@ function ContProcGetExclStatus( $siteId, $settCache, $path, $pathOrig, $pathIsDi
 
 	$shouldCurUserSessionExist = ShouldCurUserSessionExist();
 	if( ( !($sessInfo[ 'sessId' ]??null) && ( $shouldCurUserSessionExist || $stateCookId ) ) || ( $shouldCurUserSessionExist && !$userId ) )
+	{
+
 		$seraph_accel_g_contProcGetExclStatus = Gen::GetArrField( $settCache, array( 'ctx' ), false ) ? 'noCacheSession' : 'userCtx';
+	}
 
 	return( $seraph_accel_g_contProcGetExclStatus );
 }
@@ -3767,10 +3808,10 @@ function ContProcGetSkipStatus( $content )
 	if( $seraph_accel_g_contProcGetSkipStatus !== null )
 		return( $seraph_accel_g_contProcGetSkipStatus );
 
-	if( defined( 'REST_REQUEST' ) && REST_REQUEST )
+	if( $seraph_accel_g_simpCacheMode === null && defined( 'REST_REQUEST' ) && REST_REQUEST )
 		return( $seraph_accel_g_contProcGetSkipStatus = 'restapi' );
 
-	if( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST )
+	if( $seraph_accel_g_simpCacheMode === null && defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST )
 		return( $seraph_accel_g_contProcGetSkipStatus = 'xmlrpc' );
 
 	$errLast = error_get_last();
@@ -3794,9 +3835,9 @@ function ContProcGetSkipStatus( $content )
 	if( is_404() )
 		return( $seraph_accel_g_contProcGetSkipStatus = 'httpCode:404' );
 
-	if( is_search() )
+	if( $seraph_accel_g_simpCacheMode === null && is_search() )
 		return( $seraph_accel_g_contProcGetSkipStatus = 'search' );
-	if( is_feed() )
+	if( $seraph_accel_g_simpCacheMode === null && is_feed() )
 		return( $seraph_accel_g_contProcGetSkipStatus = 'feed' );
 
 	if( $seraph_accel_g_simpCacheMode === null && Gen::StrPosArr( $content, array( '</body>', '</BODY>' ) ) === false && Gen::StrPosArr( $content, array( '</head>', '</HEAD>' ) ) === false )
@@ -3866,7 +3907,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.17 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.18 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5156,7 +5197,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.17';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.18';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5606,7 +5647,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.17');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.18');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

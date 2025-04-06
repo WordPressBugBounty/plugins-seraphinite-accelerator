@@ -316,6 +316,12 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 
 	}
 
+	$plg = ($availablePlugins[ 'jetpack-boost' ]??null);
+	if( $plg && ($plg[ 'IsActive' ]??null) )
+	{
+
+	}
+
 	$plg = ($availablePlugins[ 'autoptimize' ]??null);
 	if( $plg && ($plg[ 'IsActive' ]??null) )
 	{

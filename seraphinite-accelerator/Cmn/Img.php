@@ -33,7 +33,7 @@ class Img
 	static function GetInfoFromFile( $file, $ext = false )
 	{
 
-		$data = @file_get_contents( $file );
+		$data = Gen::FileGetContents( $file );
 		return( $data !== false ? Img::GetInfoFromData( $data, $ext ) : null );
 	}
 
@@ -329,7 +329,7 @@ class Img
 			$hr = self::_GetDataEx_PostProcess( $mimeType, $prms, $file );
 			if( $hr == Gen::S_OK )
 			{
-				$res = @file_get_contents( $file );
+				$res = Gen::FileGetContents( $file );
 				if( $res === false )
 				{
 					Gen::LastErrDsc_Set( Gen::GetLocPackFileReadErr( $file ) );
@@ -740,7 +740,7 @@ class Img
 			}
 			else if( $fileIsTmp )
 			{
-				$res = @file_get_contents( $file );
+				$res = Gen::FileGetContents( $file );
 				if( $res === false )
 				{
 					Gen::LastErrDsc_Set( Gen::GetLocPackFileReadErr( $file ) );
@@ -857,7 +857,7 @@ class Img
 			}
 			else if( $fileIsTmp )
 			{
-				$res = @file_get_contents( $file );
+				$res = Gen::FileGetContents( $file );
 				if( $res === false )
 				{
 					Gen::LastErrDsc_Set( Gen::GetLocPackFileReadErr( $file ) );

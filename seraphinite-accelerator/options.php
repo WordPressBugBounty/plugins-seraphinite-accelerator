@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.19' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.20' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1173,6 +1173,7 @@ function _SettingsPage_CacheData( $callbacks_args, $box )
 						}
 
 						{
+
 							$fldId = 'mime';
 							$o .= ( Ui::ComboBox(
 								$idItems . '/' . $itemKey . '/' . $fldId,
@@ -1181,6 +1182,7 @@ function _SettingsPage_CacheData( $callbacks_args, $box )
 									'text/xml' => 'text/xml',
 									'text/plain' => 'text/plain',
 									'text/html' => 'text/html',
+									'application/rss+xml' => 'application/rss+xml',
 									'application/octet-stream' => 'application/octet-stream',
 								),
 								Gen::GetArrField( $item, $fldId, 'application/json', '/' ), true, array( 'class' => 'ctlSpaceVBefore' ) ) );

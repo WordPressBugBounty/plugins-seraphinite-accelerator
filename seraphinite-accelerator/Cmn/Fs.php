@@ -264,6 +264,7 @@ class Fs
 		'rm'      => 'audio/x-pn-realaudio',
 		'roff'    => 'application/x-troff',
 		'rpm'     => 'application/x-rpm',
+		'rss'     => 'application/rss+xml',
 		'rtf'     => 'text/rtf',
 		'rtx'     => 'text/richtext',
 		'sgm'     => 'text/sgml',

@@ -531,7 +531,8 @@ function _Process( $sites )
 	{
 		if( $seraph_accel_g_prepPrms === null )
 		{
-			$bgEnabled = Gen::CloseCurRequestSessionForContinueBgWork();
+			if( $bgEnabled = Gen::CloseCurRequestSessionForContinueBgWork() )
+				CacheFem();
 
 			$seraph_accel_g_noFo = true;
 			return( Gen::S_IO_PENDING );
@@ -611,7 +612,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.27.19;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.27.20;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -766,6 +767,7 @@ function _ProcessOutCachedData( $allowExtCache, $objSubType, $settGlob, $sett, $
 		case 'xml':		$objSubType = 'text/xml; charset=UTF-8'; break;
 		case 'txt':		$objSubType = 'text/plain; charset=UTF-8'; break;
 		case 'bin':		$objSubType = 'application/octet-stream'; break;
+		case 'rss':		$objSubType = 'application/rss+xml; charset=UTF-8'; break;
 		default:		$objSubType = 'text/html; charset=UTF-8'; break;
 		}
 
@@ -1506,7 +1508,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( ($settCache[ 'normAgent' ]??null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = ($_SERVER[ 'HTTP_USER_AGENT' ]??'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.19';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.20';
 	}
 
 	if( ($settCache[ 'views' ]??null) )

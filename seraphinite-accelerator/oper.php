@@ -1192,7 +1192,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.19' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.20' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1257,7 +1257,7 @@ function OnOptDel_Sett()
 function CacheVerifyEnvDropin( $sett, $verifyEnvDropin = null )
 {
 	$file = WP_CONTENT_DIR . '/advanced-cache.php';
-	$cont = @file_get_contents( $file );
+	$cont = Gen::FileGetContents( $file );
 
 	if( IsEnvDropinLockedBy( $file, $cont ) )
 		return( true );
@@ -1279,7 +1279,7 @@ function CacheVerifyEnvObjDropin( $settGlob, $verifyEnvDropin = null )
 		$verifyEnvDropin = new AnyObj();
 
 	$verifyEnvDropin -> needed = str_replace( '.0,', ',', ( string )GetObjCacheFileContent( $settGlob ) );
-	$verifyEnvDropin -> actual = str_replace( '.0,', ',', ( string )@file_get_contents( WP_CONTENT_DIR . '/object-cache.php' ) );
+	$verifyEnvDropin -> actual = str_replace( '.0,', ',', ( string )Gen::FileGetContents( WP_CONTENT_DIR . '/object-cache.php' ) );
 
 	if( $verifyEnvDropin -> actual == $verifyEnvDropin -> needed )
 		return( true );
@@ -1297,7 +1297,7 @@ function CacheVerifyEnvNginxConf( $settGlob, $sett, $verifyEnvDropin = null )
 		$verifyEnvDropin = new AnyObj();
 
 	$verifyEnvDropin -> needed = CacheGetEnvNginxConf( $settGlob, $sett );
-	$verifyEnvDropin -> actual = @file_get_contents( CacheGetEnvNginxConfFile() );
+	$verifyEnvDropin -> actual = Gen::FileGetContents( CacheGetEnvNginxConfFile() );
 	return( $verifyEnvDropin -> actual == $verifyEnvDropin -> needed );
 }
 
@@ -1547,7 +1547,7 @@ function IsEnvDropinLockedBy( $file, $cont = null )
 function CacheInitEnvDropin( $sett, $init = true )
 {
 	$file = WP_CONTENT_DIR . '/advanced-cache.php';
-	$cont = @file_get_contents( $file );
+	$cont = Gen::FileGetContents( $file );
 	$hr = Gen::S_OK;
 
 	if( $sLock = IsEnvDropinLockedBy( $file, $cont ) )
@@ -1583,7 +1583,7 @@ function CacheInitEnvDropin( $sett, $init = true )
 
 	if( $cont != $contNew )
 	{
-		$hr = Gen::HrAccom( $hr, @file_put_contents( $file, $contNew ) !== false ? Gen::S_OK : Gen::E_FAIL );
+		$hr = Gen::HrAccom( $hr, Gen::FilePutContents( $file, $contNew ) !== false ? Gen::S_OK : Gen::E_FAIL );
 		_OpCache_Invalidate( $file );
 	}
 
@@ -1593,7 +1593,7 @@ function CacheInitEnvDropin( $sett, $init = true )
 function CacheInitEnvObjDropin( $settGlob, $init = true )
 {
 	$file = WP_CONTENT_DIR . '/object-cache.php';
-	$cont = @file_get_contents( $file );
+	$cont = Gen::FileGetContents( $file );
 
 	if( !$init && ( !$cont || strpos( $cont, '/* seraphinite-accelerator */' ) === false ) )
 		return( Gen::S_OK );
@@ -1603,7 +1603,7 @@ function CacheInitEnvObjDropin( $settGlob, $init = true )
 	$hr = Gen::S_OK;
 	if( $cont != $contNew )
 	{
-		$hr = Gen::HrAccom( $hr, ( strlen( $contNew ) ? @file_put_contents( $file, $contNew ) : @unlink( $file ) ) !== false ? Gen::S_OK : Gen::E_FAIL );
+		$hr = Gen::HrAccom( $hr, ( strlen( $contNew ) ? Gen::FilePutContents( $file, $contNew ) : @unlink( $file ) ) !== false ? Gen::S_OK : Gen::E_FAIL );
 		_OpCache_Invalidate( $file );
 
 		if( strlen( $contNew ) )
@@ -1641,8 +1641,8 @@ function CacheInitEnv( $settGlob, $sett, $init = true )
 			$confComprRedirBlock = CacheGetEnvNginxConf( $settGlob, $sett, false );
 
 			$fileConfComprRedir = CacheGetEnvNginxConfFile();
-			if( @file_get_contents( $fileConfComprRedir ) !== $confComprRedirBlock )
-				@file_put_contents( $fileConfComprRedir, $confComprRedirBlock );
+			if( Gen::FileGetContents( $fileConfComprRedir ) !== $confComprRedirBlock )
+				Gen::FilePutContents( $fileConfComprRedir, $confComprRedirBlock );
 		}
 
 		return( Gen::S_OK );
@@ -1837,8 +1837,8 @@ function CacheInitEnv( $settGlob, $sett, $init = true )
 		$confComprRedirBlock = CacheGetEnvNginxConf( $settGlob, $sett );
 
 		$fileConfComprRedir = CacheGetEnvNginxConfFile();
-		if( @file_get_contents( $fileConfComprRedir ) !== $confComprRedirBlock )
-			@file_put_contents( $fileConfComprRedir, $confComprRedirBlock );
+		if( Gen::FileGetContents( $fileConfComprRedir ) !== $confComprRedirBlock )
+			Gen::FilePutContents( $fileConfComprRedir, $confComprRedirBlock );
 	}
 
 	return( $hr );

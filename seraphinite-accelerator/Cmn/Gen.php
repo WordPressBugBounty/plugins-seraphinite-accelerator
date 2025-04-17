@@ -999,6 +999,18 @@ class Gen
 		return( @file_exists( $file ) ? @filesize( $file ) : false );
 	}
 
+	static function FileGetContents( $file )
+	{
+		return( @file_exists( $file ) ? @file_get_contents( $file ) : false );
+	}
+
+	static function FilePutContents( $file, $data )
+	{
+		if( is_dir( $file ) )
+			Gen::DelDir( $file );
+		return( @file_put_contents( $file, $data ) );
+	}
+
 	static function SetLastSlash( $filepath, $set = true, $slash = '/' )
 	{
 		$n = strlen( $filepath );
@@ -1399,8 +1411,6 @@ class Gen
 		for( $l = ob_get_level(); $l > 0; $l-- )
 			ob_end_flush();
 		flush();
-
-		error_reporting( E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR | E_RECOVERABLE_ERROR );
 
 		return( Gen::CloseCurRequestSessionForContinueBgWorkEx() );
 	}
@@ -3609,7 +3619,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.19';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.20';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

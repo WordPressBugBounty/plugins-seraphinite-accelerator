@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.7
-Stable tag: 2.27.19
+Stable tag: 2.27.20
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,16 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.27.20 =
+
+Improvements:
+
+* Product gallery images of WooCommerce.
+
+Fixes:
+
+* Cache revalidation: Headers already sent by cache.php.
 
 = 2.27.19 =
 
@@ -4125,6 +4135,7 @@ Fixes:
 * Block's help button is shifted to right.
 * CSS optimization: If script content is not changed then inlining is ignored.
 * Cache is not reset if admin changes user depended data.
+* Cache revalidation: Headers already sent by cache.php.
 * Call to undefined function: wpml_element_type_filter.
 * Characters are stripped from image URLs.
 * Compatibility issues with Polylang plugin.

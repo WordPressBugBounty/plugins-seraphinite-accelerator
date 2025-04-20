@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.20' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.21' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -4479,12 +4479,15 @@ function _SettingsPage_Styles( $callbacks_args, $box )
 							}
 							$o .= ( Ui::TagClose( 'tr' ) );
 
-							$o .= ( Ui::TagOpen( 'tr' ) );
+							$o .= ( Ui::TagOpen( 'tr', array( 'class' => 'blck' ) ) );
 							{
 								$o .= ( Ui::TagOpen( 'td' ) );
 								{
-									$fldId = 'contPr/css/fontPreload';
-									$o .= ( Ui::CheckBox( esc_html_x( 'FontPreloadChk', 'admin.Settings_Styles_Fonts', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+									$fldId = 'contPr/css/font/inl/enable';
+									$o .= ( Ui::CheckBox( esc_html_x( 'InlineChk', 'admin.Settings_Styles_Fonts', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+
+									$fldIdEx = 'contPr/css/font/inl/items';
+									$o .= ( Ui::SettTokensEditor( $fldIdEx, Gen::GetArrField( $sett, $fldIdEx, array(), '/' ), _x( 'InclPhlr', 'admin.Settings_Styles_Fonts', 'seraphinite-accelerator' ), 'seraph_accel', "\n", 5, true ) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) );
 							}
@@ -6136,7 +6139,8 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'contPr/css/groupNonCritCombine';		Gen::SetArrField( $sett, $fldId, $args[ 'seraph_accel/' . $fldId ] === '1', '/' ); }
 		{ $fldId = 'contPr/css/groupFont';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/css/groupFontCombine';			Gen::SetArrField( $sett, $fldId, $args[ 'seraph_accel/' . $fldId ] === '1', '/' ); }
-		{ $fldId = 'contPr/css/fontPreload';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/css/font/inl/enable';			Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/css/font/inl/items';				Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( $args[ 'seraph_accel/' . $fldId ], null, true ), '/' ); }
 		{ $fldId = 'contPr/css/sepImp';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/css/min';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/css/corrErr';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
@@ -6338,19 +6342,22 @@ function _OnSaveSettings( $args )
 				$wph -> server_nginx_config = FALSE;
 
 				include_once( WPH_PATH . '/include/class.rewrite-process.php' );
-				$rewrite_process = new \WPH_Rewrite_Process( TRUE );
-
-				foreach( $rewrite_process -> _rewrite_data_mod_rewrite as $rule )
+				if( class_exists( 'WPH_Rewrite_Process' ) )
 				{
-					$rule = trim( $rule );
-					if( !Gen::StrStartsWith( $rule, 'RewriteRule ^' ) )
-						continue;
+					$rewrite_process = new \WPH_Rewrite_Process( TRUE );
 
-					$rule = explode( ' ', substr( $rule, 13 ) );
-					if( count( $rule ) < 2 )
-						continue;
+					foreach( $rewrite_process -> _rewrite_data_mod_rewrite as $rule )
+					{
+						$rule = trim( $rule );
+						if( !Gen::StrStartsWith( $rule, 'RewriteRule ^' ) )
+							continue;
 
-					$ctxVPathMap -> a[] = array( 'f' => '`^' . $ctxProcess[ 'siteRootUri' ] . '/' . $rule[ 0 ] . '`', 'r' => $rule[ 1 ] );
+						$rule = explode( ' ', substr( $rule, 13 ) );
+						if( count( $rule ) < 2 )
+							continue;
+
+						$ctxVPathMap -> a[] = array( 'f' => '`^' . $ctxProcess[ 'siteRootUri' ] . '/' . $rule[ 0 ] . '`', 'r' => $rule[ 1 ] );
+					}
 				}
 
 				foreach( $aValPrev as $vName => $v )

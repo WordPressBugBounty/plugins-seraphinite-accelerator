@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 170;
+const PLUGIN_SETT_VER								= 171;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -2133,11 +2133,16 @@ function OnOptGetDef_Sett()
 				'groupFont' => true,
 				'groupFontCombine' => true,
 				'font' => array(
+					'inl' => array(
+						'enable' => true,
+						'items' => array(),
+					),
+
 					'deinlLrg' => true,
 					'deinlLrgSize' => 512,
+
 					'optLoadNameExpr' => '',
 				),
-				'fontPreload' => false,
 
 				'sepImp' => true,
 				'min' => true,
@@ -3674,15 +3679,15 @@ function ExprConditionsSet_ItemOp( $e, $v )
 	{
 	case 'ne':		return( $v !== $e[ 'v' ] );
 	case 'e':		return( $v === $e[ 'v' ] );
-	case 'v':		return( !strlen( $v ) );
+	case 'v':		return( is_string( $v ) ? !strlen( $v ) : !$v );
 
 	case '<':
 	case '>':
 	case '>=':
-	case '<=':		return( strlen( $v ) ? @version_compare( $v, $e[ 'v' ], $e[ 'op' ] ) : false );
+	case '<=':		return( ( is_string( $v ) && strlen( $v ) ) ? @version_compare( $v, $e[ 'v' ], $e[ 'op' ] ) : false );
 	}
 
-	return( !!strlen( $v ) );
+	return( is_string( $v ) ? !!strlen( $v ) : !!$v );
 }
 
 function ExprConditionsSet_IsItemOpFullSearch( $e )
@@ -3712,6 +3717,21 @@ function ExprConditionsSet_IsRegExp( $ee )
 		if( IsStrRegExp( $e[ 'expr' ] ) )
 			return( true );
 	return( false );
+}
+
+function ExprConditionsSet_Match( $expr, $cbMatch )
+{
+	$found = false;
+	foreach( ExprConditionsSet_Parse( $expr ) as $e )
+	{
+		$val = call_user_func( $cbMatch, $e[ 'expr' ] );
+		if( !ExprConditionsSet_ItemOp( $e, $val ) )
+			return( false );
+
+		$found = true;
+	}
+
+	return( $found );
 }
 
 function AccomulateCookiesState( &$state, $cookies, $elems )
@@ -3917,7 +3937,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.20 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.21 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5207,7 +5227,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.20';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.21';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5657,7 +5677,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.20');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.21');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

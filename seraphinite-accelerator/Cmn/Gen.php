@@ -1089,7 +1089,7 @@ class Gen
 		return( false );
 	}
 
-	static function StrStartsWith( string $haystack, $needle )
+	static function StrStartsWith( string $haystack, $needle, &$needleKey = null )
 	{
 		if( is_string( $needle ) )
 		{
@@ -1098,14 +1098,17 @@ class Gen
 			return( substr_compare( $haystack, $needle, 0, strlen( $needle ) ) === 0 );
 		}
 
-		foreach( $needle as $needleEl )
+		foreach( $needle as $k => $needleEl )
 			if( Gen::StrStartsWith( $haystack, $needleEl ) )
+			{
+				$needleKey = $k;
 				return( true );
+			}
 
 		return( false );
 	}
 
-	static function StrEndsWith( string $haystack, $needle )
+	static function StrEndsWith( string $haystack, $needle, &$needleKey = null )
 	{
 		if( is_string( $needle ) )
 		{
@@ -1114,9 +1117,12 @@ class Gen
 			return( substr_compare( $haystack, $needle, -strlen( $needle ), strlen( $needle ) ) === 0 );
 		}
 
-		foreach( $needle as $needleEl )
+		foreach( $needle as $k => $needleEl )
 			if( Gen::StrEndsWith( $haystack, $needleEl ) )
+			{
+				$needleKey = $k;
 				return( true );
+			}
 
 		return( false );
 	}
@@ -3619,7 +3625,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.21';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.22';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

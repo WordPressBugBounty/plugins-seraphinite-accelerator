@@ -141,28 +141,13 @@ class DbTbl
 		return( $wpdb -> query( $sql ) );
 	}
 
-	static function GetRowsEx( $sqlFrom, $cols = null, $limit = null, $where = null, $order = null, $output = ARRAY_A, $prms = array() )
+	static private function _QueryCond( &$conditions, &$values, &$where, &$prms )
 	{
-		global $wpdb;
+		if( $where && ( $where = self::_process_fields( $where, self::_GetFormat( $where ) ) ) === false )
+			return( false );
 
-		if( $where )
-		{
-			$where = self::_process_fields( $where, self::_GetFormat( $where ) );
-			if( false === $where )
-				return( false );
-		}
-
-		$fields = array();
 		$conditions = array();
 		$values = array();
-
-		if( is_array( $cols ) )
-		{
-			foreach( $cols as $field )
-				$fields[] = DbTbl::QueryId( $field );
-		}
-		else
-			$fields[] = '*';
 
 		if( $where )
 		{
@@ -201,8 +186,27 @@ class DbTbl
 			$conditions = array_merge( $conditions, array_map( function( $e ) { return( str_replace( '%', '%%', $e ) ); }, $extraWhere ) );
 		}
 
+		return( true );
+	}
+
+	static function GetRowsEx( $sqlFrom, $cols = null, $limit = null, $where = null, $order = null, $output = ARRAY_A, $prms = array() )
+	{
+		global $wpdb;
+
+		if( !self::_QueryCond( $conditions, $values, $where, $prms ) )
+			return( false );
+
+		$fields = array();
+
+		if( is_array( $cols ) )
+		{
+			foreach( $cols as $field )
+				$fields[] = DbTbl::QueryId( $field );
+		}
+		else
+			$fields[] = '*';
+
 		$fields = implode( ',', $fields );
-		$conditions = implode( ' AND ', $conditions );
 
 		if( ($prms[ 'distinct' ]??null) )
 			$fields = 'DISTINCT(' . $fields . ')';
@@ -211,7 +215,7 @@ class DbTbl
 
 		$sql = 'SELECT ' . $fields . ' FROM ' . $sqlFrom;
 		if( $conditions )
-			$sql .= ' WHERE ' . $conditions;
+			$sql .= ' WHERE ' . implode( ' AND ', $conditions );
 
 		$sql .= self::_QueryGroup( ($prms[ 'group' ]??null) );
 		$sql .= self::_QueryOrder( $order );
@@ -220,7 +224,8 @@ class DbTbl
 		$suppress = $wpdb -> suppress_errors();
 		$res = $wpdb -> get_results( $values ? $wpdb -> prepare( $sql, $values ) : $sql, $output );
 		$wpdb -> suppress_errors( $suppress );
-		return( $res );
+
+		return( ( $wpdb -> last_error || !is_array( $res ) ) ? false : $res );
 	}
 
 	static function GetRows( $id, $cols = null, $limit = null, $where = null, $order = null, $output = ARRAY_A, $prms = array() )
@@ -228,13 +233,20 @@ class DbTbl
 		return( DbTbl::GetRowsEx( DbTbl::QueryId( $id ), $cols, $limit, $where, $order, $output, $prms ) );
 	}
 
-	static function InsertRow( $id, $data )
+	static function GetRow( $id, $cols = null, $where = null, $output = ARRAY_A, $prms = array(), $iRow = 0, $order = null )
+	{
+		$res = DbTbl::GetRows( $id, $cols, $iRow + 1, $where, $order, $output, $prms );
+		return( is_array( $res ) ? ($res[ $iRow ]??null) : false );
+	}
+
+	static function InsertRow( $id, $data, &$idRow = null )
 	{
 		global $wpdb;
 
 		$suppress = $wpdb -> suppress_errors();
 		try { $res = $wpdb -> insert( $id, $data, self::_GetFormat( $data ) ); } catch( \Exception $e ) { $res = false; }
 		$wpdb -> suppress_errors( $suppress );
+		$idRow = $wpdb -> insert_id;
 		return( $res );
 	}
 
@@ -316,19 +328,27 @@ class DbTbl
 		return( $res );
 	}
 
-	static function DeleteRows( $id, $where = null )
+	static function DeleteRows( $id, $where = null, $prms = array() )
 	{
 		global $wpdb;
 
+		if( !self::_QueryCond( $conditions, $values, $where, $prms ) )
+			return( false );
+
+		$sql = 'DELETE FROM ' . DbTbl::QueryId( $id );
+		if( $conditions )
+			$sql .= ' WHERE ' . implode( ' AND ', $conditions );
+
 		$suppress = $wpdb -> suppress_errors();
-		$res = $where ? $wpdb -> delete( $id, $where, self::_GetFormat( $where ) ) : $wpdb -> query( 'DELETE FROM `' . $id . '`' );
+		$res = $wpdb -> query( $values ? $wpdb -> prepare( $sql, $values ) : $sql );
 		$wpdb -> suppress_errors( $suppress );
-		return( $res );
+
+		return( ( $wpdb -> last_error || !is_int( $res ) ) ? false : $res );
 	}
 
 	static function GetCountFromRowsResult( $res, $defVal = 0 )
 	{
-		return( $res ? intval( Gen::ArrGetByPos( $res[ 0 ], 0 ) ) : $defVal );
+		return( $res ? absint( Gen::ArrGetByPos( $res[ 0 ], 0 ) ) : $defVal );
 	}
 
 	private static function _AddCommaArg( &$str, $arg, $commaSuffix = '' )

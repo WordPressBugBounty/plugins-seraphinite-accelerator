@@ -178,7 +178,7 @@ class WP_Object_Cache
 
 		$this -> inited = true;
 
-		if( is_multisite() )
+		if( is_multisite() && function_exists( 'get_current_site' ) )
 		{
 			$this -> curSite = get_current_site();
 			$this -> curSite = new \seraph_accel\AnyObj( array( 'blog_id' => get_current_blog_id(), 'site_id' => $this -> curSite -> site_id ) );

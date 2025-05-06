@@ -3625,7 +3625,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.23';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.24';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -4737,7 +4737,10 @@ class Php
 			{
 				$bracketsLevel--;
 				if( $bracketsLevel == 0 )
+				{
+					$pos++;
 					break;
+				}
 			}
 
 			if( $bracketsLevel == 1 && $token == array( Php::TI_ID => T_ELEMENT, Php::TI_CONTENT => ',' ) )
@@ -4756,160 +4759,6 @@ class Php
 		}
 
 		return( $res );
-	}
-
-	static function File_SetDefineVal( $file, $name, $val )
-	{
-		if( !file_exists( $file ) )
-			return( Gen::E_NOT_FOUND );
-
-		if( !is_writable( $file ) )
-			return( Gen::E_ACCESS_DENIED );
-
-		$fileContent = file_get_contents( $file );
-		if( !$fileContent )
-			return( Gen::E_ACCESS_DENIED );
-
-		if( !function_exists( 'token_get_all' ) )
-		{
-			if( !Gen::StrStartsWith( $fileContent, '<?php' ) )
-				return( Gen::S_FALSE );
-
-			$fileContent = "<?php\ndefine( '" . $name . "', " . var_export( $val, true ) . " );\n" . substr( $fileContent, 5 );
-		}
-		else if( !Php::Content_SetDefineVal( $fileContent, $name, $val ) )
-			return( Gen::S_FALSE );
-
-		if( !is_integer( file_put_contents( $file, $fileContent, LOCK_EX ) ) )
-			return( Gen::E_FAIL );
-
-		return( Gen::S_OK );
-	}
-
-	static function Content_SetDefineVal( &$fileContent, $name, $val )
-	{
-		$tokens = Php::Tokens_GetFromContent( $fileContent );
-		if( $tokens === false )
-			return( false );
-
-		if( !Php::Tokens_SetDefineVal( $tokens, $name, $val ) )
-			return( false );
-
-		$fileContent = Php::Tokens_GetContent( $tokens );
-		return( true );
-	}
-
-	static function Tokens_SetDefineVal( &$tokens, $name, $val )
-	{
-
-		$firstInsertPos = Php::Tokens_Find( $tokens, T_OPEN_TAG );
-		if( $firstInsertPos === false )
-		{
-			$tokensInsert = array();
-			$tokensInsert[] = array( Php::TI_ID => T_OPEN_TAG, Php::TI_CONTENT => Php::T_OPEN_TAG_CONTENT );
-			$tokensInsert[] = array( Php::TI_ID => T_WHITESPACE, Php::TI_CONTENT => PHP_EOL . PHP_EOL );
-
-			Php::Tokens_Insert( $tokens, count( $tokens ), $tokensInsert );
-
-			$firstInsertPos = count( $tokens );
-		}
-		else
-		{
-			$firstInsertPos++;
-
-			$firstInsertPos = Php::Tokens_Find( $tokens, array( 'e' => array( T_WHITESPACE ) ), null, $firstInsertPos );
-			if( $firstInsertPos === false )
-				$firstInsertPos = count( $tokens );
-		}
-
-		$defineValPos = false;
-		for( $i = $firstInsertPos; ; )
-		{
-			$i = Php::Tokens_Find( $tokens, T_STRING, 'define', $i );
-			if( $i === false )
-				break;
-			$i++;
-
-			$callArgs = Php::Tokens_GetCallArgs( $tokens, $i );
-			if( empty( $callArgs ) || count( $callArgs ) != 2 )
-				continue;
-
-			if( Php::Token_GetEncapsedStrVal( Php::Token_GetContent( Php::Tokens_CallArgs_GetSingleArg( $callArgs, 0 ), T_CONSTANT_ENCAPSED_STRING ) ) != $name )
-				continue;
-
-			Php::Tokens_CallArgs_GetSingleArg( $callArgs, 1, $defineValPos );
-			break;
-		}
-
-		$changed = false;
-
-		if( $defineValPos === false )
-		{
-			$tokensInsert = array();
-			$tokensInsert[] = array( Php::TI_ID => T_STRING, Php::TI_CONTENT => 'define' );
-			$tokensInsert[] = array( Php::TI_ID => T_ELEMENT, Php::TI_CONTENT => '(' );
-			$tokensInsert[] = array( Php::TI_ID => T_CONSTANT_ENCAPSED_STRING, Php::TI_CONTENT => '\'' . $name . '\'' );
-			$tokensInsert[] = array( Php::TI_ID => T_ELEMENT, Php::TI_CONTENT => ',' );
-			$tokensInsert[] = array( Php::TI_ID => T_WHITESPACE, Php::TI_CONTENT => ' ' );
-
-			{
-				$defineValPos = count( $tokensInsert );
-				$tokensInsert[] = array( Php::TI_ID => T_CONSTANT_ENCAPSED_STRING, Php::TI_CONTENT => '\'\'' );
-			}
-
-			$tokensInsert[] = array( Php::TI_ID => T_ELEMENT, Php::TI_CONTENT => ')' );
-			$tokensInsert[] = array( Php::TI_ID => T_ELEMENT, Php::TI_CONTENT => ';' );
-			$tokensInsert[] = array( Php::TI_ID => T_WHITESPACE, Php::TI_CONTENT => PHP_EOL . PHP_EOL );
-
-			Php::Tokens_Insert( $tokens, $firstInsertPos, $tokensInsert );
-			$defineValPos += $firstInsertPos;
-
-			$changed = true;
-		}
-
-		{
-
-			$tokenValNew = null;
-			switch( gettype( $val ) )
-			{
-			case 'string':
-				$token = $tokens[ $defineValPos ];
-
-				$cQuote = null;
-				if( $token[ Php::TI_ID ] == T_CONSTANT_ENCAPSED_STRING )
-					$cQuote = substr( $token[ Php::TI_CONTENT ], 0, 1 );
-
-				if( empty( $cQuote ) )
-					$cQuote = '\'';
-
-				$tokenValNew = array( Php::TI_ID => T_CONSTANT_ENCAPSED_STRING, Php::TI_CONTENT => $cQuote . $val . $cQuote );
-				break;
-
-			case 'boolean':
-				$tokenValNew = array( Php::TI_ID => T_STRING, Php::TI_CONTENT => $val ? 'true' : 'false' );
-				break;
-
-			case 'integer':
-				$tokenValNew = array( Php::TI_ID => T_LNUMBER, Php::TI_CONTENT => '' . $val );
-				break;
-
-			case 'double':
-			    $tokenValNew = array( Php::TI_ID => T_DNUMBER, Php::TI_CONTENT => '' . $val );
-			    break;
-
-			default:
-				return( false );
-				break;
-			}
-
-			if( $tokens[ $defineValPos ] != $tokenValNew )
-			{
-				$tokens[ $defineValPos ] = $tokenValNew;
-				$changed = true;
-			}
-		}
-
-		return( true );
 	}
 }
 
@@ -6701,6 +6550,211 @@ class Wp
 			require_once( ABSPATH . 'wp-admin/includes/file.php' );
 
 		return( get_home_path() );
+	}
+
+	static function _Cfg_Tokens_SetDefineVal( &$tokens, $name, $val )
+	{
+
+		$firstInsertPos = Php::Tokens_Find( $tokens, T_OPEN_TAG );
+		if( $firstInsertPos === false )
+		{
+			$tokensInsert = array();
+			$tokensInsert[] = array( Php::TI_ID => T_OPEN_TAG, Php::TI_CONTENT => Php::T_OPEN_TAG_CONTENT );
+			$tokensInsert[] = array( Php::TI_ID => T_WHITESPACE, Php::TI_CONTENT => PHP_EOL . PHP_EOL );
+
+			Php::Tokens_Insert( $tokens, count( $tokens ), $tokensInsert );
+
+			$firstInsertPos = count( $tokens );
+
+			unset( $tokensInsert );
+		}
+		else
+		{
+			$firstInsertPos++;
+
+			$firstInsertPos = Php::Tokens_Find( $tokens, array( 'e' => array( T_WHITESPACE ) ), null, $firstInsertPos );
+			if( $firstInsertPos === false )
+				$firstInsertPos = count( $tokens );
+		}
+
+		$definePos = false;
+		$defineValPos = false;
+		for( $i = $firstInsertPos; ; )
+		{
+			$i = Php::Tokens_Find( $tokens, T_STRING, 'define', $i );
+			if( $i === false )
+				break;
+
+			$iDefine = $i;
+			$i++;
+
+			$callArgs = Php::Tokens_GetCallArgs( $tokens, $i );
+			$iEnd = Php::Tokens_Find( $tokens, T_ELEMENT, ';', $i );
+			if( $iEnd === false )
+				continue;
+
+			$i = $iEnd + 1;
+
+			if( empty( $callArgs ) || count( $callArgs ) != 2 )
+				continue;
+
+			if( Php::Token_GetEncapsedStrVal( Php::Token_GetContent( Php::Tokens_CallArgs_GetSingleArg( $callArgs, 0 ), T_CONSTANT_ENCAPSED_STRING ) ) != $name )
+				continue;
+
+			if( $defineValPos === false )
+			{
+				$definePos = array( $iDefine, $i - $iDefine );
+				Php::Tokens_CallArgs_GetSingleArg( $callArgs, 1, $defineValPos );
+				continue;
+			}
+
+			array_splice( $tokens, $iDefine, $i - $iDefine );
+			$i = $iDefine;
+		}
+
+		$changed = false;
+
+		if( $defineValPos === false )
+		{
+			$tokensInsert = array();
+			$tokensInsert[] = array( Php::TI_ID => T_STRING, Php::TI_CONTENT => 'define' );
+			$tokensInsert[] = array( Php::TI_ID => T_ELEMENT, Php::TI_CONTENT => '(' );
+			$tokensInsert[] = array( Php::TI_ID => T_CONSTANT_ENCAPSED_STRING, Php::TI_CONTENT => '\'' . $name . '\'' );
+			$tokensInsert[] = array( Php::TI_ID => T_ELEMENT, Php::TI_CONTENT => ',' );
+			$tokensInsert[] = array( Php::TI_ID => T_WHITESPACE, Php::TI_CONTENT => ' ' );
+
+			{
+				$defineValPos = count( $tokensInsert );
+				$tokensInsert[] = array( Php::TI_ID => T_CONSTANT_ENCAPSED_STRING, Php::TI_CONTENT => '\'\'' );
+			}
+
+			$tokensInsert[] = array( Php::TI_ID => T_ELEMENT, Php::TI_CONTENT => ')' );
+			$tokensInsert[] = array( Php::TI_ID => T_ELEMENT, Php::TI_CONTENT => ';' );
+			$tokensInsert[] = array( Php::TI_ID => T_WHITESPACE, Php::TI_CONTENT => PHP_EOL . PHP_EOL );
+
+			Php::Tokens_Insert( $tokens, $firstInsertPos, $tokensInsert );
+			$definePos = array( $firstInsertPos, count( $tokensInsert ) );
+			$defineValPos += $firstInsertPos;
+
+			unset( $tokensInsert );
+
+			$changed = true;
+		}
+
+		{
+
+			$tokenValNew = null;
+			switch( gettype( $val ) )
+			{
+			case 'string':
+				$token = $tokens[ $defineValPos ];
+
+				$cQuote = null;
+				if( $token[ Php::TI_ID ] == T_CONSTANT_ENCAPSED_STRING )
+					$cQuote = substr( $token[ Php::TI_CONTENT ], 0, 1 );
+
+				if( empty( $cQuote ) )
+					$cQuote = '\'';
+
+				$tokenValNew = array( Php::TI_ID => T_CONSTANT_ENCAPSED_STRING, Php::TI_CONTENT => $cQuote . $val . $cQuote );
+				break;
+
+			case 'boolean':
+				$tokenValNew = array( Php::TI_ID => T_STRING, Php::TI_CONTENT => $val ? 'true' : 'false' );
+				break;
+
+			case 'integer':
+				$tokenValNew = array( Php::TI_ID => T_LNUMBER, Php::TI_CONTENT => '' . $val );
+				break;
+
+			case 'double':
+				$tokenValNew = array( Php::TI_ID => T_DNUMBER, Php::TI_CONTENT => '' . $val );
+				break;
+
+			default:
+				return( false );
+				break;
+			}
+
+			if( $tokens[ $defineValPos ] != $tokenValNew )
+			{
+				$tokens[ $defineValPos ] = $tokenValNew;
+				$changed = true;
+			}
+		}
+
+		$inclPos = false;
+		for( $i = $firstInsertPos; ; )
+		{
+			$i = Php::Tokens_Find( $tokens, array( 'i' => array( T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE ) ), null, $i );
+			if( $i === false )
+				break;
+
+			$iInclude = $i;
+			$i++;
+
+			$iEnd = Php::Tokens_Find( $tokens, T_ELEMENT, ';', $i );
+			if( $iEnd === false )
+				continue;
+
+			$iArg = Php::Tokens_Find( $tokens, array( 'i' => array( T_CONSTANT_ENCAPSED_STRING ) ), array( '\'wp-settings.php\'' ), $i, $iEnd - $i );
+			if( $iEnd === false || $iArg > $iEnd )
+				continue;
+
+			$inclPos = array( $iInclude, $iEnd - $iInclude );
+			break;
+		}
+
+		if( $inclPos !== false && $inclPos[ 0 ] < $definePos[ 0 ] )
+		{
+			$tokensInsert = array_splice( $tokens, $definePos[ 0 ], $definePos[ 1 ] );
+			$tokensInsert[] = array( Php::TI_ID => T_WHITESPACE, Php::TI_CONTENT => PHP_EOL . PHP_EOL );
+			Php::Tokens_Insert( $tokens, $firstInsertPos, $tokensInsert );
+			unset( $tokensInsert );
+		}
+
+		return( true );
+	}
+
+	static function _Cfg_SetDefineValEx( &$fileContent, $name, $val )
+	{
+		$tokens = Php::Tokens_GetFromContent( $fileContent );
+		if( $tokens === false )
+		{
+
+			if( !Gen::StrStartsWith( $fileContent, '<?php' ) )
+				return( false );
+
+			$fileContent = "<?php\ndefine( '" . $name . "', " . var_export( $val, true ) . " );\n" . substr( $fileContent, 5 );
+			return( true );
+		}
+
+		if( !self::_Cfg_Tokens_SetDefineVal( $tokens, $name, $val ) )
+			return( false );
+
+		$fileContent = Php::Tokens_GetContent( $tokens );
+		return( true );
+	}
+
+	static function Cfg_SetDefineValEx( $file, $name, $val )
+	{
+		if( !file_exists( $file ) )
+			return( Gen::E_NOT_FOUND );
+
+		if( !is_writable( $file ) )
+			return( Gen::E_ACCESS_DENIED );
+
+		$fileContent = file_get_contents( $file );
+		if( !$fileContent )
+			return( Gen::E_ACCESS_DENIED );
+
+		if( !self::_Cfg_SetDefineValEx( $fileContent, $name, $val ) )
+			return( Gen::S_FALSE );
+
+		if( !is_integer( file_put_contents( $file, $fileContent, LOCK_EX ) ) )
+			return( Gen::E_FAIL );
+
+		return( Gen::S_OK );
 	}
 }
 

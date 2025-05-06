@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.7
-Stable tag: 2.27.23
+Stable tag: 2.27.24
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,13 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.27.24 =
+
+Fixes:
+
+* Masked URLs symbols are converted to '%2A' if TranslatePress is active.
+* Setting 'define' values in 'wp-config.php' doesnt matter if they are located after including of 'wp-settings.php'.
 
 = 2.27.23 =
 

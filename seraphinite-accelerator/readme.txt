@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.7
-Stable tag: 2.27.24
+Stable tag: 2.27.25
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,18 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.27.25 =
+
+Improvements:
+
+* Changing processing priority in revalidation expressions.
+* Fast content optimization in temporary cache.
+
+Fixes:
+
+* Anchor scrolling doesn't happen if lazy HTML is enabled with BJS specification.
+* Cache auto-update doesn't work if invalid expressions are defined.
 
 = 2.27.24 =
 

@@ -915,13 +915,24 @@ function CacheOpPost( $postId, $reason, $priority = 0, $proc = null, $cbIsAborte
 
 	$ctx = new AnyObj();
 	$ctx -> cbIsAborted = $cbIsAborted;
-	$ctx -> urls = array( get_permalink( $post ) );
+	$ctx -> urls = array( $priority => array( get_permalink( $post ) ) );
+	$ctx -> priority = $priority;
 	$ctx -> cb =
-		function( $ctx, $url )
+		function( $ctx, $url, $priorityChange = 0 )
 		{
 			if( !is_bool( $ctx -> cbIsAborted ) && call_user_func( $ctx -> cbIsAborted ) )
 				return( false );
-			$ctx -> urls[] = $url;
+
+			$priority = $ctx -> priority;
+			if( $priorityChange != 0 )
+			{
+				if( $priority == 5 )
+					$priority = $priorityChange < 0 ? 30 : 5;
+				else if( $priority == 4 )
+					$priority = $priorityChange < 0 ? 20 : 4;
+			}
+
+			$ctx -> urls[ $priority ][] = $url;
 		};
 
 	if( Gen::GetArrField( Plugin::SettGet(), array( 'log' ), false ) && Gen::GetArrField( Plugin::SettGet(), array( 'logScope', 'upd' ), false ) )
@@ -943,7 +954,7 @@ function CacheOpPost( $postId, $reason, $priority = 0, $proc = null, $cbIsAborte
 			if( is_string( $reason ) )
 				$txt .= ': ' . $reason;
 		}
-		$txt .= '; scope: URL(s): ' . implode( ', ', array_merge( $ctx -> urls, Gen::GetArrField( $sett, array( 'cache', 'updPostDeps' ), array() ) ) );
+		$txt .= '; scope: URL(s): ' . implode( ', ', array_merge( $ctx -> urls[ $priority ], Gen::GetArrField( $sett, array( 'cache', 'updPostDeps' ), array() ) ) );
 
 		LogWrite( $txt, Ui::MsgInfo, 'Cache update' );
 	}
@@ -957,12 +968,16 @@ function CacheOpPost( $postId, $reason, $priority = 0, $proc = null, $cbIsAborte
 
 	if( $reason == 'delete' && $op !== 2 )
 	{
-		if( CacheOpUrls( false, $ctx -> urls[ 0 ], 2, $priority, $cbIsAborted, $proc ) === false )
+		if( CacheOpUrls( false, $ctx -> urls[ $priority ][ 0 ], 2, $priority, $cbIsAborted, $proc ) === false )
 			return( false );
-		array_splice( $ctx -> urls, 0, 1 );
+		array_splice( $ctx -> urls[ $priority ], 0, 1 );
 	}
 
-	return( CacheOpUrls( false, $ctx -> urls, $op, $priority, $cbIsAborted, $proc, null, null, null, $immediatelyPushQueue ) );
+	foreach( $ctx -> urls as $priority => $urls )
+		if( CacheOpUrls( false, $urls, $op, $priority, $cbIsAborted, $proc, null, null, null, $immediatelyPushQueue ) === false )
+			return( false );
+
+	return( null );
 }
 
 function CacheOpCancel( $op )
@@ -1084,7 +1099,7 @@ function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $
 	$ctx -> viewsHeaders = CacheOpGetViewsHeaders( $ctx -> settCache, $ctx -> viewId );
 
 	$ctx -> cbUrlOp =
-		function( $ctx, $url )
+		function( $ctx, $url, $priorityChange = 0 )
 		{
 			if( CacheOpUrl_ParseUrl( $url, $ctx -> curSiteAddr, $siteSubId, $path, $ctx -> curQuery ) !== $ctx -> curSiteId )
 				return;
@@ -1192,7 +1207,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.24' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.25' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{

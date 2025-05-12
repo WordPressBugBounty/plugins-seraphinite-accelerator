@@ -1958,9 +1958,9 @@ class Gen
 		return( @file_exists( $file ) ? @filemtime( $file ) : false );
 	}
 
-	static function Constant( string $name )
+	static function Constant( string $name, $def = null )
 	{
-		return( defined( $name ) ? @constant( $name ) : null );
+		return( defined( $name ) ? @constant( $name ) : $def );
 	}
 
 	static private $_lastErrDsc = null;
@@ -3625,7 +3625,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.25';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.26';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

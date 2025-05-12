@@ -127,8 +127,16 @@ function _Process( $sites )
 		unset( $addrSite, $host );
 	}
 
-	$sett = Plugin::SettGet( Gen::CallFunc( 'seraph_accel_siteSettInlineDetach', array( $seraph_accel_g_siteId ) ) );
-	$settGlob = $seraph_accel_g_siteId == 'm' ? $sett : ( array )Gen::CallFunc( 'seraph_accel_siteSettInlineDetach', array( 'm' ) );
+	$settGlob = Plugin::SettGet( Gen::CallFunc( 'seraph_accel_siteSettInlineDetach', array( 'm' ) ) );
+	if( $seraph_accel_g_siteId != 'm' )
+	{
+		if( is_multisite() )
+			PluginOptions::SetBlogId( ( int )GetBlogIdFromSiteId( $seraph_accel_g_siteId ) );
+		$sett = Plugin::SettGet( Gen::CallFunc( 'seraph_accel_siteSettInlineDetach', array( $seraph_accel_g_siteId ) ) );
+		PluginOptions::SetBlogId( null );
+	}
+	else
+		$sett = $settGlob;
 
 	$settCache = Gen::GetArrField( $sett, array( 'cache' ), array() );
 
@@ -158,65 +166,82 @@ function _Process( $sites )
 
 	$requestMethodCache = 'GET';
 	{
-		$requestURICheck = null;
-		foreach( Gen::GetArrField( $settCache, array( 'data', 'items' ), array() ) as $itemData )
+		$itemDataFound = null;
+		if( ( $requestMethod == 'GET' ) && isset( $_REQUEST[ 'seraph_accel_gbnr' ] ) )
 		{
-			if( !($itemData[ 'enable' ]??null) )
-				continue;
-
-			if( $requestMethod != ($itemData[ 'type' ]??'GET') )
-				continue;
-
-			$found = false;
-			foreach( ExprConditionsSet_Parse( ($itemData[ 'pattern' ]??'') ) as $e )
+			$itemDataFound = array(
+				'type' => 'GET', 'mime' => 'text/plain',
+				'exclArgsAll' => false, 'exclArgs' => array(),
+				'skipArgsEnable' => true, 'skipArgsAll' => false, 'skipArgs' => array( '!seraph_accel_gbnr' ),
+				'timeoutCln' => 60 * 60 * 24, 'timeout' => 60, 'lazyInv' => true,
+			);
+		}
+		else
+		{
+			$requestURICheck = null;
+			foreach( Gen::GetArrField( $settCache, array( 'data', 'items' ), array() ) as $itemData )
 			{
-				if( $requestURICheck === null )
-				{
-					$requestURICheck = $_SERVER[ 'REQUEST_URI' ];
+				if( !($itemData[ 'enable' ]??null) )
+					continue;
 
-					if( $requestMethod == 'POST' )
+				if( $requestMethod != ($itemData[ 'type' ]??'GET') )
+					continue;
+
+				$found = false;
+				foreach( ExprConditionsSet_Parse( ($itemData[ 'pattern' ]??'') ) as $e )
+				{
+					if( $requestURICheck === null )
 					{
-						AddCurPostArgs( $args );
-						$requestURICheck = Net::UrlAddArgs( $requestURICheck, $args );
+						$requestURICheck = $_SERVER[ 'REQUEST_URI' ];
+
+						if( $requestMethod == 'POST' )
+						{
+							AddCurPostArgs( $args );
+							$requestURICheck = Net::UrlAddArgs( $requestURICheck, $args );
+						}
 					}
-				}
 
-				$val = false;
-				if( IsStrRegExp( $e[ 'expr' ] ) )
-				{
-					if( @preg_match( $e[ 'expr' ], $requestURICheck ) )
+					$val = false;
+					if( IsStrRegExp( $e[ 'expr' ] ) )
+					{
+						if( @preg_match( $e[ 'expr' ], $requestURICheck ) )
+							$val = true;
+					}
+					else if( strpos( $requestURICheck, $e[ 'expr' ] ) !== false )
 						$val = true;
-				}
-				else if( strpos( $requestURICheck, $e[ 'expr' ] ) !== false )
-					$val = true;
 
-				if( !ExprConditionsSet_ItemOp( $e, $val ) )
+					if( !ExprConditionsSet_ItemOp( $e, $val ) )
+					{
+						$found = false;
+						break;
+					}
+
+					$found = true;
+				}
+
+				if( $found )
 				{
-					$found = false;
+					$itemDataFound = $itemData;
 					break;
 				}
-
-				$found = true;
 			}
+		}
 
-			if( !$found )
-				continue;
-
-			$seraph_accel_g_simpCacheMode = 'data:' . Fs::GetFileTypeFromMimeContentType( ($itemData[ 'mime' ]??''), 'bin' );
+		if( $itemDataFound )
+		{
+			$seraph_accel_g_simpCacheMode = 'data:' . Fs::GetFileTypeFromMimeContentType( ($itemDataFound[ 'mime' ]??''), 'bin' );
 
 			foreach( array( 'exclArgsAll', 'exclArgs', 'skipArgsEnable', 'skipArgsAll', 'skipArgs' ) as $fld )
-				Gen::SetArrField( $settCache, array( $fld ), Gen::GetArrField( $itemData, array( $fld ) ) );
-			$requestMethodCache = ($itemData[ 'type' ]??'GET');
-			$timeoutCln = Gen::GetArrField( $itemData, array( 'timeoutCln' ), 0 );
-			$timeout = Gen::GetArrField( $itemData, array( 'timeout' ), 0 );
+				Gen::SetArrField( $settCache, array( $fld ), Gen::GetArrField( $itemDataFound, array( $fld ) ) );
+			$requestMethodCache = ($itemDataFound[ 'type' ]??'GET');
+			$timeoutCln = Gen::GetArrField( $itemDataFound, array( 'timeoutCln' ), 0 );
+			$timeout = Gen::GetArrField( $itemDataFound, array( 'timeout' ), 0 );
 
 			if( $pathOrig !== null && $seraph_accel_g_cacheSkipData )
 				$seraph_accel_g_cacheSkipData = null;
-
-			break;
 		}
 
-		unset( $requestURICheck, $itemData, $found, $val );
+		unset( $requestURICheck, $itemData, $itemDataFound, $found, $val );
 	}
 
 	if( $requestMethod != $requestMethodCache )
@@ -612,7 +637,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.27.25;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.27.26;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -876,7 +901,7 @@ function CacheDscGetDataCtxFirstFile( $settCache, $oiCi, &$ctxData, $dataPath, $
 function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, $type )
 {
 	$oiCs = ($dsc[ 'p' ]??null);
-	if( !is_array( $oiCs ) || count( $oiCs ) != 1 )
+	if( !is_array( $oiCs )  || count( $oiCs ) != 1 )
 	{
 
 		return( null );
@@ -889,6 +914,7 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 		$dataComprExt = _GetDataFileComprExt( $dataComprExt );
 
 	$ctxData = array( 'encoding' => $encoding, 'recompress' => false, 'oiFs' => array() );
+	if( $oiCs )
 	{
 		$oiCi = $oiCs[ 0 ];
 
@@ -901,6 +927,8 @@ function CacheDscGetDataCtx( $settCache, $dsc, $encoding, $dataPath, $tmUpdate, 
 
 		$ctxData[ 'fmt' ] = $oiCf[ 'fmt' ];
 	}
+	else
+		$ctxData[ 'fmt' ] = '';
 
 	$fmt = $ctxData[ 'fmt' ];
 
@@ -1078,9 +1106,6 @@ function CacheDscDataOutput( $ctxData, $out = true )
 	$encoding = $ctxData[ 'encoding' ];
 	$recompress = $ctxData[ 'recompress' ];
 	$fmt = $ctxData[ 'fmt' ];
-
-	if( !$iubyvadkxs )
-		return( false );
 
 	if( $recompress )
 	{
@@ -1508,7 +1533,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( ($settCache[ 'normAgent' ]??null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = ($_SERVER[ 'HTTP_USER_AGENT' ]??'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.25';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.26';
 	}
 
 	if( ($settCache[ 'views' ]??null) )

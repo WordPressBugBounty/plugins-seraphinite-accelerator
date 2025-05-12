@@ -1207,7 +1207,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.25' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.26' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1316,7 +1316,7 @@ function CacheVerifyEnvNginxConf( $settGlob, $sett, $verifyEnvDropin = null )
 	return( $verifyEnvDropin -> actual == $verifyEnvDropin -> needed );
 }
 
-function _CacheGetEnvConfPrms( $settGlob, $sett, $init )
+function _CacheGetEnvConfPrms( $settGlob, $sett, $init, $bAllMultisites = false )
 {
 	$imgTypesCnvFrom_RegExpEnum = implode( '|', array( 'jpe','jpg','jpeg','png','gif','bmp', 'webp','avif' ) );
 
@@ -1379,7 +1379,7 @@ function _CacheGetEnvConfPrms( $settGlob, $sett, $init )
 		}
 	;
 
-	$bMultiSite = _DropInInit_EnumSites( array( $ctxMs, 'cb' ), $sett, $init );
+	$bMultiSite = _DropInInit_EnumSites( array( $ctxMs, 'cb' ), $sett, $init, $bAllMultisites );
 
 	return( array( 'imgTypesCnvFrom_RegExpEnum' => $imgTypesCnvFrom_RegExpEnum, 'siteRootUri' => $siteRootUri, 'dataUri' => $dataUri, 'dataPath' => $dataPath, 'ctxMs' => $ctxMs, 'bMultiSite' => $bMultiSite ) );
 }
@@ -1406,10 +1406,10 @@ function _CacheGetEnvNginxConf_GetSiteExpr( $aSite, $exprNegative = 'set $site "
 	return( $expr );
 }
 
-function CacheGetEnvNginxConf( $settGlob, $sett, $init = true )
+function CacheGetEnvNginxConf( $settGlob, $sett, $init = true, $bAllMultisites = false )
 {
 
-	extract( _CacheGetEnvConfPrms( $settGlob, $sett, $init ) );
+	extract( _CacheGetEnvConfPrms( $settGlob, $sett, $init, $bAllMultisites ) );
 
 	$confComprRedirBlock = '';
 
@@ -1559,7 +1559,7 @@ function IsEnvDropinLockedBy( $file, $cont = null )
 	return( 'unk' );
 }
 
-function CacheInitEnvDropin( $sett, $init = true )
+function CacheInitEnvDropin( $sett, $init = true, $bAllMultisites = false )
 {
 	$file = WP_CONTENT_DIR . '/advanced-cache.php';
 	$cont = Gen::FileGetContents( $file );
@@ -1571,7 +1571,7 @@ function CacheInitEnvDropin( $sett, $init = true )
 		if( $cont === false )
 			return( Gen::E_FAIL );
 
-		$contNew = _GetAdvCacheFileContent( $sett, true, $init );
+		$contNew = _GetAdvCacheFileContent( $sett, true, $init, $bAllMultisites );
 		if( $contNew && $sLock == 'batcache' )
 		{
 			$contNew = 'define( \'SERAPH_ACCEL_ADVCACHE_COMP\', true );' . "\n" . $contNew;
@@ -1594,7 +1594,7 @@ function CacheInitEnvDropin( $sett, $init = true )
 	if( !$init && ( !$cont || strpos( $cont, '/* seraphinite-accelerator */' ) === false ) )
 		return( Gen::S_OK );
 
-	$contNew = GetAdvCacheFileContent( $sett, $init );
+	$contNew = GetAdvCacheFileContent( $sett, $init, $bAllMultisites );
 
 	if( $cont != $contNew )
 	{
@@ -1633,13 +1633,13 @@ function IsWpCacheActive()
 	return( defined( 'WP_CACHE' ) && WP_CACHE );
 }
 
-function CacheInitEnv( $settGlob, $sett, $init = true )
+function CacheInitEnv( $settGlob, $sett, $init = true, $bAllMultisites = false )
 {
 	$cacheEnable = Gen::GetArrField( $sett, 'cache/enable', true, '/' );
 
 	if( !$cacheEnable || !$init )
 	{
-		CacheInitEnvDropin( $sett, false );
+		CacheInitEnvDropin( $sett, false, $bAllMultisites );
 
 		CacheInitClearProcessor( true, false );
 		CacheInitOperScheduler( true, false );
@@ -1653,7 +1653,7 @@ function CacheInitEnv( $settGlob, $sett, $init = true )
 			Gen::HtAccess_SetBlock( 'seraphinite-accelerator', '' );
 
 		{
-			$confComprRedirBlock = CacheGetEnvNginxConf( $settGlob, $sett, false );
+			$confComprRedirBlock = CacheGetEnvNginxConf( $settGlob, $sett, false, $bAllMultisites );
 
 			$fileConfComprRedir = CacheGetEnvNginxConfFile();
 			if( Gen::FileGetContents( $fileConfComprRedir ) !== $confComprRedirBlock )
@@ -1667,7 +1667,7 @@ function CacheInitEnv( $settGlob, $sett, $init = true )
 
 	if( $cacheEnable )
 	{
-		$hr = Gen::HrAccom( $hr, CacheInitEnvDropin( $sett ) );
+		$hr = Gen::HrAccom( $hr, CacheInitEnvDropin( $sett, true, $bAllMultisites ) );
 		if( !IsWpCacheActive() )
 		{
 			$hr = Gen::HrAccom( $hr, Wp::Cfg_SetDefineValEx( Wp::GetConfigFilePath(), 'WP_CACHE', true ) );
@@ -1680,7 +1680,7 @@ function CacheInitEnv( $settGlob, $sett, $init = true )
 
 	$hr = Gen::HrAccom( $hr, CacheInitEnvObjDropin( $settGlob, Gen::GetArrField( $settGlob, array( 'cacheObj', 'enable' ), false ) ) );
 
-	extract( _CacheGetEnvConfPrms( $settGlob, $sett, $init ) );
+	extract( _CacheGetEnvConfPrms( $settGlob, $sett, $init, $bAllMultisites ) );
 
 	if( $aHtAccessSoft = Gen::HtAccess_IsSupported() )
 	{
@@ -1849,7 +1849,7 @@ function CacheInitEnv( $settGlob, $sett, $init = true )
 	}
 
 	{
-		$confComprRedirBlock = CacheGetEnvNginxConf( $settGlob, $sett );
+		$confComprRedirBlock = CacheGetEnvNginxConf( $settGlob, $sett, true, $bAllMultisites );
 
 		$fileConfComprRedir = CacheGetEnvNginxConfFile();
 		if( Gen::FileGetContents( $fileConfComprRedir ) !== $confComprRedirBlock )
@@ -1922,7 +1922,7 @@ function _AddSiteIdSites( &$sitesIds, $addrSite, $siteId, $availablePlugins )
 
 }
 
-function _DropInInit_EnumSites( $cb, $sett, $init = true )
+function _DropInInit_EnumSites( $cb, $sett, $init = true, $bAllMultisites = false )
 {
 
 	if( !Gen::DoesFuncExist( 'get_sites' ) || !is_multisite() )
@@ -1942,6 +1942,22 @@ function _DropInInit_EnumSites( $cb, $sett, $init = true )
 		$availablePlugins = Plugin::GetAvailablePlugins();
 
 		$settSite = null;
+
+		if( $bAllMultisites )
+		{
+			$iPlgPos = array_search( $idPlg, $availablePlugins );
+			if( $init )
+			{
+				if( $iPlgPos === false )
+					$availablePlugins[] = $idPlg;
+			}
+			else
+			{
+				if( $iPlgPos !== false )
+					array_splice( $availablePlugins, $iPlgPos, 1 );
+			}
+		}
+
 		if( $idBlog != $site -> blog_id )
 		{
 			if( in_array( $idPlg, $availablePlugins ) )
@@ -1962,7 +1978,7 @@ function _DropInInit_EnumSites( $cb, $sett, $init = true )
 	return( true );
 }
 
-function _GetAdvCacheFileContent( $sett, $bTiny = false, $init = true )
+function _GetAdvCacheFileContent( $sett, $bTiny = false, $init = true, $bAllMultisites = false )
 {
 	$ctxMs = new AnyObj();
 	$ctxMs -> bTiny = $bTiny;
@@ -1972,10 +1988,14 @@ function _GetAdvCacheFileContent( $sett, $bTiny = false, $init = true )
 	$ctxMs -> cb =
 		function( $ctxMs, $siteId, $site, $sett, $availablePlugins )
 		{
-			if( !$sett )
-				return;
-
 			$addrSite = strtolower( Net::GetUrlWithoutProto( Gen::SetLastSlash( Wp::GetSiteRootUrl(), false ) ) );
+
+			if( !$sett )
+			{
+				$ctxMs -> sitesIds[ $addrSite ] = false;
+				return;
+			}
+
 			_AddSiteIdSites( $ctxMs -> sitesIds, $addrSite, $siteId, $availablePlugins );
 
 			$sSett = $ctxMs -> bTiny ? Gen::VarExport( $sett, $ctxMs -> varExportTinyFmt ) : var_export( $sett, true );
@@ -1986,7 +2006,7 @@ function _GetAdvCacheFileContent( $sett, $bTiny = false, $init = true )
 		}
 	;
 
-	if( _DropInInit_EnumSites( array( $ctxMs, 'cb' ), $sett, $init ) )
+	if( _DropInInit_EnumSites( array( $ctxMs, 'cb' ), $sett, $init, $bAllMultisites ) )
 	{
 		if( $ctxMs -> content )
 			$ctxMs -> content .= 'function seraph_accel_siteSettInlineDetach($siteId){ $fn = \'_seraph_accel_siteSettInlineDetach_\' . $siteId; return function_exists($fn) ? call_user_func($fn) : null; }' . "\n";
@@ -1998,9 +2018,9 @@ function _GetAdvCacheFileContent( $sett, $bTiny = false, $init = true )
 	return( $ctxMs -> content );
 }
 
-function GetAdvCacheFileContent( $sett, $init = true )
+function GetAdvCacheFileContent( $sett, $init = true, $bAllMultisites = false )
 {
-	$content = _GetAdvCacheFileContent( $sett, false, $init );
+	$content = _GetAdvCacheFileContent( $sett, false, $init, $bAllMultisites );
 
 	if( $content )
 	{

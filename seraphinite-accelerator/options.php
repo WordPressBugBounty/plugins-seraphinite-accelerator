@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.26' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.27' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -2116,6 +2116,17 @@ function _SettingsPage_Ctxs( $callbacks_args, $box )
 				}
 				$o .= ( Ui::TagClose( 'tr' ) );
 
+				$o .= ( Ui::TagOpen( 'tr', array( 'style' => array( 'display' => 'none' ) ) ) );
+				{
+					$o .= ( Ui::TagOpen( 'td' ) );
+					{
+						$fldId = 'cache/ctxLazyInv';
+						$o .= ( Ui::CheckBox( esc_html_x( 'LazyInvChk', 'admin.Settings_Cache_Common', 'seraphinite-accelerator' ) . Ui::AdminBtnsBlock( array( Plugin::AdminBtnsBlock_GetPaidContent( $isPaidLockedContent ) ), Ui::AdminHelpBtnModeChkRad ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+					}
+					$o .= ( Ui::TagClose( 'td' ) );
+				}
+				$o .= ( Ui::TagClose( 'tr' ) );
+
 				$o .= ( Ui::TagOpen( 'tr' ) );
 				{
 					$o .= ( Ui::TagOpen( 'td' ) );
@@ -3466,6 +3477,12 @@ function _SettingsPage_Frames( $callbacks_args, $box )
 						{
 							$fldId = 'contPr/cp/jetCrslPst';
 							return( Ui::CheckBox( esc_html_x( 'JetCrslPstChk', 'admin.Settings_Frames_ContParts', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+						},
+
+						function( $sett )
+						{
+							$fldId = 'contPr/cp/kpPsvStls';
+							return( Ui::CheckBox( esc_html_x( 'KpPsvStlsChk', 'admin.Settings_Frames_ContParts', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 						},
 
 						function( $sett )
@@ -5820,6 +5837,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'cache/ctxSessSep';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/ctxContPr';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/ctxCliRefresh';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'cache/ctxLazyInv';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{
 			$fldId = 'cache/ctxGrps';
 			Gen::SetArrField( $sett, $fldId, Ui::ItemsList_GetSaveItems( 'seraph_accel/' . $fldId, '/', $args,
@@ -6026,6 +6044,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'contPr/cp/jetLott';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/jetCrsl';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/jetCrslPst';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/cp/kpPsvStls';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/diviMv';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/diviMvImg';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/diviMvText';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }

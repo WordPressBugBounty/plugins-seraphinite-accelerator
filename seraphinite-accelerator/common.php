@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 173;
+const PLUGIN_SETT_VER								= 174;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1126,6 +1126,13 @@ function OnOptRead_Sett( $sett, $verFrom )
 		}
 	}
 
+	if( $verFrom && $verFrom < 174 )
+	{
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'kpPsvStls' ), false );
+
+		Gen::SetArrField( $sett, array( 'cache', 'ctxLazyInv' ), false );
+	}
+
 	return( $sett );
 }
 
@@ -1389,6 +1396,7 @@ function OnOptGetDef_Sett()
 				'seopress_paged',
 				'sitemap',
 				'sitemap_n',
+				'elementor-preview',
 			),
 
 			'skipArgsEnable' => false,
@@ -1545,6 +1553,7 @@ function OnOptGetDef_Sett()
 			'ctxSessSep' => true,
 			'ctxContPr' => true,
 			'ctxCliRefresh' => true,
+			'ctxLazyInv' => false,
 			'ctxGrps' => array(
 				'common' => array(
 					'enable' => true,
@@ -1908,6 +1917,7 @@ function OnOptGetDef_Sett()
 				'phtncThmb' => true,
 				'jetMobMenu' => true,
 				'jetLott' => true,
+				'kpPsvStls' => true,
 				'diviMv' => true,
 				'diviSld' => true,
 				'diviMvImg' => false,
@@ -3754,10 +3764,10 @@ function ExprConditionsSet_IsRegExp( $ee )
 	return( false );
 }
 
-function ExprConditionsSet_Match( $expr, $cbMatch )
+function ExprConditionsSet_MatchEx( $aExpr, $cbMatch )
 {
 	$found = false;
-	foreach( ExprConditionsSet_Parse( $expr ) as $e )
+	foreach( $aExpr as $e )
 	{
 		$val = call_user_func( $cbMatch, $e[ 'expr' ] );
 		if( !ExprConditionsSet_ItemOp( $e, $val ) )
@@ -3767,6 +3777,11 @@ function ExprConditionsSet_Match( $expr, $cbMatch )
 	}
 
 	return( $found );
+}
+
+function ExprConditionsSet_Match( $expr, $cbMatch )
+{
+	return( ExprConditionsSet_MatchEx( ExprConditionsSet_Parse( $expr ), $cbMatch ) );
 }
 
 function AccomulateCookiesState( &$state, $cookies, $elems )
@@ -3972,7 +3987,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.26 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.27 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5262,7 +5277,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.26';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.27';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5712,7 +5727,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.26');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.27');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

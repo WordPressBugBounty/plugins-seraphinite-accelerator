@@ -318,6 +318,7 @@ function CacheExt_Clear( $url = null )
 					else
 					{
 						$nginx_purger -> purge_all();
+
 						$logInfo = 'Purger: Purged all';
 					}
 				}

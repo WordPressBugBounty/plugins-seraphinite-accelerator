@@ -1809,16 +1809,7 @@ class Gen
 			return( preg_replace( '@([^\\.])0+$@', '${1}', sprintf( '%.' . ( string )$fmt[ 'floatPrec' ] . 'F', $v ) ) );
 
 		case 'string':
-			$v = str_replace( array( '\\' ), array( '\\\\' ), $v );
-
-			$cQuote = '\'';
-			if( $fmt[ 'escValNl' ] && strpos( $v, "\n" ) !== false )
-			{
-				$cQuote = '"';
-				$v = str_replace( array( "\r", "\n", '$' ), array( '\\r', '\\n', '\\$' ), $v );
-			}
-
-			return( $cQuote . str_replace( $cQuote, '\\' . $cQuote, $v ) . $cQuote );
+			return( json_encode( $v ) );
 
 		case 'array':
 			$res = 'array(' . $fmt[ 'elemSpace' ];
@@ -1828,7 +1819,7 @@ class Gen
 			return( $res );
 
 		case 'object':
-			return( ( string )$v );
+			return( self::_VarExport( ( array )$v, $fmt, $level ) );
 		}
 
 		return( 'null' );
@@ -3625,7 +3616,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.29';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.30';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -5068,19 +5059,8 @@ class Wp
 		return( trim( substr( $cont, $aPos[ 0 ], $aPos[ 1 ] ) ) );
 	}
 
-	static function Config_SetBlock( $id, $content )
+	static function Config_SetBlockEx( &$cont, $id, $content )
 	{
-		$file = Wp::GetConfigFilePath();
-		if( !$file )
-			return( Gen::E_FAIL );
-
-		if( !is_writable( $file ) )
-		    return( Gen::E_ACCESS_DENIED );
-
-		$cont = @file_get_contents( $file );
-		if( !$cont )
-			return( Gen::E_FAIL );
-
 		$aMarker = array( '/* BEGIN ' . $id . ' */', '/* END ' . $id . ' */' );
 		$aPos = self::_Config_GetBlockPos( $id, $cont, $aMarker );
 		if( !$aPos )
@@ -5096,6 +5076,25 @@ class Wp
 		}
 
 		$cont = substr_replace( $cont, ( $content ? ( "\n" . '/**' . "\n" . ' * The code (lines) between "BEGIN ' . $id . '" and "END ' . $id . '" are dynamically generated.' . "\n" . ' * Any changes to the directives between these markers will be overwritten.' . "\n" . ' */' ) : '' ) . $content, $aPos[ 0 ], $aPos[ 1 ] );
+		return( Gen::S_OK );
+	}
+
+	static function Config_SetBlock( $id, $content )
+	{
+		$file = Wp::GetConfigFilePath();
+		if( !$file )
+			return( Gen::E_FAIL );
+
+		if( !is_writable( $file ) )
+		    return( Gen::E_ACCESS_DENIED );
+
+		$cont = @file_get_contents( $file );
+		if( !$cont )
+			return( Gen::E_FAIL );
+
+		$hr = Wp::Config_SetBlockEx( $cont, $id, $content );
+		if( Gen::HrFail( $hr ) )
+			return( $hr );
 
 		if( !is_integer( file_put_contents( $file, $cont, LOCK_EX ) ) )
 			return( Gen::E_FAIL );

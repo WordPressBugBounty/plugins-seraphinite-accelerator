@@ -1207,7 +1207,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.29' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.30' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1269,19 +1269,34 @@ function OnOptDel_Sett()
 	return( CacheInitEnv( Plugin::SettGetGlobal(), Plugin::SettGet() ) );
 }
 
-function CacheVerifyEnvDropin( $sett, $verifyEnvDropin = null )
+function _CacheVerifyEnvDropin_Norm( $cont )
+{
+	return( str_replace( '.0,', ',', $cont ) );
+}
+
+function CacheVerifyEnvDropin( &$file, $sett, $verifyEnvDropin = null )
 {
 	$file = WP_CONTENT_DIR . '/advanced-cache.php';
 	$cont = Gen::FileGetContents( $file );
 
-	if( IsEnvDropinLockedBy( $file, $cont ) )
-		return( true );
+	if( $sLock = IsEnvDropinLockedBy( $file, $cont ) )
+	{
+		$file = Wp::GetConfigFilePath();
+		$verifyEnvDropin -> actual = _CacheVerifyEnvDropin_Norm( Gen::FileGetContents( $file ) );
+		$verifyEnvDropin -> needed = $verifyEnvDropin -> actual;
+
+		Wp::Config_SetBlockEx( $verifyEnvDropin -> needed, 'seraphinite-accelerator', _CacheVerifyEnvDropin_Norm( GetDropinLockedFileContent( $sett, $sLock ) ) );
+		if( $verifyEnvDropin -> actual == $verifyEnvDropin -> needed )
+			return( true );
+
+		return( false );
+	}
 
 	if( $verifyEnvDropin === null )
 		$verifyEnvDropin = new AnyObj();
 
-	$verifyEnvDropin -> needed = str_replace( '.0,', ',', ( string )GetAdvCacheFileContent( $sett ) );
-	$verifyEnvDropin -> actual = str_replace( '.0,', ',', ( string )$cont );
+	$verifyEnvDropin -> needed = _CacheVerifyEnvDropin_Norm( ( string )GetAdvCacheFileContent( $sett ) );
+	$verifyEnvDropin -> actual = _CacheVerifyEnvDropin_Norm( ( string )$cont );
 
 	if( $verifyEnvDropin -> actual == $verifyEnvDropin -> needed )
 		return( true );
@@ -1559,8 +1574,23 @@ function IsEnvDropinLockedBy( $file, $cont = null )
 	return( 'unk' );
 }
 
+function GetDropinLockedFileContent( $sett, $sLock, $init = true, $bAllMultisites = false )
+{
+	$contNew = _GetAdvCacheFileContent( $sett, true, $init, $bAllMultisites );
+	if( $contNew && $sLock == 'batcache' )
+	{
+		$contNew = 'define( \'SERAPH_ACCEL_ADVCACHE_COMP\', true );' . "\n" . $contNew;
+		if( $sLock == 'batcache' )
+			$contNew .= '$batcache[ \'cache_control\' ] = false; $batcache[ \'use_stale\' ] = false; $batcache[ \'times\' ] = 1; $batcache[ \'unique\' ][] = !empty( $_SERVER[ \'HTTP_USER_AGENT\'] ) && preg_match( \'/(Android|Mobile|iPod|iPhone|MobileSafari|webOS|BlackBerry|windows phone|symbian|vodafone|opera mini|windows ce|smartphone|palm|midp)/i\', $_SERVER[ \'HTTP_USER_AGENT\' ] ) ? \'mobile\' : \'desktop\';';
+		$contNew = "\n" . $contNew . "\n";
+	}
+
+	return( $contNew );
+}
+
 function CacheInitEnvDropin( $sett, $init = true, $bAllMultisites = false )
 {
+
 	$file = WP_CONTENT_DIR . '/advanced-cache.php';
 	$cont = Gen::FileGetContents( $file );
 	$hr = Gen::S_OK;
@@ -1571,15 +1601,7 @@ function CacheInitEnvDropin( $sett, $init = true, $bAllMultisites = false )
 		if( $cont === false )
 			return( Gen::E_FAIL );
 
-		$contNew = _GetAdvCacheFileContent( $sett, true, $init, $bAllMultisites );
-		if( $contNew && $sLock == 'batcache' )
-		{
-			$contNew = 'define( \'SERAPH_ACCEL_ADVCACHE_COMP\', true );' . "\n" . $contNew;
-			if( $sLock == 'batcache' )
-				$contNew .= '$batcache[ \'cache_control\' ] = false; $batcache[ \'use_stale\' ] = false; $batcache[ \'times\' ] = 1; $batcache[ \'unique\' ][] = !empty( $_SERVER[ \'HTTP_USER_AGENT\'] ) && preg_match( \'/(Android|Mobile|iPod|iPhone|MobileSafari|webOS|BlackBerry|windows phone|symbian|vodafone|opera mini|windows ce|smartphone|palm|midp)/i\', $_SERVER[ \'HTTP_USER_AGENT\' ] ) ? \'mobile\' : \'desktop\';';
-			$contNew = "\n" . $contNew . "\n";
-		}
-
+		$contNew = GetDropinLockedFileContent( $sett, $sLock, $init, $bAllMultisites );
 		if( $cont != $contNew )
 		{
 			$hr = Gen::HrAccom( $hr, Wp::Config_SetBlock( 'seraphinite-accelerator', $contNew ) );

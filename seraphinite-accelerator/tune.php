@@ -37,18 +37,18 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 		{
 			if( IsWpCacheActive() )
 			{
-				$verifyEnvDropin = new AnyObj();
-				if( !isset( $sett[ PluginOptions::VERPREV ] ) && ( ($_SERVER[ 'REQUEST_METHOD' ]??null) == 'GET' ) && !CacheVerifyEnvDropin( $sett, $verifyEnvDropin ) )
+				$verifyEnvDropin = new AnyObj(); $verifyEnvDropin -> file = null;
+				if( !CacheVerifyEnvDropin( $verifyEnvDropin -> file, $sett, $verifyEnvDropin ) && !isset( $sett[ PluginOptions::VERPREV ] ) && ( ($_SERVER[ 'REQUEST_METHOD' ]??null) == 'GET' ) )
 				{
-					if( !@file_exists( WP_CONTENT_DIR . '/advanced-cache.php' ) && !@is_writable( WP_CONTENT_DIR ) )
-						call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDirNotWrittable_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), Gen::GetFileName( WP_CONTENT_DIR ), 'advanced-cache.php' ) ) );
-					else if( !@is_writable( WP_CONTENT_DIR . '/advanced-cache.php' ) )
-						call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDropinNotWrittable_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), Gen::GetFileName( WP_CONTENT_DIR ), 'advanced-cache.php' ) ) );
+					if( !@file_exists( $verifyEnvDropin -> file ) && !@is_writable( dirname( $verifyEnvDropin -> file ) ) )
+						call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDirNotWrittable_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), Gen::GetFileName( dirname( $verifyEnvDropin -> file ) ), Gen::GetFileName( $verifyEnvDropin -> file ) ) ) );
+					else if( !@is_writable( $verifyEnvDropin -> file ) )
+						call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDropinNotWrittable_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), Gen::GetFileName( dirname( $verifyEnvDropin -> file ) ), Gen::GetFileName( $verifyEnvDropin -> file ) ) ) );
 
-					call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDropinNotMatch_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), Gen::GetFileName( WP_CONTENT_DIR ), 'advanced-cache.php' ) . ( $ext ? '' : sprintf( Wp::safe_html_x( 'ContentDropinNotMatchEx_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), GetCodeViewHtmlBlock( $verifyEnvDropin -> needed ), GetCodeViewHtmlBlock( $verifyEnvDropin -> actual ) ) ) ) );
+					call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDropinNotMatch_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), Gen::GetFileName( dirname( $verifyEnvDropin -> file ) ), Gen::GetFileName( $verifyEnvDropin -> file ) ) . ( $ext ? '' : sprintf( Wp::safe_html_x( 'ContentDropinNotMatchEx_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), GetCodeViewHtmlBlock( $verifyEnvDropin -> needed ), GetCodeViewHtmlBlock( $verifyEnvDropin -> actual ) ) ) ) );
 				}
 				else if( !Gen::DoesFuncExist( 'seraph_accel_siteSettInlineDetach' ) )
-					call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDropinNotLoaded_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), Gen::GetFileName( WP_CONTENT_DIR ), 'advanced-cache.php' ) ) );
+					call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'ContentDropinNotLoaded_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), Gen::GetFileName( dirname( $verifyEnvDropin -> file ) ), Gen::GetFileName( $verifyEnvDropin -> file ) ) ) );
 			}
 			else
 			{

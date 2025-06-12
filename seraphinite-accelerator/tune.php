@@ -60,6 +60,9 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 			}
 		}
 
+		if( !GetSalt() )
+			call_user_func_array( $cb, array( Ui::MsgErr, Wp::safe_html_x( 'WpSaltNotDefined', 'admin.Notice', 'seraphinite-accelerator' ) ) );
+
 		if( ( in_array( 'br', Gen::GetArrField( $sett, 'cache/encs', array(), '/' ) ) || in_array( 'brotli', Gen::GetArrField( $sett, 'cache/dataCompr', array(), '/' ) ) ) && @version_compare( @phpversion( 'brotli' ), '0.1.0' ) === -1 )
 			call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'PhpBrotliNotActive_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), 'BROTLI', '0.1.0' ) ) );
 

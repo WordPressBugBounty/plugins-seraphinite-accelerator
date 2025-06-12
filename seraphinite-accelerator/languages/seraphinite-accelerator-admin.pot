@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.27.30)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.27.30\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.27.31)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27.31\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.27.30)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.27.30\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.27.31)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27.31\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -507,6 +507,221 @@ msgctxt "admin.Common_ItemsList"
 msgid "NoItemsInfo"
 msgstr ""
 
+# A conflicting setting has been detected that is preventing correct working. The <strong>'%2$s' should be turned off</strong> in '%1$s' settings.
+#, php-format
+msgctxt "admin.SelfDiag"
+msgid "3rdExtSett_Conflict_%1$s%2$s"
+msgstr ""
+
+# The <strong>'%2$s'</strong> in '%1$s' settings might decrease the site's loading speed.
+#, php-format
+msgctxt "admin.SelfDiag"
+msgid "3rdExtSett_SpeedDecr_%1$s%2$s"
+msgstr ""
+
+# A requred module is missing. The <strong>'%1$s' should be enabled</strong>.
+#, php-format
+msgctxt "admin.Notice"
+msgid "3rdMdl_ConflictOff_%1$s"
+msgstr ""
+
+# A conflicting module has been detected that is preventing correct working. The <strong>'%1$s' should be disabled</strong>.
+#, php-format
+msgctxt "admin.Notice"
+msgid "3rdMdl_Conflict_%1$s"
+msgstr ""
+
+# A conflicting setting has been detected that is preventing correct working. The <strong>'%2$s' should be turned off</strong> in '%1$s''s settings.
+#, php-format
+msgctxt "admin.Notice"
+msgid "3rdSett_ConflictSoft_%1$s%2$s"
+msgstr ""
+
+# A conflicting setting has been detected that is preventing correct working. The <strong>'%1$s' should be disabled</strong> or <strong>'%2$s' should be turned off</strong> in it's settings.
+#, php-format
+msgctxt "admin.Notice"
+msgid "3rdSett_Conflict_%1$s%2$s"
+msgstr ""
+
+# Asset's loading of '%1$s' type has bad compression. Please, check the hosting's settings.
+#, php-format
+msgctxt "admin.Notice"
+msgid "AssetCompr_Bad_%1$s"
+msgstr ""
+
+# Use for asynchronous tasks execution
+msgctxt "admin.Settings_Advanced_Cron"
+msgid "AsyncUseCronChk"
+msgstr ""
+
+# Enable Avif with %1$squality and %2$sspeed
+#, php-format
+msgctxt "admin.Settings_Images_Compr"
+msgid "AvifChk_%1$s%2$s"
+msgstr ""
+
+# The cache directory '%1$s' is not writtable or can't be created. Please, create it manually, <strong>make it writable</strong>, and save the plugin settings.
+#, php-format
+msgctxt "admin.Notice"
+msgid "CacheDirNotWrittable_%1$s"
+msgstr ""
+
+# The configuration file '%1$s' is not writable. Please, make it writable and save the plugin settings.
+#, php-format
+msgctxt "admin.Notice"
+msgid "ConfigFileNotWrittable_%1$s"
+msgstr ""
+
+# The '%1$s' directory is not writable. It is needed to create a file '%2$s' in to that folder in order to work. Please, <strong>make it writable</strong> and save the plugin settings.
+#, php-format
+msgctxt "admin.Notice"
+msgid "ContentDirNotWrittable_%1$s%2$s"
+msgstr ""
+
+# The '%2$s' file in '%1$s' directory is not loaded. It looks like it's some kind of special hosting or site setup.
+#, php-format
+msgctxt "admin.Notice"
+msgid "ContentDropinNotLoaded_%1$s%2$s"
+msgstr ""
+
+# <p>Required content:</p>%1$s<p>Current content:</p>%2$s
+#, php-format
+msgctxt "admin.Notice"
+msgid "ContentDropinNotMatchEx_%1$s%2$s"
+msgstr ""
+
+# The '%2$s' file in '%1$s' directory has wrong content. Please, <strong>save the plugin settings</strong> to correct it.
+#, php-format
+msgctxt "admin.Notice"
+msgid "ContentDropinNotMatch_%1$s%2$s"
+msgstr ""
+
+# The '%2$s' file in '%1$s' directory is not writable. Please, <strong>make it writable</strong> and save the plugin settings.
+#, php-format
+msgctxt "admin.Notice"
+msgid "ContentDropinNotWrittable_%1$s%2$s"
+msgstr ""
+
+# Images' auto-redirection to '%3$s' is not active. Please, find %1$show to enable it%2$s or try turn on the <strong>%5$s</strong> mode. If all previous steps are unsuccessful you can just turn off the <strong>%4$s</strong> option.
+#, php-format
+msgctxt "admin.Notice"
+msgid "ImgConvRedir_NotActive_%1$s%2$s%3$s%4$s%5$s"
+msgstr ""
+
+# Images' compression to '%3$s' is not supported on current hosting configuration. Please, find %1$show to enable it%2$s or just turn off the <strong>%4$s</strong> option.
+#, php-format
+msgctxt "admin.Notice"
+msgid "ImgConv_NotSupp_%1$s%2$s%3$s%4$s"
+msgstr ""
+
+# Images' compression to '%3$s' doesn't work: %5$s. Please, find %1$show to fix it%2$s or just turn off the <strong>%4$s</strong> option.
+#, php-format
+msgctxt "admin.Notice"
+msgid "ImgConv_NotWork_%1$s%2$s%3$s%4$s%5$s"
+msgstr ""
+
+# General
+msgctxt "admin.Settings_Advanced_Common"
+msgid "Lbl"
+msgstr ""
+
+# Task scheduler (Cron)
+msgctxt "admin.Settings_Advanced_Cron"
+msgid "Lbl"
+msgstr ""
+
+# Processing
+msgctxt "admin.Settings_Cache_Revalidate_Proc"
+msgid "Lbl"
+msgstr ""
+
+# Adaptation to screen sizes
+msgctxt "admin.Settings_Images_Adapt"
+msgid "Lbl"
+msgstr ""
+
+# Compression
+msgctxt "admin.Settings_Images_Compr"
+msgid "Lbl"
+msgstr ""
+
+# PHP '%1$s' extension at least %2$s version must be active to work correctly. Please, enable it at hosting's PHP settings.
+#, php-format
+msgctxt "admin.Notice"
+msgid "PhpBrotliNotActive_%1$s%2$s"
+msgstr ""
+
+# PHP '%1$s' extension must be active to work correctly. Please, enable it at hosting's PHP settings.
+#, php-format
+msgctxt "admin.Notice"
+msgid "PhpExtNotActive_%1$s"
+msgstr ""
+
+# '%2$s' function requres PHP '%1$s' extension to work correctly. If this function is not needed it can be just turned off in the '%3$s' group. Otherwise, please, enable '%1$s' extension at hosting's PHP settings.
+#, php-format
+msgctxt "admin.Notice"
+msgid "PhpGdNotActive_%1$s%2$s%3$s"
+msgstr ""
+
+# '%2$s' function requres PHP '%1$s' extension to work correctly. But, <strong>if the site has wellformed HTML</strong> this function is not necessary and can be just turned off in the '%3$s' group. Otherwise, please, enable '%1$s' extension at hosting's PHP settings.
+#, php-format
+msgctxt "admin.Notice"
+msgid "PhpTidyNotActive_%1$s%2$s%3$s"
+msgstr ""
+
+# Alternative redirection
+msgctxt "admin.Settings_Images_Compr"
+msgid "RedirOwnChk"
+msgstr ""
+
+# After the settings will been changed, please, don't forget to update the cache %1$shere%2$s.
+#, php-format
+msgctxt "admin.Notice"
+msgid "RemindRefreshCache_%1$s%2$s"
+msgstr ""
+
+# Advanced by 'Tidy'
+msgctxt "admin.Settings_Html_Fix"
+msgid "TidyChk"
+msgstr ""
+
+# Advanced
+msgctxt "admin.Settings_Advanced"
+msgid "Title"
+msgstr ""
+
+# Revalidation
+msgctxt "admin.Settings_Cache_Revalidate"
+msgid "Title"
+msgstr ""
+
+# HTML
+msgctxt "admin.Settings_Html"
+msgid "Title"
+msgstr ""
+
+# Images
+msgctxt "admin.Settings_Images"
+msgid "Title"
+msgstr ""
+
+# The file '%1$s' is not writable. Please, make it writable.
+#, php-format
+msgctxt "admin.Notice"
+msgid "TmpFileNotWrittable_%1$s"
+msgstr ""
+
+# Enable WebP with %1$squality
+#, php-format
+msgctxt "admin.Settings_Images_Compr"
+msgid "WebpChk_%1$s"
+msgstr ""
+
+# The WordPress cache system is not active. Please, <strong>save the plugin settings</strong> to activate it.
+msgctxt "admin.Notice"
+msgid "WpCacheNotActive"
+msgstr ""
+
 # Manager
 msgctxt "admin.Manage"
 msgid "Title"
@@ -985,11 +1200,6 @@ msgctxt "admin.Settings_Cache"
 msgid "Title"
 msgstr ""
 
-# Revalidation
-msgctxt "admin.Settings_Cache_Revalidate"
-msgid "Title"
-msgstr ""
-
 # Browser cache
 msgctxt "admin.Settings_CacheBrowser"
 msgid "Title"
@@ -1025,16 +1235,6 @@ msgctxt "admin.Settings_Ctx"
 msgid "Title"
 msgstr ""
 
-# HTML
-msgctxt "admin.Settings_Html"
-msgid "Title"
-msgstr ""
-
-# Images
-msgctxt "admin.Settings_Images"
-msgid "Title"
-msgstr ""
-
 # Videos, frames and content parts
 msgctxt "admin.Settings_Frames"
 msgid "Title"
@@ -1057,11 +1257,6 @@ msgstr ""
 
 # Content groups
 msgctxt "admin.Settings_Groups"
-msgid "Title"
-msgstr ""
-
-# Advanced
-msgctxt "admin.Settings_Advanced"
 msgid "Title"
 msgstr ""
 
@@ -1282,11 +1477,6 @@ msgstr ""
 # Site's URLs, relative URIs, or expressions, each on newline
 msgctxt "admin.Settings_Cache_Revalidate"
 msgid "UpdAllDepsPhlr"
-msgstr ""
-
-# Processing
-msgctxt "admin.Settings_Cache_Revalidate_Proc"
-msgid "Lbl"
 msgstr ""
 
 # Maximum number of parallel processing: %1$s pages(s)
@@ -1937,11 +2127,6 @@ msgctxt "admin.Settings_Html_Fix"
 msgid "MedChk"
 msgstr ""
 
-# Advanced by 'Tidy'
-msgctxt "admin.Settings_Html_Fix"
-msgid "TidyChk"
-msgstr ""
-
 # Cleanup
 msgctxt "admin.Settings_Html_Cln"
 msgid "Lbl"
@@ -2099,11 +2284,6 @@ msgctxt "admin.Settings_Images_Compr"
 msgid "RedirCacheAdaptChk"
 msgstr ""
 
-# Alternative redirection
-msgctxt "admin.Settings_Images_Compr"
-msgid "RedirOwnChk"
-msgstr ""
-
 # Excludes:
 msgctxt "admin.Settings_Common"
 msgid "ExclsLbl"
@@ -2114,26 +2294,9 @@ msgctxt "admin.Settings_Images_Lazy"
 msgid "ExclsPhlr"
 msgstr ""
 
-# Compression
-msgctxt "admin.Settings_Images_Compr"
-msgid "Lbl"
-msgstr ""
-
-# Enable WebP with %1$squality
-#, php-format
-msgctxt "admin.Settings_Images_Compr"
-msgid "WebpChk_%1$s"
-msgstr ""
-
 # Auto-redirection to WebP version
 msgctxt "admin.Settings_Images_Compr"
 msgid "RedirWebpChk"
-msgstr ""
-
-# Enable Avif with %1$squality and %2$sspeed
-#, php-format
-msgctxt "admin.Settings_Images_Compr"
-msgid "AvifChk_%1$s%2$s"
 msgstr ""
 
 # Auto-redirection to Avif version
@@ -2144,11 +2307,6 @@ msgstr ""
 # Process asynchronously
 msgctxt "admin.Settings_Images_Compr"
 msgid "AsyncChk"
-msgstr ""
-
-# Adaptation to screen sizes
-msgctxt "admin.Settings_Images_Adapt"
-msgid "Lbl"
 msgstr ""
 
 # Ordinary images
@@ -2363,6 +2521,7 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "ElmntrWdgtCntrChk"
 msgstr ""
 
+# Countdown Widget of Elementor
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "ElmntrWdgtCntdwnChk"
 msgstr ""
@@ -3382,11 +3541,6 @@ msgctxt "admin.Settings_Group_Item"
 msgid "SklCssSelExclPhlr"
 msgstr ""
 
-# General
-msgctxt "admin.Settings_Advanced_Common"
-msgid "Lbl"
-msgstr ""
-
 # Enable default WordPress emoji icons
 msgctxt "admin.Settings_Advanced_Common"
 msgid "EmojiIconsEnableChk"
@@ -3476,11 +3630,6 @@ msgctxt "admin.Settings_Advanced_Common"
 msgid "AsyncMode_ExtCronDsc_%1$s%2$s"
 msgstr ""
 
-# Task scheduler (Cron)
-msgctxt "admin.Settings_Advanced_Cron"
-msgid "Lbl"
-msgstr ""
-
 # Enable
 msgctxt "admin.Settings_Advanced_Cron"
 msgid "CronEnableChk"
@@ -3489,11 +3638,6 @@ msgstr ""
 # Compensation on cached pages
 msgctxt "admin.Settings_Advanced_Cron"
 msgid "CronCompensatorChk"
-msgstr ""
-
-# Use for asynchronous tasks execution
-msgctxt "admin.Settings_Advanced_Cron"
-msgid "AsyncUseCronChk"
 msgstr ""
 
 # Debug
@@ -3580,145 +3724,6 @@ msgctxt "admin.Settings_Advanced_Test"
 msgid "TestContExtraChk_%1$s"
 msgstr ""
 
-# After the settings will been changed, please, don't forget to update the cache %1$shere%2$s.
-#, php-format
 msgctxt "admin.Notice"
-msgid "RemindRefreshCache_%1$s%2$s"
-msgstr ""
-
-# The cache directory '%1$s' is not writtable or can't be created. Please, create it manually, <strong>make it writable</strong>, and save the plugin settings.
-#, php-format
-msgctxt "admin.Notice"
-msgid "CacheDirNotWrittable_%1$s"
-msgstr ""
-
-# The '%1$s' directory is not writable. It is needed to create a file '%2$s' in to that folder in order to work. Please, <strong>make it writable</strong> and save the plugin settings.
-#, php-format
-msgctxt "admin.Notice"
-msgid "ContentDirNotWrittable_%1$s%2$s"
-msgstr ""
-
-# The '%2$s' drop-in file in '%1$s' directory is not writable. Please, <strong>make it writable</strong> and save the plugin settings.
-#, php-format
-msgctxt "admin.Notice"
-msgid "ContentDropinNotWrittable_%1$s%2$s"
-msgstr ""
-
-# <p>Required content:</p>%1$s<p>Current content:</p>%2$s
-#, php-format
-msgctxt "admin.Notice"
-msgid "ContentDropinNotMatchEx_%1$s%2$s"
-msgstr ""
-
-# The '%2$s' drop-in file in '%1$s' directory has wrong content. Please, <strong>save the plugin settings</strong> to correct it.
-#, php-format
-msgctxt "admin.Notice"
-msgid "ContentDropinNotMatch_%1$s%2$s"
-msgstr ""
-
-# The '%2$s' drop-in file in '%1$s' directory is not loaded. It looks like it's some kind of special hosting or site setup.
-#, php-format
-msgctxt "admin.Notice"
-msgid "ContentDropinNotLoaded_%1$s%2$s"
-msgstr ""
-
-# The configuration file '%1$s' is not writable. Please, make it writable and save the plugin settings.
-#, php-format
-msgctxt "admin.Notice"
-msgid "ConfigFileNotWrittable_%1$s"
-msgstr ""
-
-# The WordPress cache system is not active. Please, <strong>save the plugin settings</strong> to activate it.
-msgctxt "admin.Notice"
-msgid "WpCacheNotActive"
-msgstr ""
-
-# PHP '%1$s' extension at least %2$s version must be active to work correctly. Please, enable it at hosting's PHP settings.
-#, php-format
-msgctxt "admin.Notice"
-msgid "PhpBrotliNotActive_%1$s%2$s"
-msgstr ""
-
-# The file '%1$s' is not writable. Please, make it writable.
-#, php-format
-msgctxt "admin.Notice"
-msgid "TmpFileNotWrittable_%1$s"
-msgstr ""
-
-# PHP '%1$s' extension must be active to work correctly. Please, enable it at hosting's PHP settings.
-#, php-format
-msgctxt "admin.Notice"
-msgid "PhpExtNotActive_%1$s"
-msgstr ""
-
-# '%2$s' function requres PHP '%1$s' extension to work correctly. But, <strong>if the site has wellformed HTML</strong> this function is not necessary and can be just turned off in the '%3$s' group. Otherwise, please, enable '%1$s' extension at hosting's PHP settings.
-#, php-format
-msgctxt "admin.Notice"
-msgid "PhpTidyNotActive_%1$s%2$s%3$s"
-msgstr ""
-
-# '%2$s' function requres PHP '%1$s' extension to work correctly. If this function is not needed it can be just turned off in the '%3$s' group. Otherwise, please, enable '%1$s' extension at hosting's PHP settings.
-#, php-format
-msgctxt "admin.Notice"
-msgid "PhpGdNotActive_%1$s%2$s%3$s"
-msgstr ""
-
-# A conflicting setting has been detected that is preventing correct working. The <strong>'%2$s' should be turned off</strong> in '%1$s''s settings.
-#, php-format
-msgctxt "admin.Notice"
-msgid "3rdSett_ConflictSoft_%1$s%2$s"
-msgstr ""
-
-# A conflicting module has been detected that is preventing correct working. The <strong>'%1$s' should be disabled</strong>.
-#, php-format
-msgctxt "admin.Notice"
-msgid "3rdMdl_Conflict_%1$s"
-msgstr ""
-
-# A conflicting setting has been detected that is preventing correct working. The <strong>'%1$s' should be disabled</strong> or <strong>'%2$s' should be turned off</strong> in it's settings.
-#, php-format
-msgctxt "admin.Notice"
-msgid "3rdSett_Conflict_%1$s%2$s"
-msgstr ""
-
-# A requred module is missing. The <strong>'%1$s' should be enabled</strong>.
-#, php-format
-msgctxt "admin.Notice"
-msgid "3rdMdl_ConflictOff_%1$s"
-msgstr ""
-
-# A conflicting setting has been detected that is preventing correct working. The <strong>'%2$s' should be turned off</strong> in '%1$s' settings.
-#, php-format
-msgctxt "admin.SelfDiag"
-msgid "3rdExtSett_Conflict_%1$s%2$s"
-msgstr ""
-
-# The <strong>'%2$s'</strong> in '%1$s' settings might decrease the site's loading speed.
-#, php-format
-msgctxt "admin.SelfDiag"
-msgid "3rdExtSett_SpeedDecr_%1$s%2$s"
-msgstr ""
-
-# Images' auto-redirection to '%3$s' is not active. Please, find %1$show to enable it%2$s or try turn on the <strong>%5$s</strong> mode. If all previous steps are unsuccessful you can just turn off the <strong>%4$s</strong> option.
-#, php-format
-msgctxt "admin.Notice"
-msgid "ImgConvRedir_NotActive_%1$s%2$s%3$s%4$s%5$s"
-msgstr ""
-
-# Images' compression to '%3$s' is not supported on current hosting configuration. Please, find %1$show to enable it%2$s or just turn off the <strong>%4$s</strong> option.
-#, php-format
-msgctxt "admin.Notice"
-msgid "ImgConv_NotSupp_%1$s%2$s%3$s%4$s"
-msgstr ""
-
-# Images' compression to '%3$s' doesn't work: %5$s. Please, find %1$show to fix it%2$s or just turn off the <strong>%4$s</strong> option.
-#, php-format
-msgctxt "admin.Notice"
-msgid "ImgConv_NotWork_%1$s%2$s%3$s%4$s%5$s"
-msgstr ""
-
-# Asset's loading of '%1$s' type has bad compression. Please, check the hosting's settings.
-#, php-format
-msgctxt "admin.Notice"
-msgid "AssetCompr_Bad_%1$s"
+msgid "WpSaltNotDefined"
 msgstr ""

@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 175;
+const PLUGIN_SETT_VER								= 176;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1138,6 +1138,11 @@ function OnOptRead_Sett( $sett, $verFrom )
 		Gen::SetArrField( $sett, array( 'contPr', 'cp', 'elmntrWdgtCntdwn' ), false );
 	}
 
+	if( $verFrom && $verFrom < 176 )
+	{
+		Gen::SetArrField( $sett, array( 'asyncSmpOpt' ), false );
+	}
+
 	return( $sett );
 }
 
@@ -1198,9 +1203,9 @@ function OnAsyncTasksGetFile()
 	return( GetCacheDir() . '/at' );
 }
 
-function OnAsyncTasksGetPushUrlFile()
+function OnAsyncTasksGetPushUrlFile( $bForceIdx = false )
 {
-	return( Gen::GetArrField( Plugin::SettGetGlobal(), array( 'asyncUseCron' ), true ) ? 'wp-cron.php' : 'index.php' );
+	return( !$bForceIdx && Gen::GetArrField( Plugin::SettGetGlobal(), array( 'asyncUseCron' ), true ) ? 'wp-cron.php' : 'index.php' );
 }
 
 function OnAsyncTasksUseCmptNbr()
@@ -2042,6 +2047,8 @@ function OnOptGetDef_Sett()
 						'.//a[@href="#link-popup"]',
 						'.//a[@onclick]',
 
+						'.//button',
+
 						'.//*[starts-with(@href,"#elementor-action")]',
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," mobile-menu ")]',
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," elementor-button ")][not(self::node()[contains(concat(" ",normalize-space(@class)," ")," elementor-button-link ")])]',
@@ -2052,7 +2059,7 @@ function OnOptGetDef_Sett()
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," elementor-icon ")]',
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," wd-open-popup ")]',
 						'.//a[starts-with(@href,"#grve-")]',
-						'.//button[contains(concat(" ",normalize-space(@class)," ")," elementskit-menu-toggler ")]',
+
 						'.//a[starts-with(@href,"#")][contains(concat(" ",normalize-space(@class)," ")," infinite-mm-menu-button ")]',
 						'.//*[contains(concat(" ",normalize-space(@class)," ")," elementor-swiper-button ")]',
 
@@ -2060,8 +2067,6 @@ function OnOptGetDef_Sett()
 						'.//*[contains(concat(" ",normalize-space(@class)," ")," jet-menu-item ")]/a[contains(concat(" ",normalize-space(@class)," ")," menu-link ")]',
 
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," ajax_add_to_cart ")]',
-						'.//button[contains(concat(" ",normalize-space(@class)," ")," single_add_to_cart_button ")]',
-						'.//button[contains(concat(" ",normalize-space(@class)," ")," addtocart_btn ")]',
 
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," dt-mobile-menu-icon ")]',
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," submit ")]',
@@ -2082,8 +2087,6 @@ function OnOptGetDef_Sett()
 
 						'.//*[contains(concat(" ",normalize-space(@class)," ")," product-video-button ")]/a',
 
-						'.//button[contains(concat(" ",normalize-space(@class)," ")," menu-toggle ")]',
-
 						'.//a[@data-fslightbox="gallery"]',
 
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," dvmm_button ")]',
@@ -2092,11 +2095,7 @@ function OnOptGetDef_Sett()
 
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," searchOpen ")]',
 
-						'.//button[contains(concat(" ",normalize-space(@class)," ")," uicore-toggle ")]',
-
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," bricks-button ")]',
-
-						'.//button[contains(concat(" ",normalize-space(@class)," ")," e-n-menu-toggle ")]',
 
 						'.//img[contains(concat(" ",normalize-space(@class)," ")," swiper-slide-image ")]',
 
@@ -2259,7 +2258,7 @@ function OnOptGetDef_Sett()
 
 					'wp-block-ultimate-post-slider'	=> array( 'enable' => true,		'descr' => 'Block Ultimate Post Slider',	'data' => "[class*=wp-block-ultimate-post-post-slider] .ultp-block-items-wrap:not(.slick-initialized) > .ultp-block-item:not(:first-child)\n{\n\tdisplay: none!important;\n}" ),
 
-					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader, .pix-page-loading-bg, .pix-loading-circ-path, .mesh-loader, .lqd-preloader-wrap, .rey-sitePreloader, .et-loader, .preloader-plus {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}\r\n\r\n/*html body > :not(.preloader-plus) {\r\n\topacity: unset;\r\n}*/" ),
+					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader, .pix-page-loading-bg, .pix-loading-circ-path, .mesh-loader, .lqd-preloader-wrap, .rey-sitePreloader, .et-loader, .preloader-plus, .plwao-loader-wrap {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}\r\n\r\n/*html body > :not(.preloader-plus) {\r\n\topacity: unset;\r\n}*/" ),
 
 					'elementor-vis'		=> array( 'enable' => false, 'descr' => 'Elementor (visibility and animation)', 'data' => "body.seraph-accel-js-lzl-ing-ani .elementor-invisible {\r\n\tvisibility: visible !important;\r\n}\r\n\r\n.elementor-element[data-settings*=\"animation\\\"\"] {\r\n\tanimation-name: none !important;\r\n}" ),
 
@@ -2491,6 +2490,7 @@ function OnOptGetDef_Sett()
 		'asyncUseCron' => true,
 		'asyncMode' => '',
 		'asyncUseCmptNbr' => false,
+		'asyncSmpOpt' => true,
 	) );
 }
 
@@ -3996,7 +3996,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.31 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.32 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4273,7 +4273,7 @@ function OnAsyncTask_QueueProcessItems( $args )
 
 		$aCurItemsPrior[ $prior ] = true;
 
-		Plugin::AsyncTaskPostEx( 'CacheProcessItem', ( int )($item[ 'tp' ]??0) == 0 && $asyncMode == 'ec', array( 'id' => $id, 'siteId' => $item[ 's' ] ) );
+		Plugin::AsyncTaskPostEx( 'CacheProcessItem', ( int )($item[ 'tp' ]??0) == 0 && ( $asyncMode == 'ec' || ($settGlobal[ 'asyncSmpOpt' ]??null) ), array( 'id' => $id, 'siteId' => $item[ 's' ] ) );
 
 	}
 
@@ -4520,7 +4520,7 @@ class ProcessQueueItemCtx
 		return( Net::UrlAddArgs( $url, array( 'seraph_accel_prep' => @base64_encode( @json_encode( array_merge( $prepArgs, array( 'nonce' => hash_hmac( 'md5', '' . $tmStamp, GetSalt() ), '_tm' => '' . $tmStamp ) ) ) ) ) ) );
 	}
 
-	static function MakeRequest( $asyncMode, $method, $url, $hdrs, $timeout = 0 )
+	static function MakeRequest( $asyncMode, $method, $url, $hdrs = array(), $timeout = 0 )
 	{
 
 		$prms = array( 'redirection' => 0, 'timeout' => $timeout, 'sslverify' => false, 'headers' => $hdrs );
@@ -4891,6 +4891,7 @@ function OnAsyncTask_CacheProcessItem( $args )
 	$itemType = ( int )($ctx -> item[ 'tp' ]??0);
 	if( $itemType == 0 )
 	{
+		$settGlobal = Plugin::SettGetGlobal();
 
 		$asyncMode = null;
 
@@ -5286,7 +5287,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.31';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.32';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5736,7 +5737,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.31');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.32');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

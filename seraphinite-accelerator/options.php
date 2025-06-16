@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.31' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.32' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -5226,6 +5226,11 @@ function _SettingsPage_Advanced( $callbacks_args, $box )
 							$o .= ( Ui::Tag( 'p', Ui::CheckBox( esc_html_x( 'AsyncUseCmptNbrChk', 'admin.Settings_Advanced_Common', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ), array( 'class' => array( 'ns-', 'ns-loc' ), 'style' => array( 'padding-left' => '1.5em', 'display' => 'none' ) ) ) );
 						}
 
+						{
+							$fldId = 'asyncSmpOpt';
+							$o .= ( Ui::Tag( 'p', Ui::CheckBox( esc_html_x( 'AsyncSmpOptChk', 'admin.Settings_Advanced_Common', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ), array( 'class' => array( 'ns-', 'ns-loc', 'ns-re_r', 'ns-re' ), 'style' => array( 'padding-left' => '1.5em', 'display' => 'none' ) ) ) );
+						}
+
 						$o .= ( Ui::Tag( 'p', vsprintf( _x( 'AsyncMode_ExtCronDsc_%1$s%2$s', 'admin.Settings_Advanced_Common', 'seraphinite-accelerator' ), Ui::Link( array( '', '' ), Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Advanced_ExtCron' ) ) ), array( 'class' => 'description ns-ec', 'style' => array( 'padding-left' => '1.5em', 'display' => 'none' ) ) ) );
 					}
 					$o .= ( Ui::TagClose( 'td' ) );
@@ -5532,6 +5537,7 @@ function _OnSaveSettings( $args )
 
 		{ $fldId = 'asyncUseCron';							Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'asyncUseCmptNbr';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'asyncSmpOpt';							Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'asyncMode';								Gen::SetArrField( $sett, $fldId, Gen::SanitizeId( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 
 		{

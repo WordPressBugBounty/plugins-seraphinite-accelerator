@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.8
-Stable tag: 2.27.32
+Stable tag: 2.27.33
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,15 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.27.33 =
+
+Improvements:
+
+* Animation of TRX Addons for Elementor.
+* Simple thread of optimization.
+* Support for animations of Elementor.
+* Swiper Slider from XStore theme.
 
 = 2.27.32 =
 

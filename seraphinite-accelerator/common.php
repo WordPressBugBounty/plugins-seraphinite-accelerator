@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 176;
+const PLUGIN_SETT_VER								= 177;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1143,6 +1143,11 @@ function OnOptRead_Sett( $sett, $verFrom )
 		Gen::SetArrField( $sett, array( 'asyncSmpOpt' ), false );
 	}
 
+	if( $verFrom && $verFrom < 177 )
+	{
+		Gen::SetArrField( $sett, array( 'contPr', 'cp', 'xstrThSwpr' ), false );
+	}
+
 	return( $sett );
 }
 
@@ -1827,6 +1832,7 @@ function OnOptGetDef_Sett()
 				'excl' => array(
 					'.//svg[contains(concat(" ",normalize-space(@class)," ")," lottgen ")][contains(concat(" ",normalize-space(@class)," ")," js-lzl-ing ")]/image',
 					'.//meta[@property]',
+					'.//img[@uk-svg]',
 				),
 				'lazy' => array(
 					'setSize' => false,
@@ -1992,6 +1998,7 @@ function OnOptGetDef_Sett()
 				'wooPrdGall' => true,
 				'wooPrdGallAstrThmbsHeight' => true,
 				'wooPrdGallFltsmThmbs' => true,
+				'xstrThSwpr' => true,
 
 			),
 
@@ -2008,6 +2015,7 @@ function OnOptGetDef_Sett()
 					'src:@/plugins/zippy-form/public/js/flatpickr\\.@',
 					'id:@^wd-swiper-library-js@',
 					'src:@\\Wtrustedshops\\.com\\W@',
+					'body:@currentScript\\s*\\.\\s*getAttribute\\(\\s*\'data-gt-widget-id\'@',
 				),
 
 				'min' => false,
@@ -2242,6 +2250,11 @@ function OnOptGetDef_Sett()
 
 				'custom' => array(
 					'0' => array( 'enable' => true, 'data' => '' ),
+
+					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader, .pix-page-loading-bg, .pix-loading-circ-path, .mesh-loader, .lqd-preloader-wrap, .rey-sitePreloader, .et-loader, .preloader-plus, .plwao-loader-wrap {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}\r\n\r\n/*html body > :not(.preloader-plus) {\r\n\topacity: unset;\r\n}*/" ),
+
+					'htmlGen'		=> array( 'enable' => true,		'descr' => 'Generic HTML',					'data' => "html, html.async-hide, body {\r\n\tdisplay: block !important;\r\n\topacity: 1 !important;\r\n\tvisibility: unset !important;\r\n}" ),
+
 					'jet-menu'		=> array( 'enable' => false,	'descr' => 'Jet Menu',					'data' => ".seraph-accel-js-lzl-ing ul.jet-menu > li[id^=jet-menu-item-] {\n\tdisplay: none!important;\n}" ),
 					'jet-testimonials'		=> array( 'enable' => true,	'descr' => 'Jet Testimonials',	'data' => ".jet-testimonials__instance:not(.slick-initialized) .jet-testimonials__item {\r\n\tmax-width: 100%;\r\n}\r\n\r\n.jet-testimonials__instance:not(.slick-initialized) .jet-testimonials__item:nth-child(n+4) {\r\n\tdisplay: none !important;\r\n}" ),
 					'xo-slider'		=> array( 'enable' => true,		'descr' => 'XO Slider',					'data' => ".xo-slider .slide-content {\n\tdisplay: unset!important;\n}" ),
@@ -2257,8 +2270,6 @@ function OnOptGetDef_Sett()
 					'n2-ss-slider'	=> array( 'enable' => false,		'descr' => 'Smart Slider',				'data' => "ss3-force-full-width, ss3-fullpage {\r\n\ttransform: none !important;\r\n\topacity: 1 !important;\r\n\twidth: var(--seraph-accel-client-width) !important;\r\n\tmargin-left: calc((100% - var(--seraph-accel-client-width)) / 2);\r\n}\r\n\r\nss3-fullpage {\r\n\theight: 100vh !important;\r\n}\r\n\r\nbody.seraph-accel-js-lzl-ing .n2-ss-align {\r\n\toverflow: visible !important;\r\n}\r\n\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) .n2-ss-slide-backgrounds [data-public-id][data-lzl-first=\"1\"],\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) [data-slide-public-id][data-lzl-first=\"1\"] {\r\n\ttransform: translate3d(0px, 0px, 0px) !important;\r\n}\r\n\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) .n2-ss-slide:not([data-slide-public-id][data-lzl-first=\"1\"]),\r\n.n2-ss-slider:not(.n2-ss-loaded) .n2-ss-layer.js-lzl-n-ing,\r\n.n2-ss-slider:not(.n2-ss-loaded):not([style*=ss-responsive-scale]) [data-responsiveposition],\r\n.n2-ss-slider:not(.n2-ss-loaded):not([style*=ss-responsive-scale]) [data-responsivesize],\r\n.n2-ss-slider.n2-ss-loaded .n2-ss-layer.js-lzl-ing {\r\n\tvisibility: hidden !important;\r\n}\r\n\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) [data-slide-public-id][data-lzl-first=\"1\"] .n2-ss-layers-container,\r\n.n2-ss-slider:not(.n2-ss-loaded):not([data-ss-carousel]) .n2-ss-slide-backgrounds [data-public-id][data-lzl-first=\"1\"],\r\n.n2-ss-slider:not(.n2-ss-loaded) .n2-ss-slider-controls-advanced {\r\n\topacity: 1 !important;\r\n}\r\n\r\n.n2-ss-slider[data-ss-carousel]:not(.n2-ss-loaded) .n2-ss-layers-container {\r\n\topacity: 1 !important;\r\n\tvisibility: visible !important;\r\n}\r\n\r\n.n2-ss-slider-pane {\r\n\topacity: 1 !important;\r\n\tanimation-name: none !important;\r\n\t--self-side-margin: auto !important;\r\n\t--slide-width: 100% !important;\r\n}\r\n\r\n/*.n2-ss-showcase-slides:not(.n2-ss-showcase-slides--ready) {\r\n\topacity: 1 !important;\r\n\ttransform: none !important;\r\n}*/" ),
 
 					'wp-block-ultimate-post-slider'	=> array( 'enable' => true,		'descr' => 'Block Ultimate Post Slider',	'data' => "[class*=wp-block-ultimate-post-post-slider] .ultp-block-items-wrap:not(.slick-initialized) > .ultp-block-item:not(:first-child)\n{\n\tdisplay: none!important;\n}" ),
-
-					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader, .pix-page-loading-bg, .pix-loading-circ-path, .mesh-loader, .lqd-preloader-wrap, .rey-sitePreloader, .et-loader, .preloader-plus, .plwao-loader-wrap {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}\r\n\r\n/*html body > :not(.preloader-plus) {\r\n\topacity: unset;\r\n}*/" ),
 
 					'elementor-vis'		=> array( 'enable' => false, 'descr' => 'Elementor (visibility and animation)', 'data' => "body.seraph-accel-js-lzl-ing-ani .elementor-invisible {\r\n\tvisibility: visible !important;\r\n}\r\n\r\n.elementor-element[data-settings*=\"animation\\\"\"] {\r\n\tanimation-name: none !important;\r\n}" ),
 
@@ -2283,7 +2294,7 @@ function OnOptGetDef_Sett()
 
 					'packery'		=> array( 'enable' => true,		'descr' => 'Packery',					'data' => "[data-packery-options].row.row-grid > .col:not([style*=\"position\"]),\r\n[data-packery-options].row.row-masonry > .col:not([style*=\"position\"]) {\r\n\tfloat: unset;\r\n\tdisplay: inline-block !important;\r\n\tvertical-align: top;\r\n}" ),
 
-					'htmlGen'		=> array( 'enable' => true,		'descr' => 'Generic HTML',					'data' => "html, html.async-hide, body {\r\n\tdisplay: block !important;\r\n\topacity: 1 !important;\r\n\tvisibility: unset !important;\r\n}" ),
+					'theme-xstore'		=> array( 'enable' => true,		'descr' => 'XStore theme',		'data' => "body.wp-theme-xstore.elementor-default:not([data-elementor-device-mode]) {\r\n\t--etheme-element-loading-opacity: 1;\r\n\t--etheme-element-loading-visibility:visible;\r\n\t--etheme-element-loader-display:none;\r\n}" ),
 
 					'cookie-law-info'		=> array( 'enable' => true,		'descr' => 'CookieYes',					'data' => ".cky-consent-container.cky-hide ~ .cky-consent-container {\r\n\tdisplay: none;\r\n}" ),
 				),
@@ -3996,7 +4007,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.32 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.33 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4080,6 +4091,8 @@ function OnAsyncTask_QueueProcessItems( $args )
 	$settGlobal = Plugin::SettGetGlobal();
 	$settCacheGlobal = Gen::GetArrField( $settGlobal, array( 'cache' ), array() );
 
+	$asyncMode = null;
+
 	$nMaxItems = ($settCacheGlobal[ 'maxProc' ]??null);
 	if( !$nMaxItems )
 		$nMaxItems = 1;
@@ -4123,10 +4136,16 @@ function OnAsyncTask_QueueProcessItems( $args )
 				if( $tmDur > ( 30 ) && $fileCtl )
 				{
 					$ctlRes = ProcessCtlData_Get( $fileCtl, $isLive );
+
 					if( $ctlRes === null )
 						$hrItemForce = Gen::S_ABORTED;
-					else if( Gen::GetArrField( $ctlRes, array( 'stage' ) ) && !Gen::GetArrField( $ctlRes, array( 'finish' ) ) && !$isLive )
-						$hrItemForce = Gen::E_INVALID_STATE;
+					else if( Gen::GetArrField( $ctlRes, array( 'stage' ), '' ) )
+					{
+						if( !Gen::GetArrField( $ctlRes, array( 'finish' ) ) && !$isLive )
+							$hrItemForce = Gen::E_INVALID_STATE;
+					}
+					else if( ( int )($item[ 'tp' ]??0) == 0 && $asyncMode != 'ec' && ($settGlobal[ 'asyncSmpOpt' ]??null) )
+						_CacheProcessItem_RunSmpOpt( $asyncMode );
 				}
 			}
 			else
@@ -4261,8 +4280,6 @@ function OnAsyncTask_QueueProcessItems( $args )
 
 	uasort( $items, Gen::GetArrField( Queue_GetStgPrms( '', 0 ), array( 'options', 'cbSort' ) ) );
 	$items = array_slice( $items, 0, $nMaxItems, true );
-
-	$asyncMode = null;
 
 	foreach( $items as $id => $item )
 	{
@@ -4794,6 +4811,13 @@ function PackKvArrInfo( $a )
 	return( Gen::ArrMap( $a, function( $k, $v ) { return( LocId::Pack( 'NameToDetails_%1$s%2$s', null, array( ( string )$k, is_string( $v ) ? $v : json_encode( $v ) ) ) ); } ) );
 }
 
+function _CacheProcessItem_RunSmpOpt( $asyncMode )
+{
+
+	$tmStamp = microtime( true );
+	return( ProcessQueueItemCtx::MakeRequest( $asyncMode, 'GET', Net::UrlAddArgs( Plugin::AsyncTaskPushGetUrlEx( Wp::GetSiteWpRootUrl( OnAsyncTasksGetPushUrlFile( true ) ), 'O', $tmStamp ), array( 'nonce' => hash_hmac( 'md5', Plugin::AsyncTaskPushGetTimerun( $tmStamp ), GetSalt() ) ) ) ) );
+}
+
 function OnAsyncTask_CacheProcessItem( $args )
 {
 
@@ -5287,7 +5311,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.32';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.33';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5737,7 +5761,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.32');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.33');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

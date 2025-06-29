@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.33' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.34' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -189,7 +189,7 @@ function _SettingsPage()
 
 		Ui::PostBoxes_MetaboxAdd( 'cacheObj', esc_html_x( 'Title', 'admin.Settings_CacheObj', 'seraphinite-accelerator' ) . Ui::Tag( 'span', Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_CacheObj' ) ) ), Ui::AdminHelpBtnModeBlockHeader ) ), true,
 			'seraph_accel\\_SettingsPage_CacheObj',
-			get_defined_vars(), 'body', 'ctlInitHidden ns-nav-cache', null, $adminMsModes[ 'global' ]
+			get_defined_vars(), 'body', 'ctlInitHidden ns-nav-cache', null, $adminMsModes[ 'global' ] && false
 		);
 
 		Ui::PostBoxes_MetaboxAdd( 'server', esc_html_x( 'Title', 'admin.Settings_Cache_Srv', 'seraphinite-accelerator' ) . Ui::Tag( 'span', Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Cache_Srv' ) ) ), Ui::AdminHelpBtnModeBlockHeader ) ), true,
@@ -3673,6 +3673,12 @@ function _SettingsPage_Frames( $callbacks_args, $box )
 
 						function( $sett )
 						{
+							$fldId = 'contPr/cp/wooGsPrdGal';
+							return( Ui::CheckBox( esc_html_x( 'WooGsPrdGalChk', 'admin.Settings_Frames_ContParts', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+						},
+
+						function( $sett )
+						{
 							$fldId = 'contPr/cp/wooJs';
 							return( Ui::CheckBox( esc_html_x( 'WooJsChk', 'admin.Settings_Frames_ContParts', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 						},
@@ -6095,6 +6101,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'contPr/cp/wooPrcFlt';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/wbwPrdFlt';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/wooOuPrdGal';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/cp/wooGsPrdGal';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/wooJs';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/wpStrs';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/cp/txpTagGrps';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }

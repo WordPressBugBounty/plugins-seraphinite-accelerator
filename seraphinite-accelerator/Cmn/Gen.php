@@ -3616,7 +3616,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.33';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.34';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -4062,6 +4062,22 @@ class HtmlNd
 			return( false );
 
 		$nd -> insertBefore( $ndChild, $ndChildAfter ? $ndChildAfter -> nextSibling : ( $bFirstIfNoChildAfter ? $nd -> firstChild : null ) );
+		return( true );
+	}
+
+	static function Append( $nd, $ndChild )
+	{
+		if( !$nd || !$ndChild )
+			return( false );
+
+		if( is_array( $ndChild ) )
+		{
+			foreach( $ndChild as $ndChildI )
+				$nd -> appendChild( $ndChildI );
+		}
+		else
+			$nd -> appendChild( $ndChild );
+
 		return( true );
 	}
 

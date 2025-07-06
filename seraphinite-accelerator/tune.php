@@ -130,6 +130,9 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 		if( !Gen::DoesFuncExist( '\\DOMElement::getAttribute' ) )
 			call_user_func_array( $cb, array( Ui::MsgErr, sprintf( Wp::safe_html_x( 'PhpExtNotActive_%1$s', 'admin.Notice', 'seraphinite-accelerator' ), 'LIBXML' ) ) );
 
+		if( !class_exists( 'seraph_accel\\DomElementEx' ) )
+			call_user_func_array( $cb, array( Ui::MsgErr, Wp::safe_html_x( 'AutoLoadBroken', 'admin.Notice', 'seraphinite-accelerator' ) ) );
+
 		if( !Gen::DoesFuncExist( 'imagecreatefromstring' ) )
 		{
 			foreach( array( 'webp','avif' ) as $comprType )

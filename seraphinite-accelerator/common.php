@@ -1679,7 +1679,7 @@ function OnOptGetDef_Sett()
 
 		'cacheBr' => array(
 			'enable' => true,
-			'timeout' => 30 * 24 * 60,
+			'timeout' => 365 * 24 * 60,
 		),
 
 		'cacheObj' => array(
@@ -1741,6 +1741,7 @@ function OnOptGetDef_Sett()
 					'@\\[et-ajax\\]@i',
 					'@^\\s*\\[if\\s@i',
 					'@\\[endif\\]\\s*$@i',
+					'@fwp-loop@i',
 				),
 				'items' => array(
 					'.//img/@loading',
@@ -2149,6 +2150,10 @@ function OnOptGetDef_Sett()
 						'body:@\\Wdocument\\s*\\.\\s*querySelector\\s*\\(\\s*"\\.jdgm-rev-widg"\\s*\\)@',
 
 						'id:@^uagb-@',
+
+						'src:@fareharbor\.com@',
+
+						'body:@window\\s*\\.\\s*gtranslateSettings\\s*=@',
 					),
 
 					'timeout' => array(
@@ -2170,6 +2175,10 @@ function OnOptGetDef_Sett()
 						'id:@^cookieyes$@',
 
 						'src:@\\.elfsight\\.com/platform/@',
+
+						'src:@\\.elfsight\\.com/platform/@',
+
+						'src:@/gtranslate/@',
 					),
 				),
 
@@ -3660,7 +3669,10 @@ function ContProcGetExclStatus( $siteId, $settCache, $path, $pathOrig, $pathIsDi
 		$path .= '/';
 	$seraph_accel_g_contProcGetExclStatus = _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $_COOKIE, $path, $pathOrig, $args, $adjustArgs, $varsOut[ 'aArgRemove' ] );
 	if( $seraph_accel_g_contProcGetExclStatus )
+	{
+
 		return( $seraph_accel_g_contProcGetExclStatus );
+	}
 
 	$sessInfo = GetCacheCurUserSession( $siteId, $seraph_accel_g_cacheCtxSkip );
 
@@ -4014,7 +4026,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.34 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.35 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5318,7 +5330,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.34';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.35';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5768,7 +5780,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.34');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.35');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )
@@ -5913,6 +5925,7 @@ function BatCache_Clear( $url = null )
 
 function BatCache_DontProcessCurRequest( $bForce = false )
 {
+
 	global $batcache;
 
 	if( !$batcache )
@@ -5923,6 +5936,7 @@ function BatCache_DontProcessCurRequest( $bForce = false )
 
 	if( $bForce )
 		wp_cache_delete( $batcache -> url_key . '_genlock', $batcache -> group );
+
 }
 
 function LogGetRelativeFile()
@@ -5937,6 +5951,8 @@ function LogGetRelativeFile()
 
 function LogWrite( $text, $severity = Ui::MsgInfo, $category = 'DEBUG' )
 {
-	Gen::LogWrite( GetCacheDir() . LogGetRelativeFile(), $text, $severity, $category );
+	$file = GetCacheDir() . LogGetRelativeFile();
+
+	Gen::LogWrite( $file, $text, $severity, $category );
 }
 

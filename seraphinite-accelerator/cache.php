@@ -16,10 +16,12 @@ if( !$seraph_accel_sites )
 	return;
 
 $hr = _Process( $seraph_accel_sites );
+
 if( $hr == Gen::S_OK || Gen::HrFail( $hr ) )
 {
 	if( isset( $args[ 'seraph_accel_gp' ] ) || !CacheDoCronAndEndRequest() )
 	{
+
 		flush();
 		exit();
 	}
@@ -638,7 +640,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.27.34;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.27.35;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -1535,7 +1537,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( ($settCache[ 'normAgent' ]??null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = ($_SERVER[ 'HTTP_USER_AGENT' ]??'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.34';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.35';
 	}
 
 	if( ($settCache[ 'views' ]??null) )

@@ -1809,7 +1809,7 @@ class Gen
 			return( preg_replace( '@([^\\.])0+$@', '${1}', sprintf( '%.' . ( string )$fmt[ 'floatPrec' ] . 'F', $v ) ) );
 
 		case 'string':
-			return( json_encode( $v ) );
+			return( json_encode( $v, JSON_UNESCAPED_SLASHES ) );
 
 		case 'array':
 			$res = 'array(' . $fmt[ 'elemSpace' ];
@@ -3616,7 +3616,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.34';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.35';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -4956,12 +4956,14 @@ class Wp
 		return( $obj -> url );
 	}
 
-	static function GetSiteId( $mode = null )
+	static function GetSiteId( $ver = 2 )
 	{
-		if( $mode === 'OLD' )
+		if( $ver === null )
 			$siteUrl = Wp::GetSiteWpRootUrl();
-		else
+		else if( $ver === 1 )
 			$siteUrl = Wp::GetSiteRootUrl( '', 'base' );
+		else
+			$siteUrl = Wp::GetSiteRootUrl();
 
 		$siteUrlParts = @parse_url( $siteUrl );
 		if( !is_array( $siteUrlParts ) )

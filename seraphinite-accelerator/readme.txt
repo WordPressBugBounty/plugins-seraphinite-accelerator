@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.8
-Stable tag: 2.27.36
+Stable tag: 2.27.37
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,17 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.27.37 =
+
+Improvements:
+
+* Trying to always keep a content of 'advanced-cache.php' file in a right state.
+* Warning about broken class auto-loading.
+
+Fixes:
+
+* Wrong parsing sizes like 1.2345e10px.
 
 = 2.27.36 =
 

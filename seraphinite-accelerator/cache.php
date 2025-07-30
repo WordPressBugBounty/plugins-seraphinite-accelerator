@@ -310,7 +310,7 @@ function _Process( $sites )
 	$seraph_accel_g_ctxCache = new AnyObj();
 
 	$sessId = $userId ? ($sessInfo[ 'userSessId' ]??null) : ($sessInfo[ 'sessId' ]??null);
-	$viewId = GetCacheViewId( $seraph_accel_g_ctxCache, $settCache, $userAgent, $path, $pathOrig, $args );
+	$viewId = GetCacheViewId( $seraph_accel_g_ctxCache, $settCache, $userAgent, $path, $pathOrig, $args, Gen::StrStartsWith( ( string )$seraph_accel_g_simpCacheMode, 'fragments' ) );
 	$seraph_accel_g_ctxCache -> viewId = $viewId;
 	$cacheRootPath = GetCacheDir();
 	$siteCacheRootPath = $cacheRootPath . '/s/' . $seraph_accel_g_siteId;
@@ -640,7 +640,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.27.37;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.27.38;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -1537,7 +1537,7 @@ function _CbContentFinish( $content )
 	return( $content );
 }
 
-function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$args )
+function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$args, $bFreshParts = false )
 {
 	$ctxCache -> viewStateId = '';
 	$ctxCache -> viewGeoId = '';
@@ -1546,7 +1546,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( ($settCache[ 'normAgent' ]??null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = ($_SERVER[ 'HTTP_USER_AGENT' ]??'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.37';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.38';
 	}
 
 	if( ($settCache[ 'views' ]??null) )
@@ -1564,6 +1564,9 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 		foreach( $viewsGrps as $viewsGrp )
 		{
 			if( !($viewsGrp[ 'enable' ]??null) )
+				continue;
+
+			if( ($viewsGrp[ 'fr' ]??null) && !$bFreshParts )
 				continue;
 
 			if( CheckPathInUriList( Gen::GetArrField( $viewsGrp, array( 'urisExcl' ), array() ), $path, $pathOrig ) )

@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.8
-Stable tag: 2.27.37
+Stable tag: 2.27.38
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,20 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.27.38 =
+
+Improvements:
+
+* Deinline large images.
+* Product gallery images of WooCommerce.
+* Warning about LiteSpeed caching.
+* Work only for fresh parts for cache views.
+* Workaround for JetElements For Elementor that empties content for optimization.
+
+Fixes:
+
+* PHP warning: strpos(): /Cmn/Ext/PHP/jsmin-php/JSMin.php.
 
 = 2.27.37 =
 

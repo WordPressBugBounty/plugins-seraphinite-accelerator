@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.27.37)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.27.37\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.27.38)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27.38\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.27.37)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.27.37\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.27.38)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27.38\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1785,6 +1785,10 @@ msgstr ""
 # Enable
 msgctxt "admin.Settings_Views_Item"
 msgid "EnabledLbl"
+msgstr ""
+
+msgctxt "admin.Settings_Views_Item"
+msgid "FrLbl"
 msgstr ""
 
 # Group name

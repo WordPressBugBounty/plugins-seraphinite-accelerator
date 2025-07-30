@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.37' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.38' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1975,6 +1975,13 @@ function _SettingsPage_Views( $callbacks_args, $box )
 										{
 											$fldId = 'enable';
 											$o .= ( Ui::CheckBox( null, $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, true, '/' ), true ) );
+										}
+										$o .= ( Ui::SettBlock_Item_End() );
+
+										$o .= ( Ui::SettBlock_Item_Begin( esc_html_x( 'FrLbl', 'admin.Settings_Views_Item', 'seraphinite-accelerator' ) ) );
+										{
+											$fldId = 'fr';
+											$o .= ( Ui::CheckBox( null, $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, false, '/' ), true ) );
 										}
 										$o .= ( Ui::SettBlock_Item_End() );
 
@@ -5794,6 +5801,7 @@ function _OnSaveSettings( $args )
 					$item = array();
 
 					{ $fldId = 'enable';					Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
+					{ $fldId = 'fr';						Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
 					{ $fldId = 'name';						Gen::SetArrField( $item, $fldId, Wp::SanitizeText( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null) ), '/' ); }
 					{ $fldId = 'urisExcl';					Gen::SetArrField( $item, $fldId, _ArrToLwr( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ), true ), '/' ); }
 					{ $fldId = 'cookies';					Gen::SetArrField( $item, $fldId, _CookiesToLwr( Ui::TokensList_GetVal( ($args[ $idItems . '/' . $itemKey . '/' . $fldId ]??null), null, true ) ), '/' ); }

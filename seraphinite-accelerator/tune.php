@@ -335,7 +335,8 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 	if( $plg && ($plg[ 'IsActive' ]??null) )
 	{
 
-		call_user_func_array( $cb, array( Gen::SevErr, sprintf( Wp::safe_html_x( '3rdMdl_Conflict_%1$s', 'admin.Notice', 'seraphinite-accelerator' ), $plg[ 'Name' ] ) ) );
+		if( $isCacheEnabled && get_option( 'litespeed.conf.cache' ) )
+			call_user_func_array( $cb, array( Gen::SevErr, sprintf( Wp::safe_html_x( '3rdSett_ConflictSoft_%1$s%2$s', 'admin.Notice', 'seraphinite-accelerator' ), $plg[ 'Name' ], Wp::GetLocString( 'Enable Cache', null, 'litespeed-cache' ) ) ) );
 	}
 
 	$plg = ($availablePlugins[ 'sg-cachepress' ]??null);

@@ -142,7 +142,7 @@ class JSMin {
                 } elseif ($this->b === null
 						|| (false === strpos('{[(+-!~', $this->b)
 					        && ! $this->isAlphaNum($this->b))) {
-					if (false === strpos('"\'`', $this->b) || !$this->lastByteOut || (false === strpos('"\'`', $this->lastByteOut) && !$this->isAlphaNum($this->lastByteOut))) {
+					if (false === strpos('"\'`', (string)$this->b) || !$this->lastByteOut || (false === strpos('"\'`', $this->lastByteOut) && !$this->isAlphaNum($this->lastByteOut))) {
 						$command = self::ACTION_DELETE_A;
 					}
                 }

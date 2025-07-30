@@ -1438,6 +1438,7 @@ function OnOptGetDef_Sett()
 				'@^Permissions-Policy\\s*:@i',
 				'@^Cf-Edge-Cache\\s*:@i',
 				'@^Ec-Cdn-@i',
+
 			),
 
 			'views' => true,
@@ -1742,6 +1743,8 @@ function OnOptGetDef_Sett()
 					'@^\\s*\\[if\\s@i',
 					'@\\[endif\\]\\s*$@i',
 					'@fwp-loop@i',
+
+					'@data-map-zoom@i',
 				),
 				'items' => array(
 					'.//img/@loading',
@@ -1840,6 +1843,7 @@ function OnOptGetDef_Sett()
 					'.//meta[@property]',
 					'.//img[@uk-svg]',
 					'.//img[@name="zsCaptchaImage"]',
+					'.//img[contains(@src,"arttrk.com/pixel")]',
 				),
 				'lazy' => array(
 					'setSize' => false,
@@ -2018,7 +2022,11 @@ function OnOptGetDef_Sett()
 				'groupExclMdls' => true,
 				'groupExcls' => array(
 					'src:@stripe@',
+
 					'src:@\\.hsforms\\.net\\W@',
+					'body:@window\\.hsFormsOnReady@',
+					'body:@hbspt\\.forms\\.create@',
+
 					'src:@//cdnjs\\.cloudflare\\.com/ajax/libs/bodymovin/[\\d\\.]+/lottie\\.@',
 					'src:@/plugins/zippy-form/public/js/flatpickr\\.@',
 					'id:@^wd-swiper-library-js@',
@@ -2056,6 +2064,8 @@ function OnOptGetDef_Sett()
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," woocommerce-loop-product__link ")]',
 
 						'ifExistsThenCssSel(.//script[@id="cookieyes"],".cky-btn")',
+
+						'.//*[@data-map-zoom]',
 					),
 
 					'exclDef' => array(
@@ -3962,7 +3972,10 @@ function ContProcGetSkipStatus( $content )
 		return( $seraph_accel_g_contProcGetSkipStatus = 'feed' );
 
 	if( $seraph_accel_g_simpCacheMode === null && Gen::StrPosArr( $content, array( '</body>', '</BODY>' ) ) === false && Gen::StrPosArr( $content, array( '</head>', '</HEAD>' ) ) === false )
+	{
+
 		return( $seraph_accel_g_contProcGetSkipStatus = 'noHdrOrBody' );
+	}
 
 	return( $seraph_accel_g_contProcGetSkipStatus = false );
 }
@@ -4028,7 +4041,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.37 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.38 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5332,7 +5345,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.37';
+		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.38';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5782,7 +5795,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.37');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.38');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

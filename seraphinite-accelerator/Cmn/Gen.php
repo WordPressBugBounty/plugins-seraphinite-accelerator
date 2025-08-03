@@ -107,6 +107,11 @@ class Gen
 		return( Gen::HrSuccFromFail( $hr ) );
 	}
 
+	static function NullIfEmpty( $v )
+	{
+		return( empty( $v ) ? null : $v );
+	}
+
 	static function NormArrFieldKey( $key )
 	{
 		return( is_scalar( $key ) ? $key : null );
@@ -841,7 +846,10 @@ class Gen
 
 	static private function _FileOpen( $filename, $mode, $use_include_path = false )
 	{
+
 		if( strpos( $mode, 'r' ) !== false && !@file_exists( $filename ) )
+		    return( false );
+		if( strpos( $mode, 'x' ) !== false && @file_exists( $filename ) )
 		    return( false );
 
 		$h = @fopen( $filename, $mode, $use_include_path );
@@ -3616,7 +3624,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.38';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.39';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

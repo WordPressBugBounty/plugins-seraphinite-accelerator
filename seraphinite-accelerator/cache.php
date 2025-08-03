@@ -390,7 +390,7 @@ function _Process( $sites )
 	if( !$sessExpiration )
 		$sessExpiration = $tmCur;
 
-	$httpCacheControl = strtolower( ($_SERVER[ 'HTTP_CACHE_CONTROL' ]??null) );
+	$httpCacheControl = strtolower( ($_SERVER[ 'HTTP_CACHE_CONTROL' ]??'') );
 
 	if( $timeoutCln && $timeout > $timeoutCln )
 		$timeout = $timeoutCln;
@@ -399,7 +399,7 @@ function _Process( $sites )
 	$dsc = null;
 	$isCip = null;
 
-	$dscFileTm = @filemtime( $seraph_accel_g_dscFile );
+	$dscFileTm = Gen::FileMTime( $seraph_accel_g_dscFile );
 	$dscFileTmAge = $tmCur - $dscFileTm;
 
 	if( !$dscFileTm || ( $timeoutCln > 0 && $dscFileTmAge > $timeoutCln && ( $dscFileTm >= 60 ) ) || ( $timeout > 0 ? ( $dscFileTmAge > $timeout ) : ( $dscFileTm < 60 ) ) || ( $tmCur > $sessExpiration ) || ( $seraph_accel_g_ctxCache -> isUserSess && $httpCacheControl == 'no-cache' && Gen::GetArrField( $settCache, array( 'ctxCliRefresh' ), false ) ) )
@@ -408,7 +408,7 @@ function _Process( $sites )
 		if( !$lock -> Acquire() )
 			return( Gen::E_FAIL );
 
-		$dscFileTm = @filemtime( $seraph_accel_g_dscFile );
+		$dscFileTm = Gen::FileMTime( $seraph_accel_g_dscFile );
 
 		if( $dscFileTm === false )
 		{
@@ -640,7 +640,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.27.38;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.27.39;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -669,7 +669,7 @@ function _ProcessOutCachedData( $allowExtCache, $objSubType, $settGlob, $sett, $
 		$tmLm = $dscFileTm;
 		if( $tmLm < 60 )
 		{
-			$tmLm = @filemtime( $seraph_accel_g_dscFilePending );
+			$tmLm = Gen::FileMTime( $seraph_accel_g_dscFilePending );
 			if( $tmLm === false )
 				$tmLm = $tmCur;
 		}
@@ -714,7 +714,7 @@ function _ProcessOutCachedData( $allowExtCache, $objSubType, $settGlob, $sett, $
 	{
 		$encoding = '';
 
-		$acceptEncodings = array_map( 'trim', explode( ',', strtolower( ($_SERVER[ 'HTTP_ACCEPT_ENCODING' ]??null) ) ) );
+		$acceptEncodings = array_map( 'trim', explode( ',', strtolower( ($_SERVER[ 'HTTP_ACCEPT_ENCODING' ]??'') ) ) );
 		{
 			$acceptEncodingsRaw = $acceptEncodings;
 			$acceptEncodings = array();
@@ -1352,7 +1352,7 @@ function _CacheContentStart( $tmCur, $procTmLim )
 		if( $try == 2 )
 			return( false );
 
-		$dscFilePendingTm = @filemtime( $seraph_accel_g_dscFilePending );
+		$dscFilePendingTm = Gen::FileMTime( $seraph_accel_g_dscFilePending );
 		if( $dscFilePendingTm !== false && ( $tmCur - $dscFilePendingTm < $procTmLim ) )
 			return( false );
 
@@ -1405,7 +1405,7 @@ function _CbContentFinishSkip( $content )
 		$content = '';
 		if( $dsc = CacheReadDsc( $seraph_accel_g_dscFile ) )
 		{
-			$dscFileTm = @filemtime( $seraph_accel_g_dscFile );
+			$dscFileTm = Gen::FileMTime( $seraph_accel_g_dscFile );
 			_ProcessOutCachedData( $seraph_accel_g_simpCacheMode === null, null, $settGlob, $sett, $settCache, $dsc, $dscFileTm, $dscFileTm, 'revalidated', 'notChanged', false, $content );
 		}
 		else
@@ -1492,7 +1492,7 @@ function _CbContentFinish( $content )
 			$content = '';
 			if( $dsc = CacheReadDsc( $seraph_accel_g_dscFile ) )
 			{
-				$dscFileTm = @filemtime( $seraph_accel_g_dscFile );
+				$dscFileTm = Gen::FileMTime( $seraph_accel_g_dscFile );
 				_ProcessOutCachedData( $seraph_accel_g_simpCacheMode === null, null, $settGlob, $sett, $settCache, $dsc, $dscFileTm, $dscFileTm, 'revalidated', 'notChanged', false, $content );
 			}
 			else
@@ -1532,7 +1532,7 @@ function _CbContentFinish( $content )
 		return( '' );
 
 	$content = '';
-	$dscFileTm = @filemtime( $seraph_accel_g_dscFile );
+	$dscFileTm = Gen::FileMTime( $seraph_accel_g_dscFile );
 	_ProcessOutCachedData( $seraph_accel_g_simpCacheMode === null, null, $settGlob, $sett, $settCache, $dsc, $dscFileTm, $dscFileTm, 'revalidated', null, false, $content );
 	return( $content );
 }
@@ -1546,7 +1546,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( ($settCache[ 'normAgent' ]??null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = ($_SERVER[ 'HTTP_USER_AGENT' ]??'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.38';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.39';
 	}
 
 	if( ($settCache[ 'views' ]??null) )

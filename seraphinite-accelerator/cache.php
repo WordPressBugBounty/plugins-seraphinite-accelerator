@@ -287,7 +287,11 @@ function _Process( $sites )
 			if( Gen::StrStartsWith( $exclStatus, 'excl' ) )
 			{
 
-				_ProcessOutHdrTrace( $sett, true, true, $seraph_accel_g_cacheSkipData[ 0 ], ($seraph_accel_g_cacheSkipData[ 1 ]??null) );
+				$debugData = ($seraph_accel_g_cacheSkipData[ 1 ]??null);
+				if( ($sett[ 'debugInfo' ]??null) )
+					$debugData[ 'args' ] = $args;
+
+				_ProcessOutHdrTrace( $sett, true, true, $seraph_accel_g_cacheSkipData[ 0 ], $debugData );
 				if( $seraph_accel_g_prepPrms !== null )
 					ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'skip' => $exclStatus ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( LocId::Pack( 'SrvArgs' ) => PackKvArrInfo( $_SERVER ) ) ) : array() ), false, false );
 				return( Gen::S_NOTIMPL );
@@ -640,7 +644,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.27.39;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.27.40;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -1457,7 +1461,7 @@ function _CbContentFinish( $content )
 
 	if( $skipStatus )
 	{
-		if( $skipStatus == 'noHdrOrBody' && !strlen( $content ) && ( $asyncMode == 'ec' || ($settGlob[ 'asyncSmpOpt' ]??null) ) )
+		if( $skipStatus == 'noHdrOrBody'  && ( $asyncMode == 'ec' || ($settGlob[ 'asyncSmpOpt' ]??null) ) )
 		{
 			$urlCur = GetCurRequestUrl();
 			if( !Gen::StrEndsWith( $urlCur, '/' ) )
@@ -1546,7 +1550,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( ($settCache[ 'normAgent' ]??null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = ($_SERVER[ 'HTTP_USER_AGENT' ]??'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.39';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.40';
 	}
 
 	if( ($settCache[ 'views' ]??null) )

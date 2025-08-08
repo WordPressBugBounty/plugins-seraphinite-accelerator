@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.39' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.40' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -4277,8 +4277,19 @@ function _SettingsPage_Scripts( $callbacks_args, $box )
 			$o .= ( Ui::ToggleButton( '.blck', array( 'style' => array( 'min-width' => '7em' ) ), array( 'class' => 'ctlSpaceVAfter' ) ) );
 			$o .= ( Ui::TagOpen( 'div', array( 'class' => 'blck', 'style' => array( 'display' => 'none' ) ) ) );
 			{
-				$fldId = 'contPr/js/skips';
-				$o .= ( _SettOutputScriptsEditor( $fldId, Gen::GetArrField( $sett, $fldId, array(), '/' ), _x( 'ScriptsPhlr', 'admin.Settings_Scripts_Editor', 'seraphinite-accelerator' ), 'seraph_accel' ) );
+				$o .= ( Ui::TagOpen( 'div' ) );
+				{
+					{
+						$fldId = 'contPr/js/skipBad';
+						$o .= ( Ui::CheckBox( esc_html_x( 'BadChk', 'admin.Settings_Scripts_Skip', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true, array( 'class' => 'ctlSpaceAfter' ) ) );
+					}
+				}
+				$o .= ( Ui::TagClose( 'div' ) );
+
+				{
+					$fldId = 'contPr/js/skips';
+					$o .= ( _SettOutputScriptsEditor( $fldId, Gen::GetArrField( $sett, $fldId, array(), '/' ), _x( 'ScriptsPhlr', 'admin.Settings_Scripts_Editor', 'seraphinite-accelerator' ), 'seraph_accel' ) );
+				}
 			}
 			$o .= ( Ui::TagClose( 'div' ) );
 		}
@@ -4631,8 +4642,19 @@ function _SettingsPage_Styles( $callbacks_args, $box )
 						$o .= ( Ui::ToggleButton( '.blck', array( 'style' => array( 'min-width' => '7em' ) ), array( 'class' => 'ctlSpaceVAfter' ) ) );
 						$o .= ( Ui::TagOpen( 'div', array( 'class' => 'blck', 'style' => array( 'display' => 'none' ) ) ) );
 						{
-							$fldId = 'contPr/css/skips';
-							$o .= ( _SettOutputStylesEditor( $fldId, Gen::GetArrField( $sett, $fldId, array(), '/' ), 'seraph_accel' ) );
+							$o .= ( Ui::TagOpen( 'div' ) );
+							{
+								{
+									$fldId = 'contPr/css/skipBad';
+									$o .= ( Ui::CheckBox( esc_html_x( 'BadChk', 'admin.Settings_Styles_Skip', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true, array( 'class' => 'ctlSpaceAfter' ) ) );
+								}
+							}
+							$o .= ( Ui::TagClose( 'div' ) );
+
+							{
+								$fldId = 'contPr/css/skips';
+								$o .= ( _SettOutputStylesEditor( $fldId, Gen::GetArrField( $sett, $fldId, array(), '/' ), 'seraph_accel' ) );
+							}
 						}
 						$o .= ( Ui::TagClose( 'div' ) );
 					}
@@ -6178,6 +6200,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'contPr/js/spec/timeout/enable';			Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/js/spec/timeout/v';				Gen::SetArrField( $sett, $fldId, @intval( round( @floatval( $args[ 'seraph_accel/' . $fldId ] ) * 1000 ) ), '/' ); }
 		{ $fldId = 'contPr/js/spec/items';					Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( $args[ 'seraph_accel/' . $fldId ], null, true ), '/' ); }
+		{ $fldId = 'contPr/js/skipBad';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/js/skips';						Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( $args[ 'seraph_accel/' . $fldId ], null, true ), '/' ); }
 		{ $fldId = 'contPr/js/other/incl';					Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( $args[ 'seraph_accel/' . $fldId ], 'seraph_accel\\Wp::SanitizeXPath', true ), '/' ); }
 
@@ -6205,6 +6228,7 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'contPr/css/nonCrit/ext';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/css/nonCrit/excl';				Gen::SetArrField( $sett, $fldId, !empty( ($args[ 'seraph_accel/' . $fldId ]??null) ), '/' ); }
 		{ $fldId = 'contPr/css/nonCrit/items';				Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( $args[ 'seraph_accel/' . $fldId ], null, true ), '/' ); }
+		{ $fldId = 'contPr/css/skipBad';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/css/skips';						Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( $args[ 'seraph_accel/' . $fldId ], null, true ), '/' ); }
 		{ $fldId = 'contPr/css/fontOptLoad';				Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/css/fontOptLoadDisp';			Gen::SetArrField( $sett, $fldId, Wp::SanitizeId( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }

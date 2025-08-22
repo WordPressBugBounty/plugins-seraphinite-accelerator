@@ -984,7 +984,7 @@ class Ui
 		return( self::_MetaboxAdd( $id, $title, $callback, $callbacks_args, null, $context, 'default', $classesAdd, $classesRemove ) );
 	}
 
-	static function PostBoxes( $title, $metaBoxes = array( 'body' => null ), array $callbacks = null, $callbacks_args = null, $blocksAttrs = null )
+	static function PostBoxes( $title, $metaBoxes = array( 'body' => null ),  $callbacks = null, $callbacks_args = null, $blocksAttrs = null )
 	{
 		wp_enqueue_script( 'postbox' );
 

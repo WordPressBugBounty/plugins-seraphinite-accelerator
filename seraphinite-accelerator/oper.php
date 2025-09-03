@@ -1207,7 +1207,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.41' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.42' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1271,7 +1271,13 @@ function OnOptDel_Sett()
 
 function _CacheVerifyEnvDropin_Norm( $cont )
 {
-	return( str_replace( '.0,', ',', $cont ) );
+	return( str_replace( array( '.0,' ), array( ',' ), $cont ) );
+}
+
+function _CacheVerifyEnvDropin_NormCmp( $cont )
+{
+	return( $cont );
+
 }
 
 function CacheVerifyEnvDropin( &$file, $sett, $verifyEnvDropin = null )
@@ -1298,7 +1304,7 @@ function CacheVerifyEnvDropin( &$file, $sett, $verifyEnvDropin = null )
 	$verifyEnvDropin -> needed = _CacheVerifyEnvDropin_Norm( ( string )GetAdvCacheFileContent( $sett ) );
 	$verifyEnvDropin -> actual = _CacheVerifyEnvDropin_Norm( ( string )$cont );
 
-	if( $verifyEnvDropin -> actual == $verifyEnvDropin -> needed )
+	if( _CacheVerifyEnvDropin_NormCmp( $verifyEnvDropin -> actual ) == _CacheVerifyEnvDropin_NormCmp( $verifyEnvDropin -> needed ) )
 		return( true );
 
 }

@@ -59,7 +59,7 @@ function GetContentProcessCtxEx( $serverArgs, $sett, $siteId, $siteUrl, $siteRoo
 	else
 		$ctx[ 'srcUrlFullness' ] = 0;
 
-	$ctx[ 'aVPth' ] = array_map( function( $vPth ) { $vPth[ 'f' ] .= 'S'; return( $vPth ); }, Gen::GetArrField( $sett, array( 'cache', '_vPth' ), array() ) );
+	$ctx[ 'aVPth' ] = array_map( function( $vPth ) { $vPth[ 'f' ] .= 'S'; return( $vPth ); }, GetVirtUriPathsFromSett( $sett ) );
 
 	return( $ctx );
 }

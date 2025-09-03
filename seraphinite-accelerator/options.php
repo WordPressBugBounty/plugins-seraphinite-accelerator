@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.41' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.42' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1193,6 +1193,7 @@ function _SettingsPage_CacheData( $callbacks_args, $box )
 									'text/xml' => 'text/xml',
 									'text/plain' => 'text/plain',
 									'text/html' => 'text/html',
+									'text/css' => 'text/css',
 									'application/rss+xml' => 'application/rss+xml',
 									'application/octet-stream' => 'application/octet-stream',
 								),
@@ -6439,7 +6440,7 @@ function _OnSaveSettings( $args )
 					foreach( $rewrite_process -> _rewrite_data_mod_rewrite as $rule )
 					{
 						$rule = trim( $rule );
-						if( !Gen::StrStartsWith( $rule, 'RewriteRule ^' ) )
+						if( !Gen::StrStartsWith( $rule, 'RewriteRule ^' ) || strpos( $rule, 'wph-throw-' ) !== false )
 							continue;
 
 						$rule = explode( ' ', substr( $rule, 13 ) );
@@ -6459,7 +6460,7 @@ function _OnSaveSettings( $args )
 		}
 
 		if( $ctxVPathMap -> a )
-			Gen::SetArrField( $sett, 'cache/_vPth', $ctxVPathMap -> a, '/' );
+			Gen::SetArrField( $sett, 'cache/_vPth', base64_encode( serialize( $ctxVPathMap -> a ) ), '/' );
 		else
 			Gen::UnsetArrField( $sett, 'cache/_vPth', '/' );
 

@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 179;
+const PLUGIN_SETT_VER								= 180;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1159,6 +1159,18 @@ function OnOptRead_Sett( $sett, $verFrom )
 		Gen::SetArrField( $sett, array( 'contPr', 'js', 'skipBad' ), false );
 	}
 
+	if( $verFrom && $verFrom < 180 )
+	{
+		if( isset( $sett[ 'cache' ][ '_vPth' ] ) )
+		{
+			$a = array();
+			foreach( Gen::GetArrField( $sett, array( 'cache', '_vPth' ), array() ) as $v )
+				if( strpos( ( string )($v[ 'r' ]??null), 'wph-throw-' ) === false )
+					$a[] = $v;
+			Gen::SetArrField( $sett, array( 'cache', '_vPth' ), base64_encode( serialize( $a ) ) );
+		}
+	}
+
 	return( $sett );
 }
 
@@ -2136,6 +2148,8 @@ function OnOptGetDef_Sett()
 						'.//img[contains(concat(" ",normalize-space(@class)," ")," swiper-slide-image ")]',
 
 						'.//*[contains(concat(" ",normalize-space(@class)," ")," e-click ")]',
+
+						'.//a[contains(concat(" ",normalize-space(@class)," ")," wd-load-more ")]',
 
 						'click:.//presto-player | .//presto-player-js-lzl-ing || .//presto-playlist | .//presto-playlist-js-lzl-ing',
 					),
@@ -4051,7 +4065,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.41 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.42 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5353,14 +5367,19 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 		unset( $file, $cont );
 	}
 
-	$args = array( 'sslverify' => false, 'timeout' => $timeout );
+	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'user-agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.41';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.42';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
 	if( $serverId = Net::UrlParse( $url ) )
+	{
+		$args[ 'headers' ][ 'Host' ] = ($serverId[ 'host' ]??null);
 		$serverId = Net::UrlDeParse( $serverId, 0, array( PHP_URL_USER, PHP_URL_PASS, PHP_URL_PATH, PHP_URL_QUERY, PHP_URL_FRAGMENT ) );
+	}
+
+	$args[ 'headers' ][ 'Accept' ] = '*/*';
 
 	if( $rememberServerState && $serverId && Gen::HrFail( ($seraph_accel_g_aGetExtContentsFailedSrvs[ $serverId ]??null) ) )
 		return( false );
@@ -5517,6 +5536,11 @@ function VirtUriPath2Real( $path, array $aVPth )
 	}
 
 	return( $path );
+}
+
+function GetVirtUriPathsFromSett( $sett )
+{
+	return( Gen::GetArrField( unserialize( ( string )base64_decode( Gen::GetArrField( $sett, array( 'cache', '_vPth' ), '' ) ) ), array( '' ), array() ) );
 }
 
 function _FileWriteTmpAndReplace( $file, $fileTime = null, $data = null, $fileTmp = null, $lock = null )
@@ -5805,7 +5829,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.41');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.42');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

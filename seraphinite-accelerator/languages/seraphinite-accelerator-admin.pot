@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.27.42)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.27.42\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.27.43)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27.43\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.27.42)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.27.42\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.27.43)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.27.43\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1279,6 +1279,7 @@ msgctxt "admin.Settings_Cache_Revalidate_UpdGlobs"
 msgid "TblPrssChk"
 msgstr ""
 
+# Forms of Fluent
 msgctxt "admin.Settings_Cache_Revalidate_UpdGlobs"
 msgid "FlntFrmChk"
 msgstr ""
@@ -2385,6 +2386,10 @@ msgstr ""
 # Countdown Widget of Essential Addons
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "ElmntrWdgtEaelCntdwnChk"
+msgstr ""
+
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "ElmntrWdgtTmFnfctCntrChk"
 msgstr ""
 
 # AVO Showcase Widget of Elementor

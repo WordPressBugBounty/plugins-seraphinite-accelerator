@@ -306,7 +306,7 @@ class PluginRmtCfg
 			$args[ 'epid' ] = Wp::GetSiteId();
 			$args[ 'id' ] = 'wordpress-accelerator';
 			$args[ 'name' ] = 'Accelerator';
-			$args[ 'v' ] = '2.27.43';
+			$args[ 'v' ] = '2.27.44';
 			$args[ 'pk' ] = 'Base';
 			$args[ 'cfg' ] = '';
 			$args[ 'loc' ] = Wp::GetLocale();
@@ -328,11 +328,11 @@ class PluginRmtCfg
 		if( $lastCheckPackage === null && $lastCheckVer !== null )
 			$lastCheckPackage = 'Base';
 
-		if( $lastCheckVer !== '2.27.43' || $lastCheckPackage !== 'Base' )
+		if( $lastCheckVer !== '2.27.44' || $lastCheckPackage !== 'Base' )
 		{
 			$state = Plugin::StateGet();
 
-			if( $lastCheckVer !== '2.27.43' && !isset( $state[ 'changeVerCheck' ] ) )
+			if( $lastCheckVer !== '2.27.44' && !isset( $state[ 'changeVerCheck' ] ) )
 			{
 				$state[ 'changeVerCheck' ] = $lastCheckVer !== null ? $lastCheckVer : '';
 				Plugin::StateSet( $state );
@@ -349,7 +349,7 @@ class PluginRmtCfg
 
 		if( !$bForce )
 		{
-			if( $bFirstTimeOnly && $lastCheckVer == '2.27.43' )
+			if( $bFirstTimeOnly && $lastCheckVer == '2.27.44' )
 				return( Gen::S_FALSE );
 
 			$lastUpdTime = ($data[ 'updTime' ]??null);
@@ -368,7 +368,7 @@ class PluginRmtCfg
 			$args[ 'epid' ] = Wp::GetSiteId();
 			$args[ 'id' ] = 'wordpress-accelerator';
 			$args[ 'name' ] = 'Accelerator';
-			$args[ 'v' ] = '2.27.43';
+			$args[ 'v' ] = '2.27.44';
 			$args[ 'pk' ] = 'Base';
 			$args[ 'cfg' ] = '';
 			$args[ 'loc' ] = Wp::GetLocale();
@@ -385,7 +385,7 @@ class PluginRmtCfg
 			if( $data[ 'mdfTime' ] >= $timeMdf )
 			{
 				$data[ 'updTime' ] = $curUpdTime;
-				$data[ 'plgVer' ] = '2.27.43';
+				$data[ 'plgVer' ] = '2.27.44';
 				$data[ 'plgPk' ] = 'Base';
 
 				$hr = PluginOptions::Set( self::STG_VER, self::STG_ID, $data, __CLASS__ . '::' );
@@ -402,7 +402,7 @@ class PluginRmtCfg
 
 		$data[ 'mdfTime' ] = $timeMdf;
 		$data[ 'updTime' ] = $curUpdTime;
-		$data[ 'plgVer' ] = '2.27.43';
+		$data[ 'plgVer' ] = '2.27.44';
 		$data[ 'plgPk' ] = 'Base';
 
 		if( $timeMdf )
@@ -781,6 +781,7 @@ class Plugin
 		{
 			$data = Gen::GetArrField( @unserialize( ( string )Gen::FileContentExclusive_Get( $h ) ), array( 'data' ), array() );
 			$dataItem = self::_AsyncTaskCut( $data, $taskName, $taskRunTime, $changed );
+
 			if( $changed && !Gen::FileContentExclusive_Put( $h, $data ? @serialize( array( 'data' => $data ) ) : '' ) )
 				$dataItem = null;
 
@@ -960,7 +961,7 @@ class Plugin
 
 			if( $mark )
 			{
-				$dataItem[ 'tr' ] = ( float )sprintf( '%.20F', $tmCur );
+				$dataItem[ 'tr' ] = ( float )sprintf( '%.3F', $tmCur );
 				$changed = true;
 			}
 
@@ -1205,7 +1206,7 @@ class Plugin
 
 	static function AsyncTaskPushGetTimerun( $timeRun )
 	{
-		return( str_replace( '.', '_', sprintf( '%.20F', $timeRun ) ) );
+		return( str_replace( '.', '_', sprintf( '%.3F', $timeRun ) ) );
 	}
 
 	static function AsyncTaskPushGetUrlEx( $urlBase, $id, $timeRun = null )
@@ -1448,10 +1449,10 @@ class Plugin
 		$rmtCfg = PluginRmtCfg::Get();
 
 		$urlProductInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlProductInfo' );
-		$urlAboutPluginImg = file_exists( __DIR__ . '/../Images/ProductLogo.png' ) ? add_query_arg( array( 'v' => '2.27.43' ), Plugin::FileUri( '../Images/ProductLogo.png', __FILE__ ) ) : null;
+		$urlAboutPluginImg = file_exists( __DIR__ . '/../Images/ProductLogo.png' ) ? add_query_arg( array( 'v' => '2.27.44' ), Plugin::FileUri( '../Images/ProductLogo.png', __FILE__ ) ) : null;
 		$urlAboutPluginDocs = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlProductDocs' );
 		$urlAboutPluginSupport = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlProductSupport' );
-		$url3rdPartySoft = file_exists( __DIR__ . '/../third-party-software.html' ) ? add_query_arg( array( 'v' => '2.27.43' ), Plugin::FileUri( '../third-party-software.html', __FILE__ ) ) : null;
+		$url3rdPartySoft = file_exists( __DIR__ . '/../third-party-software.html' ) ? add_query_arg( array( 'v' => '2.27.44' ), Plugin::FileUri( '../third-party-software.html', __FILE__ ) ) : null;
 
 		$urlEula = null;
 
@@ -1460,7 +1461,7 @@ class Plugin
 		$res .= Ui::Tag( 'p' );
 
 		{
-			$version = esc_html( '2.27.43' );
+			$version = esc_html( '2.27.44' );
 
 			$res .= Ui::TagOpen( 'div' );
 
@@ -1509,7 +1510,7 @@ class Plugin
 	{
 		$rmtCfg = PluginRmtCfg::Get();
 
-		$urlAboutUsLogoImg = file_exists( __DIR__ . '/../Images/VendorLogo.png' ) ? add_query_arg( array( 'v' => '2.27.43' ), Plugin::FileUri( '../Images/VendorLogo.png', __FILE__ ) ) : null;
+		$urlAboutUsLogoImg = file_exists( __DIR__ . '/../Images/VendorLogo.png' ) ? add_query_arg( array( 'v' => '2.27.44' ), Plugin::FileUri( '../Images/VendorLogo.png', __FILE__ ) ) : null;
 		$urlMorePlugins = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlMorePlugins' );
 		$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlMain' );
 
@@ -2036,7 +2037,7 @@ class Plugin
 				return( null );
 
 			$verFrom = self::_PrevVer_GetInt( $plgVerPrev );
-			$verTo = self::_PrevVer_GetInt( '2.27.43' );
+			$verTo = self::_PrevVer_GetInt( '2.27.44' );
 			if( $verTo < $verFrom )
 				list( $verTo, $verFrom ) = array( $verFrom, $verTo );
 
@@ -2161,7 +2162,7 @@ class Plugin
 			if( (self::$g_aAlreadyIncludedObj[ 'css' ][ $id ]??null) )
 				continue;
 
-			wp_enqueue_style( Plugin::CmnScriptId( $id ), add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.css' ), array(), '2.27.43' );
+			wp_enqueue_style( Plugin::CmnScriptId( $id ), add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.css' ), array(), '2.27.44' );
 
 			self::$g_aAlreadyIncludedObj[ 'css' ][ $id ] = true;
 		}
@@ -2228,7 +2229,7 @@ class Plugin
 
 			$scrHndId = Plugin::CmnScriptId( $id );
 
-			wp_register_script( $scrHndId, add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.js' ), $deps, '2.27.43' );
+			wp_register_script( $scrHndId, add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.js' ), $deps, '2.27.44' );
 			if( $id == 'Gen' )
 				Plugin::Loc_ScriptLoad( $scrHndId );
 			wp_enqueue_script( $scrHndId );
@@ -2673,7 +2674,7 @@ class Plugin
 
 							var sendDataUrl = "<?php echo( Gen::GetArrField( $rmtCfg, 'Questionnaires.SendAnswerUrlTpl' ) ); ?>";
 							sendDataUrl = sendDataUrl.replace( "{EndPointId}",					encodeURI( "<?php echo( Wp::GetSiteId() ); ?>" ) );
-							sendDataUrl = sendDataUrl.replace( "{PluginVersion}",				encodeURI( "2.27.43" ) );
+							sendDataUrl = sendDataUrl.replace( "{PluginVersion}",				encodeURI( "2.27.44" ) );
 							sendDataUrl = sendDataUrl.replace( "{PluginMode}",					encodeURI( "base" ) );
 							sendDataUrl = sendDataUrl.replace( "{PluginPackage}",				encodeURI( "Base" ) );
 							sendDataUrl = sendDataUrl.replace( "{QuestionnaireId}",				encodeURI( "<?php echo( ($q[ 'id' ]??null) ); ?>" ) );

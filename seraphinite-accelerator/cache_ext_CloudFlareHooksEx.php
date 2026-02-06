@@ -5,7 +5,7 @@ namespace seraph_accel;
 if( !defined( 'ABSPATH' ) )
 	exit;
 
-class CloudFlareHooksEx extends \CF\WordPress\Hooks
+class CloudFlareHooksEx extends \Cloudflare\APO\WordPress\Hooks
 {
 	public function purgeUrl( $url )
 	{

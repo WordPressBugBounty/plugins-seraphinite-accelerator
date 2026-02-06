@@ -190,6 +190,12 @@ function CacheGetInfo( $siteId, $cbCancel )
 			if( $info[ 'cbCancel' ]() )
 				return( false );
 
+			if( Gen::StrEndsWith( $objFile, '.p' ) || Gen::StrEndsWith( $objFile, '.pp' ) )
+			{
+				$info[ 'nFile' ] += 1;
+				return;
+			}
+
 			if( Gen::GetFileExt( Gen::GetFileName( $objFile, true ) ) == 'html' )
 				$info[ 'nObj' ] += 1;
 			else
@@ -492,7 +498,7 @@ function _CacheOp_GetViewsForDirWalk( $viewId )
 	return( $viewId !== null ? array_map( function( $v ) { return( $v . '*' ); }, $viewId ) : null );
 }
 
-function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $cbIsAborted = true )
+function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $langId = null, $cbIsAborted = true )
 {
 	$ctx = new AnyObj();
 	$ctx -> op = $op;
@@ -515,6 +521,7 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $cbIsAborte
 	$sett = Plugin::SettGet();
 
 	$ctx -> viewId = _CacheOp_GetViews( $viewId, $geoId );
+	$ctx -> aLang = $langId ? ( array )$langId : null;
 	$ctx -> curSiteId = GetSiteId();
 	$ctx -> lock = new DscLockUpdater(  );
 	$ctx -> datasDel = array();
@@ -974,7 +981,7 @@ function CacheOpPost( $postId, $reason, $priority = 0, $proc = null, $cbIsAborte
 	}
 
 	foreach( $ctx -> urls as $priority => $urls )
-		if( CacheOpUrls( false, $urls, $op, $priority, $cbIsAborted, $proc, null, null, null, $immediatelyPushQueue ) === false )
+		if( CacheOpUrls( false, $urls, $op, $priority, $cbIsAborted, $proc, null, null, null, null, $immediatelyPushQueue ) === false )
 			return( false );
 
 	return( null );
@@ -1056,7 +1063,7 @@ function CacheOpUrl_UpdateSrv( $cbIsAborted, $settCache, $url, $viewsHeaders, $v
 	CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted );
 }
 
-function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $proc = null, $viewId = null, $geoId = null, $userId = null, $immediatelyPushQueue = true )
+function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $proc = null, $viewId = null, $geoId = null, $langId = null, $userId = null, $immediatelyPushQueue = true )
 {
 	if( $cbIsAborted === true && PluginFileValues::Get( 'o' ) !== null )
 		return( false );
@@ -1078,6 +1085,7 @@ function CacheOpUrls( $isExpr, $urls, $op, $priority = 0, $cbIsAborted = true, $
 	$ctx -> cbIsAborted = $cbIsAborted;
 	$ctx -> priority = $priority;
 	$ctx -> viewId = _CacheOp_GetViews( $viewId, $geoId );
+	$ctx -> aLang = $langId ? ( array )$langId : null;
 	$ctx -> userId = $userId;
 	$ctx -> lock = new DscLockUpdater();
 	$ctx -> procWorkInt = ($settCacheGlobal[ 'procWorkInt' ]??null);
@@ -1207,7 +1215,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.44' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.11' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1577,13 +1585,13 @@ function IsEnvDropinLockedBy( $file, $cont = null )
 	if( strpos( $cont, '$batcache' ) !== false )
 		return( 'batcache' );
 
-	return( 'unk' );
+	return( false );
 }
 
 function GetDropinLockedFileContent( $sett, $sLock, $init = true, $bAllMultisites = false )
 {
 	$contNew = _GetAdvCacheFileContent( $sett, true, $init, $bAllMultisites );
-	if( $contNew && $sLock == 'batcache' )
+	if( $contNew )
 	{
 		$contNew = 'define( \'SERAPH_ACCEL_ADVCACHE_COMP\', true );' . "\n" . $contNew;
 		if( $sLock == 'batcache' )
@@ -1900,6 +1908,17 @@ function GetCacheStatusInfo( $siteId, $cbCancel )
 	return( $info );
 }
 
+function _SiteIdSites_GetAlts( &$aAddrSite )
+{
+
+	if( defined( 'SERAPH_ACCEL_ALT_ROOTS' ) )
+	{
+		foreach( ( array )SERAPH_ACCEL_ALT_ROOTS as $url )
+			if( $urlComps = Net::UrlParse( $url ) )
+				$aAddrSite[] = trim( Net::UrlDeParse( $urlComps, 0, array(), array( PHP_URL_HOST, PHP_URL_PORT, PHP_URL_PATH ) ), '/' );
+	}
+}
+
 function _AddSiteIdSites( &$sitesIds, $addrSite, $siteId, $availablePlugins )
 {
 	$sitesIds[ $addrSite ] = $siteId;
@@ -1941,12 +1960,7 @@ function _AddSiteIdSites( &$sitesIds, $addrSite, $siteId, $availablePlugins )
 		}
 	}
 
-	if( defined( 'SERAPH_ACCEL_ALT_ROOTS' ) )
-	{
-		foreach( ( array )SERAPH_ACCEL_ALT_ROOTS as $url )
-			if( $urlComps = Net::UrlParse( $url ) )
-				$aAddrSite[] = trim( Net::UrlDeParse( $urlComps, 0, array(), array( PHP_URL_HOST, PHP_URL_PORT, PHP_URL_PATH ) ), '/' );
-	}
+	_SiteIdSites_GetAlts( $aAddrSite );
 
 	foreach( $aAddrSite as $addr )
 		if( !isset( $sitesIds[ $addr ] ) )

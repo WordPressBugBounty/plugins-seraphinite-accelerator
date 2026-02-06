@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.8
-Stable tag: 2.27.44
+Stable tag: 2.28.11
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,145 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.28.11 =
+
+Improvements:
+
+* Fast content optimization in temporary cache.
+
+= 2.28.10 =
+
+Improvements:
+
+* Slick Slider generic.
+* Swiper Slider from Breakdance Elements.
+* Tabs from Breakdance Elements.
+
+= 2.28.9 =
+
+Improvements:
+
+* FOX - Currency Switcher.
+* Slick Slider generic.
+* Video-box from Divi.
+
+= 2.28.8 =
+
+Improvements:
+
+* Content Slider of BoldThemes.
+* Menu of BoldThemes.
+* Product gallery slider from WooGallery for WooCommerce.
+
+= 2.28.7 =
+
+Improvements:
+
+* Support for multi view loading from Divi.
+
+= 2.28.6 =
+
+Improvements:
+
+* Catch scripts errors to avoid execution breaking.
+* Support for 'WP Hide & Security Enhancer' plugin.
+
+= 2.28.5 =
+
+Fixes:
+
+* Adjusting 'nonce' period skipped if user caching is enabled.
+
+= 2.28.4 =
+
+Fixes:
+
+* Adjusting 'nonce' period skipped if user caching is enabled.
+* When 'advanced-cache.php' is not writable settings in 'wp-config.php' can be wrong.
+
+= 2.28.3 =
+
+Fixes:
+
+* CSS parsing: relative colors using 'from'.
+
+= 2.28.2 =
+
+Improvements:
+
+* Integration with CloudFlare plugin.
+
+Fixes:
+
+* Adjusting 'nonce' period skipped if user caching is enabled.
+
+= 2.28.1 =
+
+Improvements:
+
+* Adjusting 'nonce' period for Wp Forms tokens.
+
+Fixes:
+
+* Adjusting 'nonce' period skipped if user caching is enabled.
+* Lazy scripts loading: document's 'write' is not synchronous.
+* Processing 'source' tags of 'picture' are not checked by exclusions of lazy load.
+
+= 2.28 =
+
+Improvements:
+
+* Initiator's call stack in logging of post changing.
+* Language choosing in cache updating.
+* Preventing double initialization of excluded scripts.
+
+Fixes:
+
+* Early redirections sometimes are not hooked.
+* Wrong counting of requests in statistics.
+
+= 2.27.48 =
+
+Fixes:
+
+* Posting 'undefined' in request when operate on all pages.
+* When 'Auto-revalidate cache if time to live is expired' is disabled then temporary cache is not created while forced cache revalidation.
+
+= 2.27.47 =
+
+Improvements:
+
+* Exclusions for lazy HTML.
+* Preventing random content to avoid cache growing: Anti-Spam by CleanTalk.
+* Restoring original user agent for 404 pages.
+* Warming up cache including alternative site's roots defined by 'SERAPH_ACCEL_ALT_ROOTS'.
+
+= 2.27.46 =
+
+Improvements:
+
+* Support delay loading of IFRAME with 'onload' attribute.
+
+Fixes:
+
+* HTML replace works if content optimization is disabled in groups.
+* Setting can be saved incorrectly in 'wp-config.php' under BatCache based hostings.
+* Styles conflict in HTML tag in PeakTwo theme 'libraries.js'.
+
+= 2.27.45 =
+
+Improvements:
+
+* Player from Presto.
+* Product gallery images thumbnails of WooCommerce from Carafity theme.
+* Support for Simple Menu of Essential Addons.
+
+Fixes:
+
+* Delayed click doesn't work on shadow root element.
+* Deprecation warning in 'TokensList_GetVal' of 'cbItem' parameter.
+* User cache doesn't work if simple thread of optimization enabled.
 
 = 2.27.44 =
 

@@ -32,7 +32,10 @@ function GetContentProcessCtxEx( $serverArgs, $sett, $siteId, $siteUrl, $siteRoo
 		'mode' => ( 1 | 2 | 4 ),
 		'modeReq' => 0,
 		'aAttrImg' => array(),
+
 		'aCssCrit' => array(),
+		'aCssRpl' => array(),
+		'aCssRplExcl' => array(),
 
 	);
 

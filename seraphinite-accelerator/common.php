@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 181;
+const PLUGIN_SETT_VER								= 188;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1176,6 +1176,35 @@ function OnOptRead_Sett( $sett, $verFrom )
 		Gen::SetArrField( $sett, array( 'contPr', 'cp', 'elmntrWdgtTmFnfctCntr' ), false );
 	}
 
+	if( $verFrom && $verFrom < 182 )
+	{
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'wooPrdGallCrftThmbs' ), false );
+	}
+
+	if( $verFrom && $verFrom < 185 )
+	{
+	    Gen::SetArrField( $sett, array( 'contPr', 'js', 'groupTrC' ), false );
+	}
+
+	if( $verFrom && $verFrom < 186 )
+	{
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'btCntSld' ), false );
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'btMenu' ), false );
+	}
+
+	if( $verFrom && $verFrom < 187 )
+	{
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'diviVidBox2' ), false );
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'wcs' ), false );
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'slckGen' ), false );
+	}
+
+	if( $verFrom && $verFrom < 188 )
+	{
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'bdeSwpr' ), false );
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'bdeTabs' ), false );
+	}
+
 	return( $sett );
 }
 
@@ -1324,6 +1353,7 @@ function OnOptGetDef_Sett()
 			),
 			'updPostMeta' => false,
 			'updPostMetaExcl' => array(
+				'@.*@',
 				'@^\\d+$@',
 				'@^_edit_lock$@',
 				'@^_edit_last$@',
@@ -1335,6 +1365,7 @@ function OnOptGetDef_Sett()
 				'@^cwg_total_subscribers@',
 				'@^_backorders$@',
 				'@^_last_seen$@',
+				'@^woodmart_history_of_visits$@',
 			),
 
 			'updGlobs' => array(
@@ -1365,6 +1396,7 @@ function OnOptGetDef_Sett()
 			'updAllDeps' => array(
 				'@home',
 				'@postsViewable:<|@pageNums|@commentPageNums>',
+				'@termsOfClass@categories',
 			),
 
 			'updSche' => array(
@@ -1398,11 +1430,11 @@ function OnOptGetDef_Sett()
 
 			'autoProc' => true,
 
-			'timeout' => 7 * 24 * 60,
+			'timeout' => 60 * 24 * 60,
 			'timeoutFr' => 60,
 			'timeoutCln' => 182 * 24 * 60,
 			'timeoutFrCln' => 60 * 60,
-			'ctxTimeoutCln' => 15 * 24 * 60,
+			'ctxTimeoutCln' => 1 * 24 * 60,
 			'extObjTimeoutCln' => 7 * 24 * 60,
 			'autoClnPeriod' => 24 * 60,
 			'useTimeoutClnForWpNonce' => true,
@@ -1423,7 +1455,8 @@ function OnOptGetDef_Sett()
 
 			'urisExcl' => array(
 				'/checkout/',
-				'@.*sitemap\.xsl$@',
+				'@sitemap@',
+
 				'@(?:^|/)page/@',
 			),
 			'exclAgents' => array(
@@ -1444,6 +1477,7 @@ function OnOptGetDef_Sett()
 				'sitemap',
 				'sitemap_n',
 				'elementor-preview',
+				'wc-ajax',
 			),
 
 			'skipArgsEnable' => false,
@@ -1451,6 +1485,8 @@ function OnOptGetDef_Sett()
 			'skipArgs' => array( 'redirect_to', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'story_fbid', 'mibextid', 'gclid', 'wbraid', 'gbraid', 'gad_campaignid', 'gad_source', '_ga', 'yclid', 'srsltid' ),
 
 			'exclConts' => array(
+				'.//*[@id="wpadminbar"]',
+				'.//body[contains(concat(" ",normalize-space(@class)," ")," theme-woodmart ")][contains(concat(" ",normalize-space(@class)," ")," seraph-accel-view-cmn ")]//*[contains(concat(" ",normalize-space(@class)," ")," whb-general-header-inner ")][count(./*[contains(concat(" ",normalize-space(@class)," ")," whb-visible-lg ")]) = 0]',
 			),
 
 			'hdrs' => array(
@@ -1562,6 +1598,12 @@ function OnOptGetDef_Sett()
 
 				array(
 					'enable' => true,
+					'name' => 'FOX - Currency Switcher',
+					'cookies' => array( '@^wccs_changed_currency$@' ),
+				),
+
+				array(
+					'enable' => false,
 					'name' => 'GDPR Cookie Consent',
 					'cookies' => array( 'viewed_cookie_policy', 'cli_user_preference' ),
 				),
@@ -1634,6 +1676,7 @@ function OnOptGetDef_Sett()
 					'name' => 'WoodMart Theme',
 					'cookies' => array(
 						'woodmart_wishlist_products',
+						'woodmart_compare_list',
 					),
 				),
 
@@ -1681,7 +1724,7 @@ function OnOptGetDef_Sett()
 				),
 
 				'lifterlms' => array(
-					'enable' => true,
+					'enable' => false,
 					'name' => 'LMS by LifterLMS',
 
 					'tables' => array(
@@ -1695,6 +1738,15 @@ function OnOptGetDef_Sett()
 
 					'tables' => array(
 
+					),
+				),
+
+				'cmsrush' => array(
+					'enable' => true,
+					'name' => 'CMS Rush',
+
+					'cookies' => array(
+						'cmsrush_',
 					),
 				),
 			),
@@ -1772,6 +1824,8 @@ function OnOptGetDef_Sett()
 					'@fwp-loop@i',
 
 					'@data-map-zoom@i',
+
+					'@react@i',
 				),
 				'items' => array(
 					'.//img/@loading',
@@ -1791,7 +1845,12 @@ function OnOptGetDef_Sett()
 						'enable' => true,
 						'expr' => '@<body[^>]+(cm-manage-google-fonts)[^>]+>@',
 						'data' => ''
-					)
+					),
+					array(
+						'enable' => true,
+						'expr' => '@\\sid=\\"nelio-ab-testing-main-js\\"@ & @<body[^>]+class="()@',
+						'data' => 'nab-done '
+					),
 				),
 			),
 
@@ -1808,10 +1867,13 @@ function OnOptGetDef_Sett()
 				'elmntrTrx' => true,
 				'thmXStr' => true,
 				'wooPrdQnt' => true,
+				'asClnTlk' => true,
 			),
 
 			'lazy' => array(
 				'items' => array(
+				),
+				'itemsExcl' => array(
 				),
 				'bjs' => true,
 				'p' => false,
@@ -1981,13 +2043,14 @@ function OnOptGetDef_Sett()
 				'diviMvText' => false,
 				'diviMvSld' => false,
 				'diviMvFwHdr' => true,
-				'diviVidBox' => true,
+				'diviVidBox' => false,
+				'diviVidBox2' => true,
 				'diviVidBg' => true,
 				'diviVidFr' => false,
 				'diviDsmGal' => true,
 				'diviLzStls' => true,
 				'diviPrld' => true,
-				'diviStck' => true,
+				'diviStck' => false,
 				'diviAni' => true,
 				'diviDataAni' => true,
 				'diviHdr' => true,
@@ -2038,7 +2101,14 @@ function OnOptGetDef_Sett()
 				'wooPrdGall' => true,
 				'wooPrdGallAstrThmbsHeight' => true,
 				'wooPrdGallFltsmThmbs' => true,
+				'wooPrdGallCrftThmbs' => true,
 				'xstrThSwpr' => true,
+				'bdeSwpr' => true,
+				'bdeTabs' => true,
+				'btCntSld' => true,
+				'btMenu' => true,
+				'wcs' => true,
+				'slckGen' => true,
 
 			),
 
@@ -2046,6 +2116,7 @@ function OnOptGetDef_Sett()
 
 				'groupCritSpec' => false,
 				'groupNonCrit' => false,
+				'groupTrC' => true,
 
 				'groupExclMdls' => true,
 				'groupExcls' => array(
@@ -2060,6 +2131,8 @@ function OnOptGetDef_Sett()
 					'id:@^wd-swiper-library-js@',
 					'src:@\\Wtrustedshops\\.com\\W@',
 					'body:@currentScript\\s*\\.\\s*getAttribute\\(\\s*\'data-gt-widget-id\'@',
+
+					'src:@\\.cloudflare\\.com/turnstile/@',
 				),
 
 				'min' => false,
@@ -2128,6 +2201,7 @@ function OnOptGetDef_Sett()
 						'.//a[@uk-toggle]',
 
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," woodmart-nav-link ")]',
+						'.//*[contains(concat(" ",normalize-space(@class)," ")," wd-action-btn ")]/a',
 
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," et_pb_video_play ")]',
 						'.//*[contains(concat(" ",normalize-space(@class)," ")," et-menu ")]/li/a[starts-with(@href,"#")]',
@@ -2189,13 +2263,13 @@ function OnOptGetDef_Sett()
 
 						'body:@\\Wdocument\\s*\\.\\s*querySelector\\s*\\(\\s*"\\.jdgm-rev-widg"\\s*\\)@',
 
-						'src:@fareharbor\.com@',
-
 						'body:@window\\s*\\.\\s*gtranslateSettings\\s*=@',
 
 						'src:@trustindex\\.io/assets/js/richsnippet@',
 
 						'src:@web\\.cmp\\.usercentrics\\.eu/@',
+
+						'id:@^zeroy-tailwind-@',
 					),
 
 					'timeout' => array(
@@ -2234,7 +2308,7 @@ function OnOptGetDef_Sett()
 
 					),
 				),
-				'skipBad' => true,
+				'skipBad' => false,
 				'skips' => array(),
 			),
 
@@ -2311,9 +2385,9 @@ function OnOptGetDef_Sett()
 				'custom' => array(
 					'0' => array( 'enable' => true, 'data' => '' ),
 
-					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader, .pix-page-loading-bg, .pix-loading-circ-path, .mesh-loader, .lqd-preloader-wrap, .rey-sitePreloader, .et-loader, .preloader-plus, .plwao-loader-wrap {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}\r\n\r\n/*html body > :not(.preloader-plus) {\r\n\topacity: unset;\r\n}*/" ),
+					'preloaders'	=> array( 'enable' => true,		'descr' => 'Preloaders',				'data' => "#pre-load, #preloader, #page_preloader, #page-preloader, #loader-wrapper, #royal_preloader, #loftloader-wrapper, #page-loading, #the7-body > #load, #loader, #loaded, #loader-container, #ocean-preloader,\r\n.rokka-loader, .page-preloader-cover, .apus-page-loading, .medizco-preloder, e-page-transition, .loadercontent, .shadepro-preloader-wrap, .tslg-screen, .page-preloader, .pre-loading, .preloader-outer, .page-loader, .martfury-preloader, body.theme-dotdigital > .preloader, .loader-wrap, .site-loader, .pix-page-loading-bg, .pix-loading-circ-path, .mesh-loader, .lqd-preloader-wrap, .rey-sitePreloader, .et-loader, .preloader-plus, .plwao-loader-wrap, .wcf-preloader {\r\n\tdisplay: none !important;\r\n}\r\n\r\nbody.royal_preloader {\r\n\tvisibility: hidden !important;\r\n}\r\n\r\n/*html body > :not(.preloader-plus) {\r\n\topacity: unset;\r\n}*/" ),
 
-					'htmlGen'		=> array( 'enable' => true,		'descr' => 'Generic HTML',					'data' => "html, html.async-hide, body {\r\n\tdisplay: block !important;\r\n\topacity: 1 !important;\r\n\tvisibility: unset !important;\r\n}" ),
+					'htmlGen'		=> array( 'enable' => true,		'descr' => 'Generic HTML',					'data' => "html, html.async-hide, body {\r\n\tdisplay: block !important;\r\n\topacity: 1 !important;\r\n\tvisibility: unset !important;\r\n}\r\n\r\nhtml body:is(.seraph-accel-js-lzl-ing, .seraph-accel-js-lzl-ing-ani) {\r\n\toverflow: auto !important;\r\n}" ),
 
 					'jet-menu'		=> array( 'enable' => false,	'descr' => 'Jet Menu',					'data' => ".seraph-accel-js-lzl-ing ul.jet-menu > li[id^=jet-menu-item-] {\n\tdisplay: none!important;\n}" ),
 					'jet-testimonials'		=> array( 'enable' => true,	'descr' => 'Jet Testimonials',	'data' => ".jet-testimonials__instance:not(.slick-initialized) .jet-testimonials__item {\r\n\tmax-width: 100%;\r\n}\r\n\r\n.jet-testimonials__instance:not(.slick-initialized) .jet-testimonials__item:nth-child(n+4) {\r\n\tdisplay: none !important;\r\n}" ),
@@ -2355,6 +2429,8 @@ function OnOptGetDef_Sett()
 					'packery'		=> array( 'enable' => true,		'descr' => 'Packery',					'data' => "[data-packery-options].row.row-grid > .col:not([style*=\"position\"]),\r\n[data-packery-options].row.row-masonry > .col:not([style*=\"position\"]) {\r\n\tfloat: unset;\r\n\tdisplay: inline-block !important;\r\n\tvertical-align: top;\r\n}" ),
 
 					'theme-xstore'		=> array( 'enable' => true,		'descr' => 'XStore theme',		'data' => "body.wp-theme-xstore.elementor-default:not([data-elementor-device-mode]) {\r\n\t--etheme-element-loading-opacity: 1;\r\n\t--etheme-element-loading-visibility:visible;\r\n\t--etheme-element-loader-display:none;\r\n}" ),
+
+					'theme-bt'		=> array( 'enable' => true,		'descr' => 'BoldThemes',		'data' => "body:is(.seraph-accel-js-lzl-ing, .seraph-accel-js-lzl-ing-ani) .bt_bb_animation_fade_in {\r\n\topacity: 1;\r\n}\r\n\r\nbody:is(.seraph-accel-js-lzl-ing, .seraph-accel-js-lzl-ing-ani) .btSearch .btSearchInner.gutter {\r\n\tdisplay: none;\r\n}" ),
 
 					'cookie-law-info'		=> array( 'enable' => true,		'descr' => 'CookieYes',					'data' => ".cky-consent-container.cky-hide ~ .cky-consent-container {\r\n\tdisplay: none;\r\n}" ),
 				),
@@ -3987,6 +4063,8 @@ function ContProcGetSkipStatus( $content )
 	}
 
 	$http_response_code = http_response_code();
+	if( $seraph_accel_g_sRedirLocation && $http_response_code === 200 )
+		$http_response_code = 302;
 	if( $http_response_code !== 200 )
 	{
 		$skipStatus = 'httpCode:' . $http_response_code;
@@ -4073,7 +4151,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.44 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.11 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5377,7 +5455,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.44';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.11';
 
 	global $seraph_accel_g_aGetExtContentsFailedSrvs;
 
@@ -5508,6 +5586,54 @@ function GetCacheViewDeviceGrp( $settCache, $userAgent )
 	}
 
 	return( null );
+}
+
+function InitTimeoutClnForWpNonce( $settCache )
+{
+	static $g_bInited;
+
+	if( $g_bInited )
+		return;
+
+	if( !Gen::GetArrField( $settCache, array( 'enable' ), false ) || !Gen::GetArrField( $settCache, array( 'useTimeoutClnForWpNonce' ), false ) )
+	{
+		$g_bInited = true;
+		return;
+	}
+
+	$ctx = new AnyObj();
+	$ctx -> nonceTtlNeeded = Gen::GetArrField( $settCache, array( 'timeoutCln' ), 0 ) * 60 * 2;
+	$ctx -> nonceTtlNeededLoggedin = ( Gen::GetArrField( $settCache, array( 'ctx' ), false ) && !Gen::GetArrField( $settCache, array( 'ctxSkip' ), false ) ) ? ( Gen::GetArrField( $settCache, array( 'ctxTimeoutCln' ), 0 ) * 60 * 2 ) : 0;
+
+	{
+		$ctx -> cb =
+			function( $ctx, $nonceTtl )
+			{
+				$nonceTtlNeeded = is_user_logged_in() ? $ctx -> nonceTtlNeededLoggedin : $ctx -> nonceTtlNeeded;
+				return( $nonceTtl < $nonceTtlNeeded ? $nonceTtlNeeded : $nonceTtl );
+			};
+
+		add_filter( 'nonce_life', array( $ctx, 'cb' ), 99999 );
+	}
+
+	{
+		$ctx -> cbWpForms =
+			function( $ctx, $times )
+			{
+				$nonceTtlNeeded = is_user_logged_in() ? $ctx -> nonceTtlNeededLoggedin : $ctx -> nonceTtlNeeded;
+				if( !$nonceTtlNeeded )
+				    return( $times );
+
+				$nTtlDays = ( int )( $nonceTtlNeeded / DAY_IN_SECONDS );
+				for( $day = 1; $day <= $nTtlDays; $day++ )
+					$times[] = $day * DAY_IN_SECONDS;
+				return( $times );
+			};
+
+		add_filter( 'wpforms_form_token_check_before_today', array( $ctx, 'cbWpForms' ), 99999 );
+	}
+
+	$g_bInited = true;
 }
 
 function GetCurHdrsToStoreInCache( $settCache )
@@ -5837,7 +5963,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.44');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.11');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

@@ -144,7 +144,9 @@ function _Process( $sites )
 	$settCache = Gen::GetArrField( $sett, array( 'cache' ), array() );
 
 	$timeoutCln = Gen::GetArrField( $settCache, array( 'timeoutCln' ), 0 ) * 60;
-	$timeout = Gen::GetArrField( $settCache, array( 'timeout' ), 0 ) * 60;
+	$timeout = ($settCache[ 'updByTimeout' ]??true) ? ( Gen::GetArrField( $settCache, array( 'timeout' ), 0 ) * 60 ) : 0;
+
+	InitTimeoutClnForWpNonce( $settCache );
 
 	if( ( $requestMethod == 'GET' ) && isset( $_REQUEST[ 'seraph_accel_gf' ] ) )
 	{
@@ -321,6 +323,27 @@ function _Process( $sites )
 	$seraph_accel_g_ctxCache -> viewPath = GetCacheViewsDir( $siteCacheRootPath, $siteSubId ) . '/' . $viewId;
 	$ctxsPath = $seraph_accel_g_ctxCache -> viewPath . '/c';
 
+	if( ($settCache[ 'normAgent' ]??null) )
+		add_action( 'template_redirect',
+			function()
+			{
+				if( !is_404() )
+					return;
+
+				if( isset( $_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] ) )
+					$_SERVER[ 'HTTP_USER_AGENT' ] = $_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ];
+			}
+		, 0 );
+
+	add_filter( 'wp_redirect_status',
+		function( $status, $location )
+		{
+			global $seraph_accel_g_sRedirLocation;
+			$seraph_accel_g_sRedirLocation = $location;
+			return( $status );
+		}
+	, 99999, 2 );
+
 	{
 		$seraph_accel_g_ctxCache -> userId = $userId;
 		if( !$sessId || !$stateCookId || !Gen::GetArrField( $settCache, array( 'ctxSessSep' ), false ) )
@@ -335,7 +358,16 @@ function _Process( $sites )
 		$ctxPathId = $userId . '/s/' . $sessId;
 
 		if( !$seraph_accel_g_cacheCtxSkip && Gen::GetArrField( $settCache, array( 'ctx' ), false ) )
+		{
 			$_SERVER[ 'HTTP_X_SERAPH_ACCEL_SESSID' ] = $userId . '/' . $sessId;
+
+			if( $seraph_accel_g_ctxCache -> isUserSess )
+			{
+				$ctxTimeoutCln = Gen::GetArrField( $settCache, array( 'ctxTimeoutCln' ), 0 ) * 60;
+				if( $timeoutCln > $ctxTimeoutCln )
+					$timeoutCln = $ctxTimeoutCln;
+			}
+		}
 
 		if( $stateCookId )
 			$stateCookId = md5( $stateCookId );
@@ -644,7 +676,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.27.44;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.28.11;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -1255,6 +1287,7 @@ function CacheDscWriteCancel( $dscDel = true, $updTime = false )
 
 function _CacheSetRequestToPrepareAsyncEx( $siteId, $method, $url, $hdrs, $tmp = false )
 {
+
 	if( !$siteId )
 	{
 		$urlProc = ProcessQueueItemCtx::AdjustRequestUrl( $url, Gen::GetCurRequestTime(), array() );
@@ -1274,7 +1307,7 @@ function _CacheSetRequestToPrepareAsyncEx( $siteId, $method, $url, $hdrs, $tmp =
 			ProcessQueueItemCtx::MakeRequest( $asyncMode, $method, $urlProc, $hdrs );
 	}
 
-	if( CachePostPreparePageEx( $method, $url, $siteId, 10, null, $hdrs ) )
+	if( $tmp != 'only' && CachePostPreparePageEx( $method, $url, $siteId, 10, null, $hdrs ) )
 		CachePushQueueProcessor();
 }
 
@@ -1550,7 +1583,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( ($settCache[ 'normAgent' ]??null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = ($_SERVER[ 'HTTP_USER_AGENT' ]??'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.27.44';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.11';
 	}
 
 	if( ($settCache[ 'views' ]??null) )

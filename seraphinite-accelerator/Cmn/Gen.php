@@ -189,6 +189,21 @@ class Gen
 		self::_SetArrField( $arr, $fieldPath, null, true );
 	}
 
+	static function RenameArrField( &$arr, $fieldPath, $fieldPathNew, $sep = '.' )
+	{
+		if( !is_array( $fieldPath ) )
+			$fieldPath = explode( $sep, $fieldPath );
+		if( !is_array( $fieldPathNew ) )
+			$fieldPathNew = explode( $sep, $fieldPathNew );
+
+		$v = self::_GetArrField( $arr, $fieldPath, null, false, true, $bFound );
+		if( !$bFound )
+			return;
+
+		self::_SetArrField( $arr, $fieldPath, null, true );
+		self::_SetArrField( $arr, $fieldPathNew, $v );
+	}
+
 	static private function _SetArrField( &$arr, array $fieldPath, $val = null, $unset = false )
 	{
 		$fld = array_shift( $fieldPath );
@@ -1658,40 +1673,52 @@ class Gen
 		return( Gen::GetTempDirEx() );
 	}
 
-	static function GetCallStack( $options = DEBUG_BACKTRACE_PROVIDE_OBJECT, $limit = 0 )
+	const GETCALLSTACK_OPT_AS_ARRAY				= 0x80;
+	const GETCALLSTACK_OPT_ALL					= Gen::GETCALLSTACK_OPT_AS_ARRAY;
+
+	static function GetCallStack( $options = DEBUG_BACKTRACE_PROVIDE_OBJECT , $limit = 0 )
 	{
-		$a = @debug_backtrace( ( int )$options, ( int )$limit );
+		$a = @debug_backtrace( ( ( int )$options & ~Gen::GETCALLSTACK_OPT_ALL ), ( int )$limit );
 		array_splice( $a, 0, 1 );
 
-		$res = '';
+		$res = ( $options & Gen::GETCALLSTACK_OPT_AS_ARRAY ) ? array() : '';
 		foreach( $a as $i => $info )
 		{
-			if( $res )
-				$res .= "\n";
+			$r = '';
+			if( !( $options & Gen::GETCALLSTACK_OPT_AS_ARRAY ) )
+				$r = '#' . $i . ' ';
 
-			$res .= '#' . $i . ' ';
 			if( ($info[ 'file' ]??null) )
-				$res .= $info[ 'file' ];
+				$r .= $info[ 'file' ];
 			else
-				$res .= '{}';
+				$r .= '{}';
 			if( ($info[ 'line' ]??null) !== null )
-				$res .= '(' . $info[ 'line' ] . ')';
+				$r .= '(' . $info[ 'line' ] . ')';
 
-			$res .= ': ';
+			$r .= ': ';
 
 			if( ($info[ 'class' ]??null) )
-				$res .= $info[ 'class' ];
+				$r .= $info[ 'class' ];
 			if( ($info[ 'type' ]??null) )
-				$res .= $info[ 'type' ];
-			$res .= Gen::GetArrField( $info, array( 'function' ), '' ) . '(';
+				$r .= $info[ 'type' ];
+			$r .= Gen::GetArrField( $info, array( 'function' ), '' ) . '(';
 
 			foreach( Gen::GetArrField( $info, array( 'args' ), array() ) as $iArg => $arg )
 			{
 				if( $iArg )
-					$res .= ', ';
-				$res .= str_replace( array( '\\\\', '\\/' ), array( '\\', '/' ), @json_encode( $arg ) );
+					$r .= ', ';
+				$r .= str_replace( array( '\\\\', '\\/' ), array( '\\', '/' ), @json_encode( $arg ) );
 			}
-			$res .= ')';
+			$r .= ')';
+
+			if( $options & Gen::GETCALLSTACK_OPT_AS_ARRAY )
+				$res[] = $r;
+			else
+			{
+				if( $res )
+					$res .= "\n";
+				$res .= $r;
+			}
 		}
 
 		return( $res );
@@ -1787,11 +1814,9 @@ class Gen
 
 	static function VarCmp( $v1, $v2 )
 	{
-		if( $v1 < $v2 )
-			return( -1 );
-		if( $v1 > $v2 )
-			return( 1 );
-		return( 0 );
+		if( $v1 == $v2 )
+			return( 0 );
+		return( $v1 > $v2 ? 1 : -1 );
 	}
 
 	static function VarExport( $v, $fmt = null, $level = 0 )
@@ -1817,7 +1842,9 @@ class Gen
 			return( preg_replace( '@([^\\.])0+$@', '${1}', sprintf( '%.' . ( string )$fmt[ 'floatPrec' ] . 'F', $v ) ) );
 
 		case 'string':
-			return( json_encode( $v, JSON_UNESCAPED_SLASHES ) );
+			$v = json_encode( $v, JSON_UNESCAPED_SLASHES );
+			$v = str_replace( array( '${' ), array( '\\${' ), $v );
+			return( $v );
 
 		case 'array':
 			$res = 'array(' . $fmt[ 'elemSpace' ];
@@ -3624,7 +3651,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.27.44';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.28.11';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -4143,23 +4170,7 @@ class HtmlNd
 		if( !$nd )
 			return( false );
 
-		$val = HtmlNd::GetAttrClass( $nd );
-
-		if( !is_array( $valClasses ) )
-			$valClasses = explode( ' ', @trim( $valClasses ) );
-
-		if( !is_array( $valClassesRemove ) )
-			$valClassesRemove = explode( ' ', @trim( $valClassesRemove ) );
-
-		foreach( $valClasses as $valClass )
-			if( strlen( ( string )$valClass ) && !in_array( $valClass, $val ) )
-				$val[] = $valClass;
-
-		foreach( $valClassesRemove as $valClassRemove )
-			while( ( $i = array_search( $valClassRemove, $val ) ) !== false )
-				unset( $val[ $i ] );
-
-		$val = implode( ' ', $val );
+		$val = Ui::AddRemoveAttrClass( $nd -> getAttribute( 'class' ), $valClasses, $valClassesRemove );
 		if( strlen( $val ) )
 			$nd -> setAttribute( 'class', $val );
 		else
@@ -4371,7 +4382,8 @@ class HtmlNd
 
 		if( $aChildren )
 			foreach( $aChildren as $child )
-				$nd -> appendChild( $child );
+				if( $child )
+					$nd -> appendChild( $child );
 
 		return( $nd );
 	}

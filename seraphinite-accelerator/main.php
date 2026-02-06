@@ -41,7 +41,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.27.44', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.28.11', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -184,10 +184,12 @@ function OnInit( $isAdminMode )
 	global $seraph_accel_g_simpCacheMode;
 	global $seraph_accel_g_prepCont;
 
+	$settCache = Gen::GetArrField( $sett, array( 'cache' ), array() );
 	$settContPr = Gen::GetArrField( $sett, array( 'contPr' ), array() );
-	$cacheEnable = Gen::GetArrField( $sett, array( 'cache', 'enable' ), false );
+	$cacheEnable = Gen::GetArrField( $settCache, array( 'enable' ), false );
 
 	CacheInitQueueTable();
+	InitTimeoutClnForWpNonce( $settCache );
 
 	if( Gen::GetArrField( $sett, 'cache', 'viewsGeo', 'enable' ) )
 	{
@@ -209,32 +211,6 @@ function OnInit( $isAdminMode )
 	}
 	else
 		Plugin::AsyncTaskDel( 'ExtDbUpdSche' );
-
-	if( $cacheEnable && Gen::GetArrField( $sett, array( 'cache', 'useTimeoutClnForWpNonce' ), false ) )
-	{
-		add_action( 'init',
-			function()
-			{
-				if( is_user_logged_in() )
-					return;
-
-				$settCache = Gen::GetArrField( Plugin::SettGet(), array( 'cache' ), array() );
-
-				$ctx = new AnyObj();
-				$ctx -> nonceTtlNeeded = Gen::GetArrField( $settCache, array( 'timeoutCln' ), 0 ) * 60 * 2;
-				if( !$ctx -> nonceTtlNeeded )
-					return;
-
-				$ctx -> cb =
-					function( $ctx, $nonceTtl )
-					{
-						return( $nonceTtl < $ctx -> nonceTtlNeeded ? $ctx -> nonceTtlNeeded : $nonceTtl );
-					};
-
-				add_filter( 'nonce_life', array( $ctx, 'cb' ), 99999 );
-			}
-		, -99999 );
-	}
 
 	add_action( $isAdminMode ? 'admin_init' : 'init',
 		function()
@@ -598,6 +574,7 @@ function _OnPostUpdated( $postId )
 	global $seraph_accel_g_postUpdated;
 
 	$seraph_accel_g_postUpdated[ $postId ][ 'v' ] = false;
+	$seraph_accel_g_postUpdated[ $postId ][ 'r' ][ 'initiatorCallStack' ] = Gen::GetCallStack( DEBUG_BACKTRACE_IGNORE_ARGS | Gen::GETCALLSTACK_OPT_AS_ARRAY );
 
 }
 
@@ -676,6 +653,13 @@ function _OnCheckUpdatePost_FinalizeArr( $ctx, &$a )
 				$postIdVal[ 'r' ][ $fld ] = array_keys( $postIdVal[ 'r' ][ $fld ] );
 
 		$postIdVal[ 'r' ][ 'initiator' ] = $ctx -> sRequest;
+
+		if( $ics = ($postIdVal[ 'r' ][ 'initiatorCallStack' ]??null) )
+		{
+			unset( $postIdVal[ 'r' ][ 'initiatorCallStack' ] );
+			$postIdVal[ 'r' ][ 'initiatorCallStack' ] = $ics;
+			unset( $ics );
+		}
 	}
 }
 
@@ -1281,7 +1265,7 @@ function _OnUpdateGeoDb_Mm_Finish()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.27.44' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.11' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1297,6 +1281,7 @@ function _ManagePage()
 
 	$aViews = GetViewsList( $sett, true );
 	$aGeos = GetGeosList( $sett, true );
+	$aLangs = GetLangsList( $aLangsSel );
 
 	{
 		Ui::PostBoxes_MetaboxAdd( 'status', esc_html_x( 'Title', 'admin.Manage_Status', 'seraphinite-accelerator' ) . Ui::Tag( 'span', Ui::AdminHelpBtn( Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Manage_Status' ), Ui::AdminHelpBtnModeBlockHeader ) ), false,
@@ -1428,6 +1413,9 @@ function _ManagePage()
 						if( $aGeos )
 							$oSub .= Ui::Tag( 'td', Ui::TokensList( array( '' ), 'seraph_accel_geos', array( 'style' => array( 'min-height' => '3em', 'height' => '5em', 'max-height' => '15em' ), 'data-oninit' => 'seraph_accel.Ui.TokensMetaTree.Expand(this,seraph_accel.Manager._int.geos,true)' ) ) );
 
+						if( $aLangs )
+							$oSub .= Ui::Tag( 'td', Ui::TokensList( $aLangsSel, 'seraph_accel_langs', array( 'style' => array( 'min-height' => '3em', 'height' => '5em', 'max-height' => '15em' ), 'data-oninit' => 'seraph_accel.Ui.TokensMetaTree.Expand(this,seraph_accel.Manager._int.langs,true)' ) ) );
+
 						if( $oSub )
 						{
 							echo( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'ctlSpaceVBefore std', 'style' => array( 'width' => '100%' ) ) ) );
@@ -1511,7 +1499,7 @@ function _ManagePage()
 	Ui::PostBoxes( Plugin::GetSubjectTitle( esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ) ), array( 'body' => array(  ), 'normal' => array(), 'side' => array(  ) ),
 		array(),
 		get_defined_vars(),
-		array( 'wrap' => array( 'id' => 'seraph_accel_manage', 'data-oninit' => 'seraph_accel.Manager._int.views = ' . @json_encode( $aViews ) . ';seraph_accel.Manager._int.geos = ' . @json_encode( $aGeos ) . ';seraph_accel.Manager._int.OnDataRefreshInit(this,' . ( $adminMsModes[ 'local' ] ? 'false' : 'true' ) . ')' ) )
+		array( 'wrap' => array( 'id' => 'seraph_accel_manage', 'data-oninit' => 'seraph_accel.Manager._int.views = ' . @json_encode( $aViews ) . ';seraph_accel.Manager._int.geos = ' . @json_encode( $aGeos ) . ';seraph_accel.Manager._int.langs = ' . @json_encode( $aLangs ) . ';seraph_accel.Manager._int.OnDataRefreshInit(this,' . ( $adminMsModes[ 'local' ] ? 'false' : 'true' ) . ')' ) )
 	);
 }
 
@@ -1519,7 +1507,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.27.44' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.28.11' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -1777,7 +1765,7 @@ function OnAsyncTask_CacheNextScheduledOp( $args )
 
 			if( $urls === true )
 			{
-				if( CacheOp( $op, $prior, null, null, $cbIsAborted ) === false )
+				if( CacheOp( $op, $prior, null, null, null, $cbIsAborted ) === false )
 					break;
 			}
 			else if( CacheOpUrls( true, $urls, $op, $prior, $cbIsAborted ) === false )
@@ -2176,6 +2164,55 @@ function GetGeosList( $sett )
 	return( $aGeos );
 }
 
+function GetLangsList( &$aLangsSel )
+{
+	$aLangs = array();
+	$aLangsSel = null;
+
+	if( Gen::DoesFuncExist( 'SitePress::get_languages' ) )
+	{
+		try
+		{
+			global $sitepress;
+
+			foreach( Gen::GetArrField( $sitepress -> get_languages( false, true ), '', array() ) as $lang => $langInfo )
+				$aLangs[ $lang ] = array( 'name' => $langInfo[ 'display_name' ] );
+			$aLangsSel = array();
+		}
+		catch( \Exception $e )
+		{
+		}
+	}
+	else
+
+	if( Gen::DoesFuncExist( 'TRP_Translate_Press::get_trp_instance' ) )
+	{
+		try
+		{
+			$oTrp = \TRP_Translate_Press::get_trp_instance();
+			$oUrlConverter = $oTrp -> get_component( 'url_converter' );
+
+			foreach( Gen::GetArrField( $oTrp -> get_component( 'settings' ) -> get_settings(), array( 'publish-languages' ), array() ) as $lang )
+				$aLangs[ $lang ] = array( 'name' => $lang );
+			$aLangsSel = array_keys( $aLangs );
+			$aLangsSel[] = 'ALL';
+		}
+		catch( \Exception $e )
+		{
+		}
+	}
+
+	if( $aLangs )
+	{
+		foreach( $aLangs as &$l )
+			$l[ 'parent' ] = 'ALL';
+		unset( $l );
+		$aLangs[ 'ALL' ] = array( 'name' => esc_html_x( 'AllLangs', 'admin.Manage_Operate', 'seraphinite-accelerator' ) );
+	}
+
+	return( $aLangs );
+}
+
 function GetUserDisplayName( $sessId )
 {
 	$sessId = explode( '/', $sessId );
@@ -2301,11 +2338,11 @@ function OnAsyncTask_CacheOp( $args )
 		if( !$urls )
 			$urls = array( Wp::GetSiteRootUrl() );
 
-		$res = CacheOpUrls( true, $urls, $op, 0, true, null, Gen::GetArrField( $args, array( 'v' ) ), Gen::GetArrField( $args, array( 'g' ) ), Gen::GetArrField( $args, array( 'u' ), 0 ) );
+		$res = CacheOpUrls( true, $urls, $op, 0, true, null, Gen::GetArrField( $args, array( 'v' ) ), Gen::GetArrField( $args, array( 'g' ) ), Gen::GetArrField( $args, array( 'l' ) ), Gen::GetArrField( $args, array( 'u' ), 0 ) );
 		break;
 
 	default:
-		if( ( $res = CacheOp( $op, 100, Gen::GetArrField( $args, array( 'v' ) ), Gen::GetArrField( $args, array( 'g' ) ) ) ) && $op != 1 )
+		if( ( $res = CacheOp( $op, 100, Gen::GetArrField( $args, array( 'v' ) ), Gen::GetArrField( $args, array( 'g' ) ), Gen::GetArrField( $args, array( 'l' ) ) ) ) && $op != 1 )
 			Plugin::StateUpdateFlds( array( 'settChangedUpdateCache' => null ) );
 		break;
 	}
@@ -2333,6 +2370,9 @@ function OnAdminApi_CacheOpBegin( $args )
 
 	if( isset( $args[ 'g' ] ) )
 		$args[ 'g' ] = explode( ',', $args[ 'g' ] );
+
+	if( isset( $args[ 'l' ] ) )
+		$args[ 'l' ] = explode( ',', $args[ 'l' ] );
 
 	if( $args[ 'op' ] == 10 )
 		CacheExt_ClearOnExtRequest( Gen::GetArrField( $args, array( 'type' ), '' ) == 'uri' ? ($args[ 'uri' ][ 0 ]??'') : null );
@@ -2429,13 +2469,15 @@ class API
 	const CACHE_OP_DEL = 2;
 	const CACHE_OP_SRVDEL = 10;
 
-	static function OperateCache( $op = API::CACHE_OP_DEL, $obj = null, $viewId = null, $userId = null, $geoId = null )
+	static function OperateCache( $op = API::CACHE_OP_DEL, $obj = null, $viewId = null, $userId = null, $geoId = null, $langId = null )
 	{
 		$args = array( 'uri' => ( array )$obj, 'op' => $op, 'type' => $obj ? 'uri' : '' );
 		if( $viewId )
 		    $args[ 'v' ] = $viewId;
 		if( $geoId !== null )
 		    $args[ 'g' ] = $geoId;
+		if( $langId !== null )
+		    $args[ 'l' ] = $langId;
 		if( $userId )
 			$args[ 'u' ] = $userId;
 

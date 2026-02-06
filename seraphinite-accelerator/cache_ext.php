@@ -982,7 +982,7 @@ function CacheExt_Clear( $url = null )
 			LogWrite( 'Hostinger: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
-	if( Gen::DoesFuncExist( '\\CF\\WordPress\\Hooks::purgeCacheEverything' ) )
+	if( Gen::DoesFuncExist( '\\Cloudflare\\APO\\WordPress\\Hooks::purgeCacheEverything' ) )
 	{
 		$logInfo = '';
 

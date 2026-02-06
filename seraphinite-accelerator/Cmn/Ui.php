@@ -374,6 +374,38 @@ class Ui
 		return( strlen( $v ) ? explode( ' ', $v ) : array() );
 	}
 
+	static function DeParseClassAttr( $v )
+	{
+		return( implode( ' ', $v ) );
+	}
+
+	static function AddRemoveAttrClassEx( $val, $valClasses, $valClassesRemove = '' )
+	{
+		if( !is_array( $valClasses ) )
+			$valClasses = $valClasses !== '' ? explode( ' ', @trim( $valClasses ) ) : array();
+
+		if( !is_array( $valClassesRemove ) )
+			$valClassesRemove = $valClassesRemove !== '' ? explode( ' ', @trim( $valClassesRemove ) ) : array();
+
+		foreach( $valClasses as $valClass )
+			if( strlen( ( string )$valClass ) && !in_array( $valClass, $val ) )
+				$val[] = $valClass;
+
+		foreach( $valClassesRemove as $valClassRemove )
+			while( ( $i = array_search( $valClassRemove, $val ) ) !== false )
+				unset( $val[ $i ] );
+
+		return( $val );
+	}
+
+	static function AddRemoveAttrClass( $val, $valClasses, $valClassesRemove = '' )
+	{
+		$val = Ui::ParseClassAttr( $val );
+		$val = Ui::AddRemoveAttrClassEx( $val, $valClasses, $valClassesRemove );
+		$val = Ui::DeParseClassAttr( $val );
+		return( $val );
+	}
+
 	static function IsSrcAttrData( $v )
 	{
 		return( strtolower( substr( $v, 0, 5 ) ) === 'data:' );
@@ -740,7 +772,7 @@ class Ui
 		return( Ui::Tag( 'div', Ui::TagOpen( 'input', $attrsVal, true ), $attrs ) );
 	}
 
-	static function TokensList_GetVal( $value, callable $cbItem = null, $unmask = false )
+	static function TokensList_GetVal( $value,  $cbItem = null, $unmask = false )
 	{
 		$value = @stripslashes( $value );
 		if( $unmask )

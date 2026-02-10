@@ -784,7 +784,7 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $langId = n
 					if( ($ctx -> datasDel[ $dataType ][ $dataId ]??null) )
 					{
 						$tmFile = @filemtime( $dataFile );
-						if( $tmFile !== false && $ctx -> tmCur - $tmFile > min( $ctx -> timeout, ( 12 * 60 * 60 ) ) )
+						if( $tmFile !== false && $ctx -> tmCur - $tmFile > min( $ctx -> timeout, ( 48 * 60 * 60 ) ) )
 							@unlink( $dataFile );
 					}
 				}
@@ -1215,7 +1215,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.12' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.13' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{

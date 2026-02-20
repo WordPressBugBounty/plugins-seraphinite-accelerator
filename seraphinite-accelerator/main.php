@@ -41,7 +41,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.28.13', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.28.14', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -377,6 +377,7 @@ function _OnOptionUpdated_PermalinkManagerUris( $option, $value, $valueOld )
 	if( !is_array( $value ) || !is_array( $valueOld ) )
 		return;
 
+	global $seraph_accel_g_postUpdated;
 	global $seraph_accel_g_aDelUrls;
 
 	global $permalink_manager_uris;
@@ -396,6 +397,9 @@ function _OnOptionUpdated_PermalinkManagerUris( $option, $value, $valueOld )
 			$seraph_accel_g_aDelUrls[ $url ][ 'postId' ] = $postId;
 			$seraph_accel_g_aDelUrls[ $url ][ 'permalinkManager_pathChanged' ] = array( 'old' => $path, 'new' => $pathNew );
 		}
+
+		$seraph_accel_g_postUpdated[ $postId ][ 'v' ] = false;
+		$seraph_accel_g_postUpdated[ $postId ][ 'r' ][ 'permalinkManager_pathChanged' ] = array( 'old' => $path, 'new' => $pathNew );
 	}
 
 	$permalink_manager_uris = $permalink_manager_uris_prev;
@@ -473,7 +477,7 @@ function _OnPostStatusUpdate( $new_status, $old_status, $post )
 
 	global $seraph_accel_g_postUpdated;
 
-	$seraph_accel_g_postUpdated[ $post -> ID ][ 'v' ] = false;
+	$seraph_accel_g_postUpdated[ $post -> ID ][ 'v' ] = $old_status == 'publish';
 	$seraph_accel_g_postUpdated[ $post -> ID ][ 'r' ][ 'status' ] = $new_status;
 
 }
@@ -573,7 +577,8 @@ function _OnPostUpdated( $postId )
 {
 	global $seraph_accel_g_postUpdated;
 
-	$seraph_accel_g_postUpdated[ $postId ][ 'v' ] = false;
+	if( !isset( $seraph_accel_g_postUpdated[ $postId ][ 'v' ] ) )
+		$seraph_accel_g_postUpdated[ $postId ][ 'v' ] = false;
 	$seraph_accel_g_postUpdated[ $postId ][ 'r' ][ 'initiatorCallStack' ] = Gen::GetCallStack( DEBUG_BACKTRACE_IGNORE_ARGS | Gen::GETCALLSTACK_OPT_AS_ARRAY );
 
 }
@@ -610,7 +615,10 @@ function _OnPostUpdatedEx( $postId, $post, $postBefore )
 		{
 			$seraph_accel_g_aDelUrls[ $url ][ 'postId' ] = $postId;
 			$seraph_accel_g_aDelUrls[ $url ][ 'postUpdated' ] = 'hidden';
+
 		}
+
+		$seraph_accel_g_postUpdated[ $postId ][ 'r' ][ 'attributes' ][ 'post_status' ] = true;
 		$seraph_accel_g_postUpdated[ $postId ][ 'v' ] = true;
 	}
 }
@@ -780,6 +788,18 @@ function _CheckUpdatePostProcess( $aPostUpdated, $proc = null, $cbIsAborted = fa
 	}
 }
 
+function _CheckUpdatePostProcessAdd_Merge( $vPrev, $v )
+{
+	if( !is_array( $vPrev ) || !is_array( $v ) )
+		return( $v );
+
+	$bNoChkVisible = ($v[ 'v' ]??null);
+	if( $bNoChkVisible )
+		$vPrev[ 'v' ] = true;
+
+	return( $vPrev );
+}
+
 function _CheckUpdatePostProcessAdd( $aPostUpdated )
 {
 	$dirQueue = GetCacheDir() . '/upq/' . GetSiteId();
@@ -789,7 +809,7 @@ function _CheckUpdatePostProcessAdd( $aPostUpdated )
 		return;
 
 	$a = new ArrayOnFiles( $dirQueue . '/*.dat.gz' );
-	$a -> setItems( $aPostUpdated );
+	$a -> setItems( $aPostUpdated, 'seraph_accel\\_CheckUpdatePostProcessAdd_Merge' );
 	$a -> dispose(); unset( $a );
 
 	$lock -> Release();
@@ -900,7 +920,7 @@ function OnAsyncTask_CheckUpdatePostProcessAdd( $args )
 		return;
 
 	$a = new ArrayOnFiles( $dirQueue . '/*.dat.gz' );
-	$a -> setItems( $aPostUpdated );
+	$a -> setItems( $aPostUpdated, 'seraph_accel\\_CheckUpdatePostProcessAdd_Merge' );
 	$a -> dispose(); unset( $a );
 
 	$lock -> Release();
@@ -1265,7 +1285,7 @@ function _OnUpdateGeoDb_Mm_Finish()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.13' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.14' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1507,7 +1527,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.28.13' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.28.14' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';

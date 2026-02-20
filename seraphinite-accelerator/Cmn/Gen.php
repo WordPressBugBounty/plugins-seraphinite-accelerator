@@ -2602,11 +2602,11 @@ class ArrayOnFiles implements \Iterator, \ArrayAccess, \Countable
 		return( null );
 	}
 
-	public function setItem( $key, $value )
+	public function setItem( $key, $value, $cbMerge = null )
 	{
 		$this -> _UnloadUnusedChunks();
 
-		if( !$this -> _setItem( $key, $value ) )
+		if( !$this -> _setItem( $key, $value, $cbMerge ) )
 			return( false );
 
 		$res = $this -> _ChunksUpdate();
@@ -2614,13 +2614,13 @@ class ArrayOnFiles implements \Iterator, \ArrayAccess, \Countable
 		return( $res );
 	}
 
-	public function setItems( array $a, $saveMem = false )
+	public function setItems( array $a, $cbMerge = null, $saveMem = false )
 	{
 		if( $saveMem )
 			$this -> _UnloadUnusedChunks();
 
 		foreach( $a as $key => $value )
-			if( !$this -> _setItem( $key, $value, $saveMem ) )
+			if( !$this -> _setItem( $key, $value, $cbMerge, $saveMem ) )
 				return( false );
 
 		$res = $this -> _ChunksUpdate();
@@ -2628,7 +2628,7 @@ class ArrayOnFiles implements \Iterator, \ArrayAccess, \Countable
 		return( $res );
 	}
 
-	private function _setItem( $key, $value, $saveMem = true )
+	private function _setItem( $key, $value, $cbMerge = null, $saveMem = true )
 	{
 		if( $this -> options[ 'keys' ] && $key !== null )
 		{
@@ -2640,6 +2640,9 @@ class ArrayOnFiles implements \Iterator, \ArrayAccess, \Countable
 				{
 					if( !$this -> options[ 'cbSort' ] || call_user_func( $this -> options[ 'cbSort' ], $chunk -> a[ $key ], $value ) === 0 )
 					{
+						if( $cbMerge )
+							$value = $cbMerge( $chunk -> a[ $key ], $value );
+
 						$chunk -> a[ $key ] = $value;
 						$chunk -> dirty = true;
 						return( true );
@@ -3651,7 +3654,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.28.13';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.28.14';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

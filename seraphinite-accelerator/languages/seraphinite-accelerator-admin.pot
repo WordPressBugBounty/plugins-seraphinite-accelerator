@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.28.13)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.28.13\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.28.14)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.28.14\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.28.13)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.28.13\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.28.14)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.28.14\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -2067,6 +2067,10 @@ msgctxt "admin.Settings_Html_RandCorr"
 msgid "AsClnTlkChk"
 msgstr ""
 
+msgctxt "admin.Settings_Html_RandCorr"
+msgid "ChbsBkngFrmChk"
+msgstr ""
+
 # Smooth appearing
 msgctxt "admin.Settings_Images_Lazy"
 msgid "SmoothAppearChk"
@@ -2438,6 +2442,11 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "ElmntrSheChk"
 msgstr ""
 
+# Sticky header of Elementor
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "ElmntrStckHdrChk"
+msgstr ""
+
 # Stretched elements for Elementor
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "ElmntrStrtchSecChk"
@@ -2556,6 +2565,16 @@ msgstr ""
 # Product gallery images thumbnails of WooCommerce from Carafity theme
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "WooPrdGallCrftThmbsChk"
+msgstr ""
+
+# Product gallery images of Nasa
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "WooNasaPrdGallChk"
+msgstr ""
+
+# WooPrdGallSldChk
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "WooPrdGallSldChk"
 msgstr ""
 
 # Thumbnail of tagDiv
@@ -2698,6 +2717,7 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "DiviHdrChk"
 msgstr ""
 
+# Countdown Timer from Divi
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "DiviCntdwnTmrChk"
 msgstr ""
@@ -2982,7 +3002,7 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "WcsChk"
 msgstr ""
 
-# Animation of TPGB
+# Animation of Nexter Gutenberg Blocks
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "TpgbAniChk"
 msgstr ""
@@ -3015,6 +3035,11 @@ msgstr ""
 # Centered
 msgctxt "admin.Settings_Frames_ContParts_SlckGen_Item"
 msgid "CenterModeChk"
+msgstr ""
+
+# Vertical
+msgctxt "admin.Settings_Frames_ContParts_SlckGen_Item"
+msgid "VerticalChk"
 msgstr ""
 
 # %1$s slides to show

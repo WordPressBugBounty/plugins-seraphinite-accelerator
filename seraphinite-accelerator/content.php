@@ -19,6 +19,7 @@ function GetContentProcessCtxEx( $serverArgs, $sett, $siteId, $siteUrl, $siteRoo
 		'siteRootPath' => Gen::SetLastSlash( $siteRootPath, false ),
 		'siteContPath' => Gen::SetLastSlash( $siteContentPath, false ),
 		'siteRootDataPath' => null,
+		'siteCacheRootDir' => $cacheDir,
 		'dataPath' => GetCacheDataDir( $cacheDir . '/s/' . $siteId ),
 		'wpRootSubPath' => $wpRootSubPath . '/',
 		'siteId' => $siteId,
@@ -36,6 +37,8 @@ function GetContentProcessCtxEx( $serverArgs, $sett, $siteId, $siteUrl, $siteRoo
 		'aCssCrit' => array(),
 		'aCssRpl' => array(),
 		'aCssRplExcl' => array(),
+
+		'bJsCssAddType' => apply_filters( 'seraph_accel_jscss_addtype', false ),
 
 	);
 
@@ -91,6 +94,7 @@ function &GetContentProcessCtx( $serverArgs, $sett )
 		}
 
 		$seraph_accel_g_ctxProcess = GetContentProcessCtxEx( $serverArgs, $sett, GetSiteId(), $siteRootUrl, $siteRootPath, WP_CONTENT_DIR, $siteWpRootSubPath, GetCacheDir(), defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG );
+		ContentProcess_InitLocalCbs( $seraph_accel_g_ctxProcess );
 	}
 
 	return( $seraph_accel_g_ctxProcess );

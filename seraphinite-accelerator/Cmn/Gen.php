@@ -21,6 +21,7 @@ class Gen
 	const S_ALREADY_EXISTS							= 0x000700B7;
 	const S_TIMEOUT									= 0x000705B4;
 	const S_ABORTED									= 0x000704C7;
+	const S_ACCESS_DENIED							= 0x00070005;
 
 	const E_DISPATCH_9								= 0x80020009;
 	const E_NOTIMPL									= 0x80004001;
@@ -698,7 +699,7 @@ class Gen
 			if( !strlen( $filePath ) )
 				break;
 
-			if( $filePathRoot && strlen( $filePathRoot ) >= strlen( $filePath ) )
+			if( $filePathRoot && strlen( $filePathRoot ) > strlen( $filePath ) )
 				break;
 
 			if( @file_exists( $filePath ) )
@@ -767,12 +768,12 @@ class Gen
 		return( true );
 	}
 
-	static function CopyDir( $path, $pathNew )
+	static function CopyDir( $path, $pathNew, $bMove = false )
 	{
 		if( Gen::HrFail( Gen::MakeDir( $pathNew, true ) ) )
 			return( false );
 
-		$ctx = array( 'pathNew' => $pathNew );
+		$ctx = array( 'pathNew' => $pathNew, 'bMove' => $bMove );
 		if( Gen::DirEnum( $path, $ctx,
 			function( $path, $file, &$ctx )
 			{
@@ -780,16 +781,27 @@ class Gen
 				$pathNew = $ctx[ 'pathNew' ] . '/' . $file;
 				if( @is_dir( $path ) )
 				{
-					if( !Gen::CopyDir( $path, $pathNew ) )
+					if( !Gen::CopyDir( $path, $pathNew, $ctx[ 'bMove' ] ) )
 						$ctx[ 'notAll' ] = true;
 				}
-				else if( !@copy( $path, $pathNew ) )
-					$ctx[ 'notAll' ] = true;
+				else
+				{
+					if( $ctx[ 'bMove' ] )
+					{
+						if( !@rename( $path, $pathNew ) )
+							$ctx[ 'notAll' ] = true;
+					}
+					else if( !@copy( $path, $pathNew ) )
+						$ctx[ 'notAll' ] = true;
+				}
 
 				return( true );
 			}
 		) === null )
 			return( false );
+
+		if( $bMove && !Gen::DelDir( $path ) )
+			$ctx[ 'notAll' ] = true;
 
 		return( !( isset( $ctx[ 'notAll' ] ) ? $ctx[ 'notAll' ] : false ) );
 	}
@@ -803,7 +815,7 @@ class Gen
 				$path = $path . '/' . $file;
 				if( @is_dir( $path ) )
 				{
-					if( !Gen::DelDir( $path ) )
+					if( Gen::DelDir( $path ) === false )
 						$notAll = true;
 				}
 				else if( !@unlink( $path ) )
@@ -816,7 +828,7 @@ class Gen
 		if( $notAll )
 			return( false );
 
-		return( $selfToo ? @rmdir( $path ) : true );
+		return( $selfToo ? ( file_exists( $path ) ? @rmdir( $path ) : null ) : true );
 	}
 
 	static function DirGetHash( $path, $inclCont = false )
@@ -923,6 +935,9 @@ class Gen
 
 	static function FileContentExclusive_Close( $h )
 	{
+		if( !$h )
+			return;
+
 		@flock( $h, LOCK_UN );
 		@fclose( $h );
 	}
@@ -1022,6 +1037,16 @@ class Gen
 		return( @file_exists( $file ) ? @filesize( $file ) : false );
 	}
 
+	static function Unlink( $file )
+	{
+		return( @file_exists( $file ) ? @unlink( $file ) : false );
+	}
+
+	static function Touch( $file, $mtime = null )
+	{
+		return( @file_exists( $file ) ? @touch( $file, $mtime ) : false );
+	}
+
 	static function FileGetContents( $file )
 	{
 		return( @file_exists( $file ) ? @file_get_contents( $file ) : false );
@@ -1032,6 +1057,68 @@ class Gen
 		if( is_dir( $file ) )
 			Gen::DelDir( $file );
 		return( @file_put_contents( $file, $data ) );
+	}
+
+	static function FileWriteTmpAndReplace( $lock, $file, $data, $fileTime = null, $delIfFail = false, $overwrite = true, $makeDir = null )
+	{
+		if( !$overwrite && @file_exists( $file ) )
+			return( null );
+
+		$dir = Gen::GetFileDir( $file );
+
+		if( $makeDir !== null && Gen::HrFail( Gen::MakeDir( $dir, $makeDir ) ) )
+		{
+			Gen::LastErrDsc_Set( LocId::Pack( 'DirWriteErr_%1$s', 'Common', array( $dir ) ) );
+			return( false );
+		}
+
+		if( $lock )
+			$fileTmp = $file . '.tmp';
+		else
+		{
+			$fileTmp = tempnam( $dir, '' );
+			if( !$fileTmp )
+			{
+				Gen::LastErrDsc_Set( LocId::Pack( 'DirWriteErr_%1$s', 'Common', array( $dir ) ) );
+				return( false );
+			}
+		}
+
+		if( ( $lr = $lock ? $lock -> Acquire() : null ) !== false )
+		{
+			if( @file_put_contents( $fileTmp, $data ) )
+			{
+				if( $fileTime === null || @touch( $fileTmp, $fileTime ) )
+				{
+					if( @file_exists( $file ) )
+						@unlink( $file );
+
+					if( @rename( $fileTmp, $file ) )
+					{
+						if( $lr )
+							$lock -> Release();
+						return( true );
+					}
+					else
+						Gen::LastErrDsc_Set( LocId::Pack( 'FileRenameErr_%1$s%2$s', 'Common', array( $fileTmp, $file ) ) );
+				}
+				else
+					Gen::LastErrDsc_Set( LocId::Pack( 'FileWriteErr_%1$s', 'Common', array( $fileTmp ) ) );
+			}
+			else
+				Gen::LastErrDsc_Set( LocId::Pack( 'FileWriteErr_%1$s', 'Common', array( $fileTmp ) ) );
+		}
+		else
+			Gen::LastErrDsc_Set( $lock -> GetErrDescr() );
+
+		@unlink( $fileTmp );
+		if( $delIfFail )
+			@unlink( $file );
+
+		if( $lr )
+			$lock -> Release();
+
+		return( false );
 	}
 
 	static function SetLastSlash( $filepath, $set = true, $slash = '/' )
@@ -1159,6 +1246,11 @@ class Gen
 			$subjectEl = Gen::StrReplace( $search, $replace, $subjectEl );
 
 		return( $subject );
+	}
+
+	static function StrReplaceKeyed( $searchReplace, $subject )
+	{
+		return( Gen::StrReplace( array_keys( $searchReplace ), array_values( $searchReplace ), $subject ) );
 	}
 
 	static function ArrCopy( $arr )
@@ -1405,7 +1497,7 @@ class Gen
 	{
 		if( gettype( $data ) != 'string' )
 			return( '' );
-		return( preg_replace( '@[^A-Za-z0-9_\\-:+=|/,\\.\\ ]@', '', $data ) );
+		return( preg_replace( '@[^A-Za-z0-9_\\-:+=|/,\\.\\ \\\\]@', '', $data ) );
 	}
 
 	static private function _GetRequestSessionsCloserForContinueBgWork()
@@ -1632,6 +1724,69 @@ class Gen
 	{
 
 		return( str_replace( '^', '%', $v ) );
+	}
+
+	static function GetCpuLoad()
+	{
+		if( function_exists( 'sys_getloadavg' ) )
+		{
+			$loadavg = sys_getloadavg();
+			if( is_array( $loadavg ) )
+			{
+				$loadavg = ($loadavg[ 0 ]??null);
+				if( is_float( $loadavg ) )
+				{
+					if( $loadavg > 1.0 )
+						$loadavg = 1.0;
+					return( $loadavg );
+				}
+			}
+		}
+
+		if( stristr( PHP_OS, 'win' ) )
+        {
+            $output = null;
+			if( function_exists( 'exec' ) )
+				@exec( 'wmic cpu get loadpercentage /all', $output );
+
+            if( $output )
+                foreach( $output as $line )
+                    if( $line && preg_match( '@^[0-9]+\$@', $line ) )
+                        return( ( float )( ( int )$line / 100 ) );
+        }
+
+		return( false );
+	}
+
+	static function GetCpuCount()
+	{
+		static $g_nCpu;
+
+		if( $g_nCpu !== null )
+			return( $g_nCpu );
+
+		if( stristr( PHP_OS, 'win' ) )
+        {
+			if( $n = getenv( 'NUMBER_OF_PROCESSORS' ) )
+				return( $g_nCpu = $n );
+
+			if( function_exists( 'shell_exec' ) )
+				return( $g_nCpu = ( int )shell_exec( 'echo %NUMBER_OF_PROCESSORS%' ) );
+
+			return( $g_nCpu = false );
+        }
+		else
+		{
+			if( $cpuinfo = Gen::FileGetContents( '/proc/cpuinfo' ) )
+				if( preg_match_all( '@^processor@m', $cpuinfo, $m ) )
+					return( $g_nCpu = count( $m[ 0 ] ) );
+
+			if( function_exists( 'shell_exec' ) )
+				if( $n = ( int )shell_exec( 'cat /proc/cpuinfo | grep processor | wc -l' ) )
+					return( $g_nCpu = $n );
+		}
+
+		return( $g_nCpu = false );
 	}
 
 	static function LastErrDsc_Set( $txt )
@@ -1899,9 +2054,34 @@ class Gen
 		return( !$resLastAbortCheck );
 	}
 
-	static function GetNonce( $data, $key )
+	static function GetNonce( $data, $key, $ttl = null, $time = null )
 	{
-		return( str_replace( array( '/', '+' ), '', rtrim( base64_encode( hash_hmac( 'md5', $data, $key, true ) ), '=' ) ) );
+		if( $ttl )
+		{
+			if( $time === null )
+				$time = time();
+			$time = Gen::AlignNLow( $time, ( int )( $ttl / 2 ) );
+		}
+
+		return( str_replace( array( '/', '+' ), '', rtrim( base64_encode( hash_hmac( 'md5', $data . ( $time ? ( string )$time : '' ), $key, true ) ), '=' ) ) );
+	}
+
+	static function CheckNonce( $nonce, $data, $key, $ttl = null, $time = null )
+	{
+		if( $ttl )
+		{
+			if( $time === null )
+				$time = time();
+			$time = array( $time, $time - ( int )( $ttl / 2 ) );
+		}
+		else
+			$time = array( null );
+
+		foreach( $time as $timeCheck )
+			if( $nonce == Gen::GetNonce( $data, $key, $ttl, $timeCheck ) )
+				return( true );
+
+		return( false );
 	}
 
 	static function ParseProps( $props, $sep = ';', $sepVal = '=', $aDefs = null )
@@ -1987,6 +2167,15 @@ class Gen
 	static function Constant( string $name, $def = null )
 	{
 		return( defined( $name ) ? @constant( $name ) : $def );
+	}
+
+	static function GetScriptCpuTime()
+	{
+
+		$v = getrusage();
+		if( !is_array( $v ) )
+			return( 0.0 );
+		return( ( float )$v[ 'ru_utime.tv_sec' ] + $v[ 'ru_utime.tv_usec' ] / ( 1000 * 1000 ) );
 	}
 
 	static private $_lastErrDsc = null;
@@ -2404,6 +2593,11 @@ class ArrayOnFiles implements \Iterator, \ArrayAccess, \Countable
 
 		usort( $this -> aChunk, function( $chunk1, $chunk2 ) { return( Gen::VarCmp( $chunk1 -> idx, $chunk2 -> idx ) ); } );
     }
+
+	function GetDir()
+	{
+		return( implode( '*', $this -> dir ) );
+	}
 
 	#[\ReturnTypeWillChange]
 	public function current()
@@ -3247,13 +3441,36 @@ class Net
 	const E_HTTP_STATUS_BEGIN						= 0x100;
 	const E_HTTP_STATUS_END							= 0x400;
 
+	const E_HTTP_STATUS_400							= 0x80190290;
+	const E_HTTP_STATUS_403							= 0x80190293;
+
+	const E_HTTP_STATUS_500							= 0x801902F4;
+
 	static function GetHrFromResponseCode( $code, $soft = false )
 	{
-		return( Gen::HrMake( $code < ( $soft ? 500 : 400 ) ? Gen::SEVERITY_SUCCESS : Gen::SEVERITY_ERROR, Gen::FACILITY_HTTP, Net::E_HTTP_STATUS_BEGIN + $code ) );
+		return( Gen::HrMake( $code < ( $soft ? 500 : 400 ) ? Gen::SEVERITY_SUCCESS : Gen::SEVERITY_ERROR, Gen::FACILITY_HTTP, Net::E_HTTP_STATUS_BEGIN + ( int )$code ) );
 	}
 
-	static function GetResponseCodeFromHr( $hr )
+	static function GetResponseCodeFromHr( $hr, $smart = false )
 	{
+		if( $smart )
+		{
+			if( $hr == Gen::S_OK )
+				return( 200 );
+			if( $hr == Gen::S_FALSE )
+				return( 204 );
+			if( $hr == Gen::S_ABORTED )
+				return( 205 );
+			if( $hr == Gen::E_ACCESS_DENIED )
+				return( 403 );
+			if( $hr == Gen::E_INVALIDARG )
+				return( 400 );
+			if( $hr == Gen::E_NOT_FOUND )
+				return( 404 );
+			if( $hr == Gen::E_BUSY )
+				return( 503 );
+		}
+
 		if( Gen::HrFacility( $hr ) != Gen::FACILITY_HTTP )
 			return( null );
 		$hr = Gen::HrCode( $hr );
@@ -3267,24 +3484,41 @@ class Net
 		if( !$requestRes )
 			return( Gen::E_FAIL );
 
-		if( !is_wp_error( $requestRes ) )
+		if( is_a( $requestRes, '\\WP_Error' ) )
 		{
-			$httpStatus = wp_remote_retrieve_response_code( $requestRes );
+			$errCode = $requestRes -> get_error_code();
+			$errMsg = $requestRes -> get_error_message( $errCode );
+		}
+		else if( is_a( $requestRes, '\\seraph_accel\\AnyObj' ) )
+		{
+			$errCode = $requestRes -> code;
+			$errMsg = $requestRes -> message;
+		}
+		else
+		{
+			$httpStatus = ($requestRes[ 'response' ][ 'code' ]??'');
 			if( $httpStatus == 200 || $httpStatus === false )
 				return( Gen::S_OK );
 
 			$hr = Net::GetHrFromResponseCode( $httpStatus, $soft );
 			if( $smart )
 			{
-				if( $httpStatus == 404 )
+				if( $httpStatus == 204 )
+					$hr = Gen::S_FALSE;
+				else if( $httpStatus == 205 )
+					$hr = Gen::S_ABORTED;
+				else if( $httpStatus == 400 )
+					$hr = Gen::E_INVALIDARG;
+				else if( $httpStatus == 403 )
+					$hr = Gen::E_ACCESS_DENIED;
+				else if( $httpStatus == 404 )
 					$hr = Gen::E_NOT_FOUND;
+				else if( $httpStatus == 503 )
+					$hr = Gen::E_BUSY;
 			}
 
 			return( $hr );
 		}
-
-		$errCode = $requestRes -> get_error_code();
-		$errMsg = $requestRes -> get_error_message( $errCode );
 
 		if( $errCode == 'http_request_failed' && strpos( $errMsg, 'cURL error 28:' ) !== false )
 			return( Net::E_TIMEOUT );
@@ -3478,9 +3712,11 @@ class Net
 		return( $url );
 	}
 
-	static function UrlAddArgs( $url, $args )
+	static function UrlAddArgs( $url, $args, $merge = true )
 	{
-		$args = array_merge( Net::UrlExtractArgs( $url ), $args );
+		$argsPrev = Net::UrlExtractArgs( $url );
+		if( $merge )
+			$args = array_merge( $argsPrev, $args );
 		return( Net::UrlAddArgsEx( $url, $args ) );
 	}
 
@@ -3654,7 +3890,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.28.15';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.28.16';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -5163,12 +5399,15 @@ class Wp
 
 		$obj = new AnyObj();
 		$obj -> method = $method;
+		$obj -> transport = ($args[ 'transport' ]??null);
 
 		$obj -> _cbRequestBefore =
 			function( $obj, $url, $p1, $p2, $p3, &$options )
 			{
 				if( $options && isset( $options[ 'timeout' ] ) && $options[ 'timeout' ] )
 					$options[ 'connect_timeout' ] = $options[ 'timeout' ] - 1;
+				if( $obj -> transport )
+					$options[ 'transport' ] = $obj -> transport;
 			};
 
 		$obj -> _cbRequestsBeforeParse =
@@ -5270,6 +5509,24 @@ class Wp
 		$obj -> setHooks( false );
 
 		return( $obj -> adjustRes( $url, $res ) );
+	}
+
+	static function GetRemoteTransport()
+	{
+		$p = null;
+		foreach( array(
+			'\\WpOrg\\Requests\\Transport\\Curl',
+			'\\WpOrg\\Requests\\Transport\\Fsockopen',
+		) as $transport )
+		{
+			if( !class_exists( $transport ) )
+				continue;
+
+			$p = new $transport();
+			break;
+		}
+
+		return( $p );
 	}
 
 	static function GetAbsPathFromUri( $uri )
@@ -6511,7 +6768,7 @@ class Wp
 	static function GetMultisiteAdminModes()
 	{
 		$res = array( 'global' => true, 'local' => true );
-		if( !is_multisite() )
+		if( !Wp::IsMultisite() )
 			return( $res );
 
 		$res[ 'global' ] = defined( 'WP_NETWORK_ADMIN' ) && WP_NETWORK_ADMIN == true;
@@ -6519,16 +6776,21 @@ class Wp
 		return( $res );
 	}
 
+	static function IsMultisite()
+	{
+		return( Gen::CallFunc( 'is_multisite' ) && defined( 'BLOG_ID_CURRENT_SITE' ) );
+	}
+
 	static function IsMultisiteMain()
 	{
-		if( !is_multisite() || !defined( 'BLOG_ID_CURRENT_SITE' ) )
+		if( !Wp::IsMultisite() )
 			return( true );
 		return( get_current_blog_id() == BLOG_ID_CURRENT_SITE );
 	}
 
 	static function IsMultisiteGlobalAdmin()
 	{
-		if( !is_multisite() )
+		if( !Wp::IsMultisite() )
 			return( false );
 		return( defined( 'WP_NETWORK_ADMIN' ) && WP_NETWORK_ADMIN == true );
 	}

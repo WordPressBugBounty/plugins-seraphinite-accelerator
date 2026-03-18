@@ -325,7 +325,7 @@ class WP_Object_Cache
 			return( false );
 
 		\seraph_accel\Gen::MakeDir( @dirname( $file ), true );
-		$res = \seraph_accel\_FileWriteTmpAndReplace( $file, $v[ 1 ], $data, null, $this -> lock );
+		$res = \seraph_accel\Gen::FileWriteTmpAndReplace( $this -> lock, $file, $data, $v[ 1 ] );
 
 		if( $lr )
 			$this -> lock -> Release();

@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.28.15)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.28.15\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.28.16)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.28.16\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.28.15)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.28.15\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.28.16)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.28.16\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -296,6 +296,11 @@ msgstr ""
 #, php-format
 msgctxt "admin.Common_Msg"
 msgid "PhpExtDirSuffix_%1$s%2$s"
+msgstr ""
+
+# GZIP encoding failed
+msgctxt "admin.Common_Msg"
+msgid "GzEncodingFail"
 msgstr ""
 
 # About
@@ -864,6 +869,22 @@ msgctxt "admin.Msg"
 msgid "TimeDurSec_%1$s"
 msgstr ""
 
+# Requesting remote processing
+msgctxt "admin.Msg"
+msgid "StateSubProgress_RemotePrepare"
+msgstr ""
+
+# Waiting remote processing
+msgctxt "admin.Msg"
+msgid "StateSubProgress_RemoteWait"
+msgstr ""
+
+# Unable to retrieve data from the site: %1$s
+#, php-format
+msgctxt "admin.Msg"
+msgid "RemoteSiteGetDataErr_%1$s"
+msgstr ""
+
 # Geo location
 msgctxt "admin.Settings_Views_Geo"
 msgid "Lbl"
@@ -1338,6 +1359,27 @@ msgstr ""
 #, php-format
 msgctxt "admin.Settings_Cache_Revalidate"
 msgid "TimeLim_%1$s"
+msgstr ""
+
+# Engine: %1$s
+#, php-format
+msgctxt "admin.Settings_Cache_Revalidate"
+msgid "ProcEngine_%1$s"
+msgstr ""
+
+# local only
+msgctxt "admin.Settings_Cache_Revalidate"
+msgid "ProcEngineLocal"
+msgstr ""
+
+# remote (if available), otherwise local
+msgctxt "admin.Settings_Cache_Revalidate"
+msgid "ProcEngineRemoteLocal"
+msgstr ""
+
+# remote only (if available)
+msgctxt "admin.Settings_Cache_Revalidate"
+msgid "ProcEngineRemote"
 msgstr ""
 
 # Intervals
@@ -1992,9 +2034,19 @@ msgctxt "admin.Settings_Html_Rpl"
 msgid "Lbl"
 msgstr ""
 
-# String or regular expression
+# Optional description to identify
+msgctxt "admin.Settings_Styles_Custom"
+msgid "DescrPhlr"
+msgstr ""
+
+# Search (string or regular expression)
 msgctxt "admin.Settings_Html_Rpl"
 msgid "FindExprPhlr"
+msgstr ""
+
+# Scope (element(s) XPath selector)
+msgctxt "admin.Settings_Html_Rpl"
+msgid "SelectorPhlr"
 msgstr ""
 
 # Corrections for random content
@@ -2067,6 +2119,7 @@ msgctxt "admin.Settings_Html_RandCorr"
 msgid "AsClnTlkChk"
 msgstr ""
 
+# Form of Chauffeur Booking System
 msgctxt "admin.Settings_Html_RandCorr"
 msgid "ChbsBkngFrmChk"
 msgstr ""
@@ -2572,7 +2625,7 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "WooNasaPrdGallChk"
 msgstr ""
 
-# WooPrdGallSldChk
+# Product Gallery Slider, Additional Variation Images for WooCommerce
 msgctxt "admin.Settings_Frames_ContParts"
 msgid "WooPrdGallSldChk"
 msgstr ""
@@ -3392,11 +3445,6 @@ msgstr ""
 # Corrections for lazy loading scripts
 msgctxt "admin.Settings_Styles_Custom"
 msgid "Lbl"
-msgstr ""
-
-# Optional description to identify
-msgctxt "admin.Settings_Styles_Custom"
-msgid "DescrPhlr"
 msgstr ""
 
 # Use even if scripts are not delay loaded

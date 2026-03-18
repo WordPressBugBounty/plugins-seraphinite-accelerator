@@ -63,7 +63,7 @@ class PluginOptions
 				if( $verFrom && Plugin::IsInited() )
 				{
 					update_option( 'seraph_accel_' . $name . 'V' . $verFrom, $dataRaw );
-					for( $verFromDel = ( int )$verFrom - 5; $verFromDel; $verFromDel-- )
+					for( $verFromDel = ( int )$verFrom - 5; $verFromDel > 0; $verFromDel-- )
 						delete_option( 'seraph_accel_' . $name . 'V' . $verFromDel );
 				}
 				self::Set( $ver, $name, $data, $cbNs );
@@ -121,21 +121,31 @@ class PluginOptions
 
 	static function GetMultiSitePrefix()
 	{
-		return( is_multisite() ? PluginOptions::GetBlogId() : '' );
+		$blogId = 0;
+		if( self::$_blogId !== null )
+			$blogId = self::$_blogId;
+		else if( Wp::IsMultisite() && Plugin::IsInited() )
+		{
+			$blogId = get_current_blog_id();
+			if( $blogId == BLOG_ID_CURRENT_SITE )
+				$blogId = 0;
+		}
+
+		return( $blogId );
 	}
 
 	static function SetBlogId( $id )
 	{
 		$idPrev = self::$_blogId;
-		self::$_blogId = $id;
+		self::$_blogId = ( int )$id;
 		return( $idPrev );
 	}
 
-	static function GetBlogId()
+	static function UnsetBlogId()
 	{
-		if( self::$_blogId !== null )
-			return( self::$_blogId );
-		return( Plugin::IsInited() ? get_current_blog_id() : Gen::Constant( 'BLOG_ID_CURRENT_SITE', 0 ) );
+		$idPrev = self::$_blogId;
+		self::$_blogId = null;
+		return( $idPrev );
 	}
 }
 
@@ -306,7 +316,7 @@ class PluginRmtCfg
 			$args[ 'epid' ] = Wp::GetSiteId();
 			$args[ 'id' ] = 'wordpress-accelerator';
 			$args[ 'name' ] = 'Accelerator';
-			$args[ 'v' ] = '2.28.15';
+			$args[ 'v' ] = '2.28.16';
 			$args[ 'pk' ] = 'Base';
 			$args[ 'cfg' ] = '';
 			$args[ 'loc' ] = Wp::GetLocale();
@@ -328,11 +338,11 @@ class PluginRmtCfg
 		if( $lastCheckPackage === null && $lastCheckVer !== null )
 			$lastCheckPackage = 'Base';
 
-		if( $lastCheckVer !== '2.28.15' || $lastCheckPackage !== 'Base' )
+		if( $lastCheckVer !== '2.28.16' || $lastCheckPackage !== 'Base' )
 		{
 			$state = Plugin::StateGet();
 
-			if( $lastCheckVer !== '2.28.15' && !isset( $state[ 'changeVerCheck' ] ) )
+			if( $lastCheckVer !== '2.28.16' && !isset( $state[ 'changeVerCheck' ] ) )
 			{
 				$state[ 'changeVerCheck' ] = $lastCheckVer !== null ? $lastCheckVer : '';
 				Plugin::StateSet( $state );
@@ -349,7 +359,7 @@ class PluginRmtCfg
 
 		if( !$bForce )
 		{
-			if( $bFirstTimeOnly && $lastCheckVer == '2.28.15' )
+			if( $bFirstTimeOnly && $lastCheckVer == '2.28.16' )
 				return( Gen::S_FALSE );
 
 			$lastUpdTime = ($data[ 'updTime' ]??null);
@@ -368,7 +378,7 @@ class PluginRmtCfg
 			$args[ 'epid' ] = Wp::GetSiteId();
 			$args[ 'id' ] = 'wordpress-accelerator';
 			$args[ 'name' ] = 'Accelerator';
-			$args[ 'v' ] = '2.28.15';
+			$args[ 'v' ] = '2.28.16';
 			$args[ 'pk' ] = 'Base';
 			$args[ 'cfg' ] = '';
 			$args[ 'loc' ] = Wp::GetLocale();
@@ -385,7 +395,7 @@ class PluginRmtCfg
 			if( $data[ 'mdfTime' ] >= $timeMdf )
 			{
 				$data[ 'updTime' ] = $curUpdTime;
-				$data[ 'plgVer' ] = '2.28.15';
+				$data[ 'plgVer' ] = '2.28.16';
 				$data[ 'plgPk' ] = 'Base';
 
 				$hr = PluginOptions::Set( self::STG_VER, self::STG_ID, $data, __CLASS__ . '::' );
@@ -402,7 +412,7 @@ class PluginRmtCfg
 
 		$data[ 'mdfTime' ] = $timeMdf;
 		$data[ 'updTime' ] = $curUpdTime;
-		$data[ 'plgVer' ] = '2.28.15';
+		$data[ 'plgVer' ] = '2.28.16';
 		$data[ 'plgPk' ] = 'Base';
 
 		if( $timeMdf )
@@ -736,6 +746,18 @@ class Plugin
 
 	const ASYNCTASK_PUSH_AUTO		= 'A';
 
+	private static function _AsyncTask_GetCurBlogId()
+	{
+		if( !Wp::IsMultisite() )
+			return( null );
+
+		$blogIdCur = get_current_blog_id();
+		if( $blogIdCur == BLOG_ID_CURRENT_SITE )
+			$blogIdCur = null;
+
+		return( $blogIdCur );
+	}
+
 	static private function _AsyncTasksProcess()
 	{
 
@@ -913,8 +935,8 @@ class Plugin
 	static private function _AsyncTaskRun( $dataItem )
 	{
 
-		if( is_multisite() )
-			switch_to_blog( $dataItem[ 'b' ] );
+		if( Wp::IsMultisite() )
+			switch_to_blog( ($dataItem[ 'b' ]??BLOG_ID_CURRENT_SITE) );
 		Gen::CallFunc( 'seraph_accel\\OnAsyncTask_' . $dataItem[ 'n' ], array( Gen::CallFunc( 'seraph_accel\\OnAsyncTask_' . $dataItem[ 'n' ] . '_AU', array( $dataItem[ 'a' ] ), $dataItem[ 'a' ] ) ) );
 
 	}
@@ -1029,8 +1051,8 @@ class Plugin
 				$dataItemNew[ 'tl' ] = Plugin::ASYNCTASK_TTL_DEF;
 		}
 
-		if( is_multisite() )
-			$dataItemNew[ 'b' ] = get_current_blog_id();
+		if( $blogIdCur = self::_AsyncTask_GetCurBlogId() )
+			$dataItemNew[ 'b' ] = $blogIdCur;
 
 		if( $fast )
 			$dataItemNew[ 'f' ] = true;
@@ -1102,16 +1124,14 @@ class Plugin
 		if( !$h )
 			return( $hr );
 
-		$curBlogId = null;
-		if( is_multisite() )
-			$curBlogId = get_current_blog_id();
+		$blogIdCur = self::_AsyncTask_GetCurBlogId();
 
 		$hr = Gen::S_FALSE;
 
 		$data = Gen::GetArrField( @unserialize( Gen::FileContentExclusive_Get( $h, '' ) ), array( 'data' ), array() );
 		foreach( $data as $i => $dataItem )
 		{
-			if( $dataItem[ 'n' ] !== $name || ($dataItem[ 'b' ]??null) !== $curBlogId )
+			if( $dataItem[ 'n' ] !== $name || ($dataItem[ 'b' ]??null) !== $blogIdCur )
 				continue;
 
 			if( !is_bool( $singleton ) )
@@ -1141,16 +1161,14 @@ class Plugin
 		if( !$h )
 			return( false );
 
-		$curBlogId = null;
-		if( is_multisite() )
-			$curBlogId = get_current_blog_id();
+		$blogIdCur = self::_AsyncTask_GetCurBlogId();
 
 		$res = null;
 
 		$data = Gen::GetArrField( @unserialize( Gen::FileContentExclusive_Get( $h, '' ) ), array( 'data' ), array() );
 		foreach( $data as $i => $dataItem )
 		{
-			if( $dataItem[ 'n' ] !== $name || ($dataItem[ 'b' ]??null) !== $curBlogId )
+			if( $dataItem[ 'n' ] !== $name || ($dataItem[ 'b' ]??null) !== $blogIdCur )
 				continue;
 
 			if( !is_bool( $singleton ) )
@@ -1191,7 +1209,7 @@ class Plugin
 
 		$asyncMode = null;
 
-		$prms = array( 'sslverify' => apply_filters( 'https_local_ssl_verify', false ) );
+		$prms = array( 'sslverify' => Gen::CallFunc( 'apply_filters', array( 'https_local_ssl_verify', false ), false ) );
 		if( $timeout > 0 )
 			$prms[ 'timeout' ] = $timeout;
 		else if( Gen::CallFunc( 'seraph_accel\\OnAsyncTasksUseCmptNbr', array(), false ) )
@@ -1447,6 +1465,8 @@ class Plugin
 
 		esc_html_x( 'PhpExecMdlNotFound_%1$s', 'admin.Common_Msg', 'seraphinite-accelerator' );
 		esc_html_x( 'PhpExtDirSuffix_%1$s%2$s', 'admin.Common_Msg', 'seraphinite-accelerator' );
+
+		esc_html_x( 'GzEncodingFail', 'admin.Common_Msg', 'seraphinite-accelerator' );
 	}
 
 	static function GetAboutPluginTitle()
@@ -1459,10 +1479,10 @@ class Plugin
 		$rmtCfg = PluginRmtCfg::Get();
 
 		$urlProductInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlProductInfo' );
-		$urlAboutPluginImg = file_exists( __DIR__ . '/../Images/ProductLogo.png' ) ? add_query_arg( array( 'v' => '2.28.15' ), Plugin::FileUri( '../Images/ProductLogo.png', __FILE__ ) ) : null;
+		$urlAboutPluginImg = file_exists( __DIR__ . '/../Images/ProductLogo.png' ) ? add_query_arg( array( 'v' => '2.28.16' ), Plugin::FileUri( '../Images/ProductLogo.png', __FILE__ ) ) : null;
 		$urlAboutPluginDocs = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlProductDocs' );
 		$urlAboutPluginSupport = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlProductSupport' );
-		$url3rdPartySoft = file_exists( __DIR__ . '/../third-party-software.html' ) ? add_query_arg( array( 'v' => '2.28.15' ), Plugin::FileUri( '../third-party-software.html', __FILE__ ) ) : null;
+		$url3rdPartySoft = file_exists( __DIR__ . '/../third-party-software.html' ) ? add_query_arg( array( 'v' => '2.28.16' ), Plugin::FileUri( '../third-party-software.html', __FILE__ ) ) : null;
 
 		$urlEula = null;
 
@@ -1471,7 +1491,7 @@ class Plugin
 		$res .= Ui::Tag( 'p' );
 
 		{
-			$version = esc_html( '2.28.15' );
+			$version = esc_html( '2.28.16' );
 
 			$res .= Ui::TagOpen( 'div' );
 
@@ -1520,7 +1540,7 @@ class Plugin
 	{
 		$rmtCfg = PluginRmtCfg::Get();
 
-		$urlAboutUsLogoImg = file_exists( __DIR__ . '/../Images/VendorLogo.png' ) ? add_query_arg( array( 'v' => '2.28.15' ), Plugin::FileUri( '../Images/VendorLogo.png', __FILE__ ) ) : null;
+		$urlAboutUsLogoImg = file_exists( __DIR__ . '/../Images/VendorLogo.png' ) ? add_query_arg( array( 'v' => '2.28.16' ), Plugin::FileUri( '../Images/VendorLogo.png', __FILE__ ) ) : null;
 		$urlMorePlugins = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlMorePlugins' );
 		$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlMain' );
 
@@ -1680,7 +1700,7 @@ class Plugin
 
 	static function SettGetGlobal( $settRawExt = null, $clearCache = false )
 	{
-		if( !is_multisite() )
+		if( !Wp::IsMultisite() )
 			return( Plugin::SettGet( $settRawExt, $clearCache ) );
 
 		$restoreBlog = false;
@@ -1705,7 +1725,7 @@ class Plugin
 
 	static function SettSetGlobal( $data, $updateCacheOnly = false )
 	{
-		if( !is_multisite() )
+		if( !Wp::IsMultisite() )
 			return( Plugin::SettSet( $data, $updateCacheOnly ) );
 
 		$restoreBlog = false;
@@ -2049,7 +2069,7 @@ class Plugin
 				return( null );
 
 			$verFrom = self::_PrevVer_GetInt( $plgVerPrev );
-			$verTo = self::_PrevVer_GetInt( '2.28.15' );
+			$verTo = self::_PrevVer_GetInt( '2.28.16' );
 			if( $verTo < $verFrom )
 				list( $verTo, $verFrom ) = array( $verFrom, $verTo );
 
@@ -2174,7 +2194,7 @@ class Plugin
 			if( (self::$g_aAlreadyIncludedObj[ 'css' ][ $id ]??null) )
 				continue;
 
-			wp_enqueue_style( Plugin::CmnScriptId( $id ), add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.css' ), array(), '2.28.15' );
+			wp_enqueue_style( Plugin::CmnScriptId( $id ), add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.css' ), array(), '2.28.16' );
 
 			self::$g_aAlreadyIncludedObj[ 'css' ][ $id ] = true;
 		}
@@ -2241,7 +2261,7 @@ class Plugin
 
 			$scrHndId = Plugin::CmnScriptId( $id );
 
-			wp_register_script( $scrHndId, add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.js' ), $deps, '2.28.15' );
+			wp_register_script( $scrHndId, add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.js' ), $deps, '2.28.16' );
 			if( $id == 'Gen' )
 				Plugin::Loc_ScriptLoad( $scrHndId );
 			wp_enqueue_script( $scrHndId );
@@ -2686,7 +2706,7 @@ class Plugin
 
 							var sendDataUrl = "<?php echo( Gen::GetArrField( $rmtCfg, 'Questionnaires.SendAnswerUrlTpl' ) ); ?>";
 							sendDataUrl = sendDataUrl.replace( "{EndPointId}",					encodeURI( "<?php echo( Wp::GetSiteId() ); ?>" ) );
-							sendDataUrl = sendDataUrl.replace( "{PluginVersion}",				encodeURI( "2.28.15" ) );
+							sendDataUrl = sendDataUrl.replace( "{PluginVersion}",				encodeURI( "2.28.16" ) );
 							sendDataUrl = sendDataUrl.replace( "{PluginMode}",					encodeURI( "base" ) );
 							sendDataUrl = sendDataUrl.replace( "{PluginPackage}",				encodeURI( "Base" ) );
 							sendDataUrl = sendDataUrl.replace( "{QuestionnaireId}",				encodeURI( "<?php echo( ($q[ 'id' ]??null) ); ?>" ) );

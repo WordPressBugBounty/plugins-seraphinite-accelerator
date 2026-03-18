@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.15' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.16' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -818,6 +818,29 @@ function _SettingsPage_Revalidate( $callbacks_args, $box )
 								$o .= ( Ui::TagClose( 'td' ) );
 							}
 							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr', array( 'style' => array( 'display' => 'none' ) ) ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/procEngn';
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'ProcEngine_%1$s', 'admin.Settings_Cache_Revalidate', 'seraphinite-accelerator' ),
+										Ui::ComboBox(
+											'seraph_accel/' . $fldId,
+											array(
+												1										=> esc_html_x( 'ProcEngineLocal', 'admin.Settings_Cache_Revalidate', 'seraphinite-accelerator' ),
+												2 | 1		=> esc_html_x( 'ProcEngineRemoteLocal', 'admin.Settings_Cache_Revalidate', 'seraphinite-accelerator' ),
+												2										=> esc_html_x( 'ProcEngineRemote', 'admin.Settings_Cache_Revalidate', 'seraphinite-accelerator' ),
+											),
+											Gen::GetArrField( $sett, $fldId, 1, '/' ), true, array( 'class' => array( 'inline' ) ) )
+									) ) );
+
+									$o .= ( Ui::Tag( 'p', implode( '<br>', array_map( function( $v ) { return( Net::UrlDeParse( Net::UrlParse( $v ), 0, array(), array( PHP_URL_HOST, PHP_URL_PORT, PHP_URL_PATH ) ) ); }, Gen::GetArrField( $rmtCfg, 'Prms.UrlsProcMgr', array() ) ) ), array( 'class' => 'description', 'style' => array( 'display' => 'none' ) ) ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
 						}
 						$o .= ( Ui::SettBlock_ItemSubTbl_End() );
 					}
@@ -2480,11 +2503,23 @@ function _SettingsPage_Html( $callbacks_args, $box )
 									{
 										{
 											$fldId = 'enable';
-											$fldIdEx = 'expr';
+											$fldIdEx = 'descr';
 											$o .= ( Ui::Tag( 'tr',
-												Ui::Tag( 'td',Ui::CheckBox( null, $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, true, '/' ), true ), array( 'class' => 'ctlMinSizeX' ) ) .
-												Ui::Tag( 'td', Ui::TextBox( $idItems . '/' . $itemKey . '/' . $fldIdEx, Gen::GetArrField( $item, $fldIdEx, '', '/' ), array( 'masked' => true, 'placeholder' => _x( 'FindExprPhlr', 'admin.Settings_Html_Rpl', 'seraphinite-accelerator' ), 'style' => array( 'width' => '100%' ) ), true ) )
+												Ui::Tag( 'td', Ui::CheckBox( null, $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, true, '/' ), true ), array( 'class' => 'ctlMinSizeX' ) ) .
+												Ui::Tag( 'td', Ui::TextBox( $idItems . '/' . $itemKey . '/' . $fldIdEx, Gen::GetArrField( $item, $fldIdEx, '', '/' ), array( 'placeholder' => _x( 'DescrPhlr', 'admin.Settings_Styles_Custom', 'seraphinite-accelerator' ), 'style' => array( 'width' => '100%' ) ), true ) )
 											) );
+										}
+
+										{
+											$fldId = 'expr';
+											$o .= ( Ui::Tag( 'tr', Ui::Tag( 'td', Ui::TextBox( $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, '', '/' ), array( 'masked' => true, 'placeholder' => _x( 'FindExprPhlr', 'admin.Settings_Html_Rpl', 'seraphinite-accelerator' ), 'style' => array( 'width' => '100%' ) ), true ), array( 'colspan' => 2 ) ) ) );
+										}
+
+										;
+
+										{
+											$fldId = 'scope';
+											$o .= ( Ui::Tag( 'tr', Ui::Tag( 'td', Ui::TextBox( $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, '', '/' ), array( 'masked' => true, 'class' => 'ctlMaxSizeX', 'placeholder' => _x( 'SelectorPhlr', 'admin.Settings_Html_Rpl', 'seraphinite-accelerator' ) ), true ), array( 'colspan' => 2 ) ) ) );
 										}
 
 										{
@@ -5808,7 +5843,7 @@ function _OnSaveSettings( $args )
 		{
 			$fldId = 'reLnch';
 
-			$v = Gen::SanitizeTextData( trim( ($args[ 'seraph_accel/' . $fldId ]??'') ) );
+			$v = Gen::SanitizeTextData( trim( stripslashes( ($args[ 'seraph_accel/' . $fldId ]??'') ) ) );
 			if( $v )
 				Gen::SetArrField( $sett, $fldId, $v, '/' );
 			else
@@ -5835,6 +5870,8 @@ function _OnSaveSettings( $args )
 			$v = @intval( $args[ 'seraph_accel/' . $fldId ] );
 			Gen::SetArrField( $sett, $fldId, $v ? $v : 1, '/' );
 		}
+
+		{ $fldId = 'cache/procEngn';						Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 
 		{ $fldId = 'cache/srv';								Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'cache/srvShrdTtl';						Gen::SetArrField( $sett, $fldId, @intval( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
@@ -6508,7 +6545,9 @@ function _OnSaveSettings( $args )
 					$item = array();
 
 					{ $fldId = 'enable';						Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
+					{ $fldId = 'descr';							Gen::SetArrField( $item, $fldId, Wp::SanitizeText( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ), '/' ); }
 					{ $fldId = 'expr';							Gen::SetArrField( $item, $fldId, @trim( Ui::UnmaskValue( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ) ), '/' ); }
+					{ $fldId = 'sel';							Gen::SetArrField( $item, $fldId, @trim( Wp::SanitizeXPath( Ui::UnmaskValue( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ) ) ), '/' ); }
 					{ $fldId = 'data';							Gen::SetArrField( $item, $fldId, Ui::UnmaskValue( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ), '/' ); }
 
 					return( $item );
@@ -6723,7 +6762,7 @@ function _OnSaveSettings( $args )
 
 	if( Gen::GetArrField( $sett, array( 'cache', 'viewsGeo', 'enable' ), false ) )
 	{
-		if( !Images_ProcessSrcEx_FileMTime( $dbIP2CFile ) || !Images_ProcessSrcEx_FileMTime( GetCacheDir() . '/db/mm/c2ip-v1.dat' ) )
+		if( !Gen::FileMTime( $dbIP2CFile ) || !Gen::FileMTime( GetCacheDir() . '/db/mm/c2ip-v1.dat' ) )
 			ExtDbUpd();
 
 	}

@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.9
-Stable tag: 2.28.15
+Stable tag: 2.28.16
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,22 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.28.16 =
+
+Improvements:
+
+* Defining scope in HTML replacement.
+* Restarting failed queue items.
+* Self-learning: Ultra-fast processing.
+* Storing the same bodies in single file in external object cache.
+
+Fixes:
+
+* If self-learning is canceled processing of item continue only after 1 minute.
+* Regenerating compressed images of unchanged images in cache directory.
+* Simple thread of optimization doesnt work with custom 'index.php'.
+* YouTube video preview images are not loaded for playlist URLs.
 
 = 2.28.15 =
 

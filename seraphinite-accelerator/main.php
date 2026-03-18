@@ -11,6 +11,7 @@ require_once( __DIR__ . '/sql.php' );
 require_once( __DIR__ . '/content.php' );
 require_once( __DIR__ . '/options.php' );
 require_once( __DIR__ . '/tune.php' );
+require_once( __DIR__ . '/cache_ex.php' );
 require_once( __DIR__ . '/cache_ext.php' );
 
 if( defined( 'SERAPH_ACCEL_ADVCACHE_COMP' ) )
@@ -41,7 +42,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.28.15', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.28.16', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -303,7 +304,7 @@ function OnInit( $isAdminMode )
 		add_filter( 'itglx_wc1c_ignore_catalog_file_processing', function( $ignoreProcessing ) { _InitCatchDataUpdate( 3 ); return( $ignoreProcessing ); } );
 	}
 
-	if( $isGet || ( is_string( $seraph_accel_g_simpCacheMode ) && Gen::StrStartsWith( $seraph_accel_g_simpCacheMode, 'data:' ) ) )
+	if( $isGet || ( is_string( $seraph_accel_g_simpCacheMode ) && Gen::StrStartsWith( $seraph_accel_g_simpCacheMode, 'data:' ) ) || ( ($_REQUEST[ 'seraph_accel_at' ]??null) == 'ORC' ) )
 	{
 		{
 			$settTest = Gen::GetArrField( $sett, array( 'test' ), array() );
@@ -875,8 +876,8 @@ function _CheckUpdatePostProcessRtn( $full = true )
 
 			$continue = true;
 
-			if( is_multisite() )
-				switch_to_blog( ( int )GetBlogIdFromSiteId( $siteId ) );
+			if( Wp::IsMultisite() )
+				switch_to_blog( (GetBlogIdFromSiteId( $siteId )??BLOG_ID_CURRENT_SITE) );
 
 			_CheckUpdatePostProcess( $aPostUpdated, null, array( $ctx, 'isAborted' ) );
 
@@ -1160,7 +1161,7 @@ function _UpdateGeoDb_MmIP2C( $dirTmp, $lock, $apiKey )
 	if( !is_string( $data ) )
 		return;
 
-	_FileWriteTmpAndReplace( GetCacheDir() . '/db/mm/ip2c.mmdb', null, $data, null, $lock );
+	Gen::FileWriteTmpAndReplace( $lock, GetCacheDir() . '/db/mm/ip2c.mmdb', $data );
 }
 
 function _UpdateGeoDb_MmC2IP( $dirTmp, $lock, $apiKey )
@@ -1241,7 +1242,7 @@ function _UpdateGeoDb_MmC2IP( $dirTmp, $lock, $apiKey )
 
 	ksort( $aRegionsIp );
 
-	_FileWriteTmpAndReplace( GetCacheDir() . '/db/mm/c2ip-v1.dat', null, @serialize( $aRegionsIp ), null, $lock );
+	Gen::FileWriteTmpAndReplace( $lock, GetCacheDir() . '/db/mm/c2ip-v1.dat', @serialize( $aRegionsIp ) );
 }
 
 function _OnUpdateGeoDb_Mm_Start()
@@ -1285,7 +1286,7 @@ function _OnUpdateGeoDb_Mm_Finish()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.15' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.16' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1452,7 +1453,7 @@ function _ManagePage()
 						Ui::Button( Wp::safe_html_x( 'CheckRevalidate', 'admin.Manage_Operate', 'seraphinite-accelerator' ), false, null, null, 'button', array( 'class' => array( 'ctlSpaceAfter', 'ctlSpaceVBefore', 'ctlVaMiddle' ), 'style' => array( 'min-width' => '7em' ), 'onclick' => 'seraph_accel.Manager._int.OnCacheOp(this,3,"' . wp_create_nonce( 'op-3' ) . '");return false;' ) ) .
 						Ui::Button( Wp::safe_html_x( 'SrvDel', 'admin.Manage_Operate', 'seraphinite-accelerator' ), false, null, null, 'button', array( 'class' => array( 'ctlSpaceAfter', 'ctlSpaceVBefore', 'ctlVaMiddle' ), 'style' => array( 'min-width' => '7em' ), 'onclick' => 'seraph_accel.Manager._int.OnCacheOp(this,10,"' . wp_create_nonce( 'op-10' ) . '");return false;' ) ) .
 						Ui::Button( Wp::GetLocString( 'Cancel' ), false, null, null, 'button', array( 'class' => array( 'ctlSpaceAfter', 'ctlSpaceVBefore', 'ctlVaMiddle', 'cancel' ), 'style' => array( 'min-width' => '7em' ), 'disabled' => true, 'onclick' => 'seraph_accel.Manager._int.OnCacheOpCancel(this,undefined,"' . wp_create_nonce( 'op-cancel' ) . '");return false;' ) ) .
-						Ui::NumberBox( null, 5, array( 'min' => 1, 'class' => array( 'ctlSpaceAfter', 'ctlSpaceVBefore', 'ctlVaMiddle', 'tmDataRefresh' ), 'style' => array( 'width' => '4em', 'display' => 'none' ) ) ) .
+						Ui::NumberBox( null, 5, array( 'min' => 1, 'class' => array( 'ctlSpaceAfter', 'ctlSpaceVBefore', 'ctlVaMiddle', 'tmDataRefresh' ), 'style' => array( 'display' => 'none', 'width' => '4em' ) ) ) .
 						Ui::Spinner( false, array( 'class' => 'ctlSpaceAfter ctlSpaceVBefore ctlVaMiddle', 'style' => array( 'display' => 'none' ) ) ) .
 						Ui::Tag( 'span', null, array( 'class' => 'ctlSpaceAfter ctlSpaceVBefore ctlVaMiddle ctlInlineBlock descr', 'style' => array( 'display' => 'none' ) ) ) .
 						''
@@ -1527,7 +1528,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.28.15' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.28.16' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -1843,8 +1844,8 @@ function GetStatusData( $siteId )
 	}
 
 	{
-		$loadAvgCont = GetLoadAvg( null );
-		$info[ 'cont' ][ 'loadAvg' ] = ( $loadAvgCont !== null ) ? ( ( string )$loadAvgCont . '%' ) : '-';
+		$loadAvgCont = Gen::GetCpuLoad();
+		$info[ 'cont' ][ 'loadAvg' ] = ( $loadAvgCont !== null ) ? ( ( string )round( 100 * $loadAvgCont ) . '%' ) : '-';
 	}
 
 	{
@@ -1865,8 +1866,8 @@ function GetStatusData( $siteId )
 		if( !$dbIP2CFile )
 			$dbIP2CFile = GetCacheDir() . '/db/mm/ip2c.mmdb';
 
-		$aDbFileTm[ 'GeoIP (MaxMind)' ] = Images_ProcessSrcEx_FileMTime( $dbIP2CFile );
-		$aDbFileTm[ 'GeoIP (MaxMind-C2IP)' ] = Images_ProcessSrcEx_FileMTime( GetCacheDir() . '/db/mm/c2ip-v1.dat' );
+		$aDbFileTm[ 'GeoIP (MaxMind)' ] = Gen::FileMTime( $dbIP2CFile );
+		$aDbFileTm[ 'GeoIP (MaxMind-C2IP)' ] = Gen::FileMTime( GetCacheDir() . '/db/mm/c2ip-v1.dat' );
 
 		$aDbFileTmDisp = array();
 		foreach( $aDbFileTm as $dbId => $dbFileTm )
@@ -2303,6 +2304,12 @@ function MsgUnpackLocIds( $v )
 	esc_html_x( 'SrvArgs', 'admin.Msg', 'seraphinite-accelerator' );
 	esc_html_x( 'ProcStat', 'admin.Msg', 'seraphinite-accelerator' );
 	esc_html_x( 'TimeDurSec_%1$s', 'admin.Msg', 'seraphinite-accelerator' );
+
+	esc_html_x( 'StateSubProgress_RemotePrepare', 'admin.Msg', 'seraphinite-accelerator' );
+	esc_html_x( 'StateSubProgress_RemoteWait', 'admin.Msg', 'seraphinite-accelerator' );
+
+	esc_html_x( 'RemoteSiteGetDataErr_%1$s', 'admin.Msg', 'seraphinite-accelerator' );
+
 }
 
 function OnAdminApi_GetData( $args )

@@ -396,7 +396,7 @@ function CacheExt_Clear( $url = null )
 				$endpoint_path = 'purge-fpc-domain';
 				$data[ 'urls' ][] = Wp::GetSiteRootUrl( '', false );
 
-				if( is_multisite() && !is_subdomain_install() )
+				if( Wp::IsMultisite() && !is_subdomain_install() )
 				{
 					$endpoint_path = 'purge-fpc-sub-dir';
 					foreach( $data[ 'urls' ] as &$urlE )

@@ -411,6 +411,18 @@ class Ui
 		return( strtolower( substr( $v, 0, 5 ) ) === 'data:' );
 	}
 
+	static function GetSrcAttrDataType( $v, &$encoding = null )
+	{
+
+		$data = strpos( $v, ',' );
+		if( $data === false )
+			return( false );
+
+		$prms = explode( ';', substr( $v, 5, $data - 5 ) );
+		$encoding = ($prms[ count( $prms ) - 1 ]??null);
+		return( ($prms[ 0 ]??null) );
+	}
+
 	static function GetSrcAttrData( $v, &$mimeType = null, &$encoding = null )
 	{
 
@@ -419,9 +431,9 @@ class Ui
 			return( false );
 
 		$prms = explode( ';', substr( $v, 5, $data - 5 ) );
-		$data = trim( substr( $v, $data + 1 ) );
 		$mimeType = ($prms[ 0 ]??null);
 		$encoding = ($prms[ count( $prms ) - 1 ]??null);
+		$data = trim( substr( $v, $data + 1 ) );
 		return( $encoding == 'base64' ? base64_decode( $data ) : rawurldecode( $data ) );
 	}
 
@@ -441,7 +453,10 @@ class Ui
 	{
 
 		$res = array();
-		while( preg_match( '@(?:\\s[\\d.]+[wx](,)|(,\\s))@S', $v, $m, PREG_OFFSET_CAPTURE ) )
+		if( !$v )
+			return( $res );
+
+		while( preg_match( '@(?:\\s[\\d.]+[wx](,)|(,\\s))@S', ( string )$v, $m, PREG_OFFSET_CAPTURE ) )
 		{
 			if( $m[ 1 ][ 1 ] === -1 )
 				$m[ 1 ] = $m[ 2 ];

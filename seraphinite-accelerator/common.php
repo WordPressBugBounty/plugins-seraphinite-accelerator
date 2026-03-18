@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 190;
+const PLUGIN_SETT_VER								= 191;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1218,6 +1218,11 @@ function OnOptRead_Sett( $sett, $verFrom )
 	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'wooPrdGallSld' ), false );
 	}
 
+	if( $verFrom && $verFrom < 191 )
+	{
+	    Gen::SetArrField( $sett, array( 'cache', 'procEngn' ), 1 );
+	}
+
 	return( $sett );
 }
 
@@ -1330,7 +1335,7 @@ function OnOptGetDef_Sett()
 
 			'srv' => true,
 			'srvClr' => true,
-			'srvUpd' => true,
+			'srvUpd' => false,
 			'srvUpdTimeout' => 5,
 			'nginx' => array(
 				'method'=> '3rdp',
@@ -1349,7 +1354,7 @@ function OnOptGetDef_Sett()
 
 			'lazyInv' => true,
 			'lazyInvInitTmp' => true,
-			'lazyInvForcedTmp' => false,
+			'lazyInvForcedTmp' => true,
 			'lazyInvTmp' => false,
 			'fastTmpOpt' => true,
 			'lazyInvFr' => true,
@@ -1366,6 +1371,7 @@ function OnOptGetDef_Sett()
 			),
 			'updPostMeta' => false,
 			'updPostMetaExcl' => array(
+
 				'@.*@',
 				'@^\\d+$@',
 				'@^_edit_lock$@',
@@ -1440,6 +1446,8 @@ function OnOptGetDef_Sett()
 			'procTmLim' => 570,
 			'procWorkInt' => 0.5,
 			'procPauseInt' => 0.5,
+
+			'procEngn' => 1,
 
 			'autoProc' => true,
 
@@ -1535,7 +1543,7 @@ function OnOptGetDef_Sett()
 				),
 
 				array(
-					'enable' => true,
+					'enable' => false,
 					'name' => '',
 					'id' => 'mobile',
 					'agents' => array( 'mobile', 'android', 'silk/',  'blackberry', 'opera mini', 'opera mobi', ),
@@ -2660,7 +2668,7 @@ function OnOptGetDef_Sett()
 
 function GetSiteId( $site = null )
 {
-	if( !is_multisite() )
+	if( !Wp::IsMultisite() )
 		return( 'm' );
 
 	if( !$site )
@@ -2678,7 +2686,7 @@ function GetSiteId( $site = null )
 function GetBlogIdFromSiteId( $siteId )
 {
 	if( $siteId === 'm' )
-		return( Gen::Constant( 'BLOG_ID_CURRENT_SITE', 0 ) );
+		return( null );
 
 	$nPos = strpos( $siteId, '_' );
 	if( $nPos === false )
@@ -2924,32 +2932,70 @@ function CacheCgif( $settCache, $oiCi )
 	return( $oiCif );
 }
 
-function CacheCw( $settCache, $siteRootDataPath, $dataPath, $composite, $content, $type, $fileExt = null )
+function CacheCw( $cbWrite, $settCache, $siteRootDataPath, $dataPath, $composite, $content, $type, $fileExt = null )
 {
 	if( !$fileExt )
 		$fileExt = $type;
 
-	$oiCi = @md5( $content ) . '.' . sprintf( '%x', strlen( $content ) );
-	$oiCif = CacheCgif( $settCache, $oiCi );
+	if( $type != 'html' )
+		$dataPath .= '/' . $type;
 
+	$oiCi = @md5( $content ) . '.' . sprintf( '%x', strlen( $content ) );
+	$oiCfn = CacheCgif( $settCache, $oiCi ) . '.' . $fileExt;
+
+	if( !$cbWrite( $settCache, $dataPath, $composite, $content, $type, $oiCfn ) )
+		return( null );
+
+	if( $siteRootDataPath !== null )
+		$relFilePath = substr( $dataPath, strlen( $siteRootDataPath ) + 1 ) . '/';
+	else
+		$relFilePath = '';
+	$relFilePath .= $oiCfn;
+
+	return( array( 'id' => $oiCi, 'relFilePath' => $relFilePath ) );
+}
+
+function Images_ProcessSrc_ConvertAll_GetAssociatedFiles( $file, $a = array() )
+{
+	if( !in_array( Gen::GetFileExt( $file ), array( 'jpe','jpg','jpeg','png','gif','bmp', 'webp','avif' ) ) )
+		return( array() );
+
+	foreach( array( 'webp','avif' ) as $type )
+	{
+		$fileCnv = $file . '.' . $type;
+		$a[] = $fileCnv;
+
+		$fileCnvStat = $fileCnv . '.json';
+		$a[] = $fileCnvStat;
+	}
+
+	return( $a );
+}
+
+function CacheCts( $file, $mtime = null )
+{
+	if( $mtime === null )
+		$mtime = time();
+
+	foreach( Images_ProcessSrc_ConvertAll_GetAssociatedFiles( $file, array( $file ) ) as $file )
+		Gen::Touch( $file, $mtime );
+}
+
+function CacheCwEx( $settCache, $dataPath, $composite, $content, $type, $oiCfn )
+{
 	$dataComprs = Gen::GetArrField( $settCache, array( 'dataCompr' ), array() );
 	if( empty( $dataComprs ) )
 		$dataComprs[] = '';
 
-	if( $type != 'html' )
+	if( $type != 'html' && !$composite )
 	{
-		$dataPath .= '/' . $type;
-		if( !$composite )
-		{
-			if( ( $type != 'css' && $type != 'js' ) || !UseGzAssets( $settCache ) )
-				$dataComprs = array( '' );
-			else if( !in_array( '', $dataComprs, true ) )
-				$dataComprs[] = '';
-		}
+		if( ( $type != 'css' && $type != 'js' ) || !UseGzAssets( $settCache ) )
+			$dataComprs = array( '' );
+		else if( !in_array( '', $dataComprs, true ) )
+			$dataComprs[] = '';
 	}
 
 	$writeOk = true;
-	$writeFailDsc = null;
 
 	foreach( $dataComprs as $dataCompr )
 	{
@@ -2961,7 +3007,7 @@ function CacheCw( $settCache, $siteRootDataPath, $dataPath, $composite, $content
 			break;
 		}
 
-		$oiCf = $dataPath . '/' . $oiCif . '.' . $fileExt . $dataFileExt;
+		$oiCf = $dataPath . '/' . $oiCfn . $dataFileExt;
 
 		$lock = new Lock( 'dtl', dirname( $dataPath ) );
 		if( !$lock -> Acquire() )
@@ -2973,7 +3019,7 @@ function CacheCw( $settCache, $siteRootDataPath, $dataPath, $composite, $content
 
 		if( CacheCvs( Gen::FileSize( $oiCf ), strlen( $content ) ) )
 		{
-			@touch( $oiCf );
+			CacheCts( $oiCf );
 			$lock -> Release();
 			continue;
 		}
@@ -3034,23 +3080,16 @@ function CacheCw( $settCache, $siteRootDataPath, $dataPath, $composite, $content
 			$lock -> Release();
 			break;
 		}
+		else
+			CacheCts( $oiCf );
 
 		$lock -> Release();
 	}
 
-	if( !$writeOk )
-		return( null );
-
-	if( $siteRootDataPath !== null )
-		$relFilePath = substr( $dataPath, strlen( $siteRootDataPath ) + 1 ) . '/';
-	else
-		$relFilePath = '';
-	$relFilePath .= $oiCif . '.' . $fileExt;
-
-	return( array( 'id' => $oiCi, 'relFilePath' => $relFilePath ) );
+	return( $writeOk );
 }
 
-function CacheCc( $settCache, $siteRootDataPath, $dataPath, $oiCi, $type, $fileExt = null )
+function CacheCc( $cbCheck, $settCache, $siteRootDataPath, $dataPath, $oiCi, $type, $fileExt = null )
 {
 	if( !$fileExt )
 		$fileExt = $type;
@@ -3060,20 +3099,7 @@ function CacheCc( $settCache, $siteRootDataPath, $dataPath, $oiCi, $type, $fileE
 	if( $type != 'html' )
 		$dataPath .= '/' . $type;
 
-	$oiCf = $dataPath . '/' . $oiCif . '.' . $fileExt;
-
-	$lock = new Lock( 'dtl', dirname( $dataPath ) );
-	if( !$lock -> Acquire() )
-	{
-		Gen::LastErrDsc_Set( $lock -> GetErrDescr() );
-		return( null );
-	}
-
-	$readOk = @file_exists( $oiCf );
-
-	$lock -> Release();
-
-	if( !$readOk )
+	if( !$cbCheck( $dataPath, $type, $oiCif . '.' . $fileExt ) )
 		return( null );
 
 	if( $siteRootDataPath !== null )
@@ -3085,12 +3111,31 @@ function CacheCc( $settCache, $siteRootDataPath, $dataPath, $oiCi, $type, $fileE
 	return( array( 'id' => $oiCi, 'relFilePath' => $relFilePath ) );
 }
 
+function CacheCcEx( $dataPath, $type, $oiCfn )
+{
+	$oiCf = $dataPath . '/' . $oiCfn;
+
+	$lock = new Lock( 'dtl', dirname( $dataPath ) );
+	if( !$lock -> Acquire() )
+	{
+		Gen::LastErrDsc_Set( $lock -> GetErrDescr() );
+		return( null );
+	}
+
+	if( $readOk = @file_exists( $oiCf ) )
+		CacheCts( $oiCf );
+
+	$lock -> Release();
+
+	return( $readOk );
+}
+
 function _ContentCw( &$dsc, $data, $type, $settCache, $dataPath )
 {
 	if( !$data )
 		return( true );
 
-	$oiC = CacheCw( $settCache, null, $dataPath, true, $data, $type );
+	$oiC = CacheCw( '\\seraph_accel\\CacheCwEx', $settCache, null, $dataPath, true, $data, $type );
 	if( !$oiC )
 		return( false );
 
@@ -3098,7 +3143,24 @@ function _ContentCw( &$dsc, $data, $type, $settCache, $dataPath )
 	return( $oiC[ 'id' ] );
 }
 
-function ReadSce( $dataPath, $settCache, $id, $type )
+function ReadSceGf( &$dataPath, $settCache, $oiCi, $type, $fileExt = null )
+{
+	if( !$fileExt )
+		$fileExt = $type;
+
+	if( $type != 'html' )
+		$dataPath .= '/' . $type;
+
+	return( CacheCgif( $settCache, $oiCi ) . '.' . $fileExt );
+}
+
+function ReadSce( $cbRead, $dataPath, $settCache, $oiCi, $type, $fileExt = null )
+{
+	$oiCfn = ReadSceGf( $dataPath, $settCache, $oiCi, $type, $fileExt );
+	return( $cbRead( $dataPath, $settCache, $type, $oiCi, $oiCfn ) );
+}
+
+function CacheCrEx( $dataPath, $settCache, $type, $oiCi, $oiCfn )
 {
 	$dataComprs = Gen::GetArrField( $settCache, array( 'dataCompr' ), array() );
 	if( empty( $dataComprs ) )
@@ -3112,12 +3174,12 @@ function ReadSce( $dataPath, $settCache, $id, $type )
 			$dataComprs[] = '';
 	}
 
-	$oiCf = _GetCcf( $settCache, $id, '', $dataPath, time(), $type, $dataComprs );
+	$oiCf = _GetCcf2( $oiCfn, '', $dataPath, time(), $dataComprs );
 	if( !$oiCf )
 		return( null );
 
 	$oiCd = _GetCfc( $oiCf );
-	if( $oiCd === false || !CacheCvs( strlen( $oiCd ), GetCacheCos( $id ) ) )
+	if( $oiCd === false || !CacheCvs( strlen( $oiCd ), GetCacheCos( $oiCi ) ) )
 		return( null );
 
 	switch( $oiCf[ 'fmt' ] )
@@ -3360,10 +3422,15 @@ const TOF_COMPR_MAX	= 9;
 
 function Tof_GetFileData( $dir, $id, $ver = null, $compressed = false, $oiCi = null )
 {
+	return( Tof_GetFileDataCb( '\\seraph_accel\\Tof_GetFileDataEx', $dir, $id, $ver, $compressed, $oiCi ) );
+}
+
+function Tof_GetFileDataCb( $cbGet, $dir, $id, $ver = null, $compressed = false, $oiCi = null )
+{
 	if( $oiCi !== null )
 		$id = $oiCi . '.' . $id;
 
-	$data = @file_get_contents( $dir . '/' . $id );
+	$data = $cbGet( $dir, $id );
 	if( $compressed )
 		$data = @gzdecode( $data );
 	$data = @unserialize( $data );
@@ -3386,46 +3453,42 @@ function Tof_GetFileData( $dir, $id, $ver = null, $compressed = false, $oiCi = n
 	return( $data );
 }
 
-function Tof_SetFileData( $dir, $id, $data, $ver = null, $tmp = false, $compressed = false, &$oiCi = null )
+function Tof_GetFileDataEx( $dir, $id )
 {
-	$hr = Gen::MakeDir( $dir, true );
-	if( Gen::HrFail( $hr ) )
-		return( $hr );
+	return( @file_get_contents( $dir . '/' . $id ) );
+}
 
+function Tof_SetFileData( $dir, $id, $data, $ver = null, $compressed = false, &$oiCi = null )
+{
+	return( Tof_SetFileDataCb( '\\seraph_accel\\Tof_SetFileDataEx', $dir, $id, $data, $ver, $compressed, $oiCi ) );
+}
+
+function Tof_SetFileDataCb( $cbSet, $dir, $id, $data, $ver = null, $compressed = false, &$oiCi = null )
+{
 	if( $ver )
 		$data[ 'v' ] = $ver;
 
 	$data = @serialize( $data );
+	$overwrite = true;
 
 	if( $oiCi !== null )
 	{
 		$oiCi = @md5( $data ) . '.' . sprintf( '%x', strlen( $data ) );
 		$id = $oiCi . '.' . $id;
 
-		if( @file_exists( $dir . '/' . $id ) )
-			return( Gen::S_FALSE );
+		$overwrite = false;
 	}
-
-	$fileTmp = tempnam( $dir, '' );
-	if( !$fileTmp )
-		return( Gen::E_FAIL );
 
 	if( $compressed !== false )
 		$data = @gzencode( $data, is_int( $compressed ) ? $compressed : -1 );
 
-	if( @file_put_contents( $fileTmp, $data ) === false )
-	{
-		@unlink( $fileTmp );
-		return( Gen::E_FAIL );
-	}
+	return( $cbSet( $dir, $id, $data, $overwrite ) );
+}
 
-	if( !@rename( $fileTmp, $tmp ? ( $fileTmp . '.' . $id ) : ( $dir . '/' . $id ) ) )
-	{
-		@unlink( $fileTmp );
-		return( Gen::E_FAIL );
-	}
-
-	return( Gen::S_OK );
+function Tof_SetFileDataEx( $dir, $id, $data, $overwrite = true )
+{
+	$r = Gen::FileWriteTmpAndReplace( null, $dir . '/' . $id, $data, null, false, $overwrite, true );
+	return( $r === null ? Gen::S_FALSE : ( $r ? Gen::S_OK : Gen::E_FAIL ) );
 }
 
 function GetCacheSiteIdAdjustPath( $sites, &$addr, &$siteSubId, &$path )
@@ -4169,7 +4232,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.15 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.16 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4275,6 +4338,11 @@ function OnAsyncTask_QueueProcessItems( $args )
 			CachePostPreparePageEx( null, Gen::GetArrField( $data, array( 'u' ), '' ), Gen::GetArrField( $data, array( 's' ), '' ), Gen::GetArrField( $data, array( 'p' ), 10 ), null, Gen::GetArrField( $data, array( 'h' ), array() ), Gen::GetArrField( $data, array( 't' ), 0.0 ) );
 	}
 
+	$pushQueueImmediately = null;
+	$bDebug = Gen::GetArrField( $settGlobal, array( 'debug' ), false );
+
+	$aRestartItem = array();
+
 	$aCurItemsPrior = array();
 	foreach( GetSiteIds() as $siteId )
 	{
@@ -4303,15 +4371,19 @@ function OnAsyncTask_QueueProcessItems( $args )
 						$hrItemForce = Gen::S_ABORTED;
 					else if( Gen::GetArrField( $ctlRes, array( 'stage' ), '' ) )
 					{
-						if( !Gen::GetArrField( $ctlRes, array( 'finish' ) ) && !$isLive )
+						if( !Gen::GetArrField( $ctlRes, array( 'finish' ) ) && !Gen::GetArrField( $ctlRes, array( 'remote' ) ) && !$isLive )
 							$hrItemForce = Gen::E_INVALID_STATE;
 					}
 					else if( ( int )($item[ 'tp' ]??0) == 0 && $asyncMode != 'ec' && ($settGlobal[ 'asyncSmpOpt' ]??null) )
-						_CacheProcessItem_RunSmpOpt( $asyncMode );
+						_CacheProcessItem_RunSmpOpt( $asyncMode, ($data[ 'u' ]??null) );
 				}
 			}
 			else
+			{
 				$hrItemForce = Gen::E_TIMEOUT;
+				if( Gen::GetArrField( ProcessCtlData_Get( $fileCtl ), array( 'remote' ) ) )
+					$hrItemForce = Gen::S_TIMEOUT;
+			}
 
 			if( $hrItemForce == Gen::S_OK )
 			{
@@ -4322,7 +4394,29 @@ function OnAsyncTask_QueueProcessItems( $args )
 			}
 
 			if( $fileCtl )
-				ProcessCtlData_Del( $fileCtl );
+				ProcessCtlData_DelSmart( $fileCtl, true );
+
+			if( $hrItemForce != Gen::S_ABORTED )
+			{
+				if( Gen::HrFail( $hrItemForce ) )
+				{
+					if( ($data[ 'rdr' ]??0) < 10 )
+					{
+						$data[ 'rpt' ] = true;
+						if( !isset( $data[ 'rdr' ] ) )
+							$data[ 'rdr' ] = 0;
+					}
+				}
+				else
+				{
+					if( ($data[ 'rdr' ]??0) < 100 )
+					{
+						$data[ 'rpt' ] = true;
+						if( !isset( $data[ 'rdr' ] ) )
+							$data[ 'rdr' ] = 0;
+					}
+				}
+			}
 
 			$data[ 'td' ] = $tmDur;
 			$data[ 'hr' ] = $hrItemForce;
@@ -4330,68 +4424,104 @@ function OnAsyncTask_QueueProcessItems( $args )
 			$item[ 'd' ] = Gen::Serialize( $data );
 			$item[ 'p' ] = -1000;
 			$item[ 't' ] = $tmCur;
+
 			unset( $aProgress[ $id ] );
 			$aDone[ $id ] = $item;
 		}
 
 		{
-			$n = $aDone -> count();
+			$aDoneNew = array();
+			$nDone = 0;
+			$nDoneErr = 0;
+			$iconClr = null;
 
-			if( Gen::GetArrField( $settGlobal, array( 'debug' ), false ) )
+			for( $aDone -> end(); $aDone -> valid(); $aDone -> prev() )
 			{
-				if( $n > 2 * 10 )
+				$id = $aDone -> key();
+				$item = $aDone -> current();
+				$data = Gen::GetArrField( Gen::Unserialize( ($item[ 'd' ]??null) ), array( '' ), array() );
+
+				if( $bDebug )
 				{
-					$aDoneNew = array();
-					$nDone = 0;
-					$nDoneErr = 0;
-
-					for( $aDone -> end(); $aDone -> valid(); $aDone -> prev() )
-					{
-						$item = $aDone -> current();
-
-						$data = Gen::GetArrField( Gen::Unserialize( ($item[ 'd' ]??null) ), array( '' ), array() );
-						list( $iconClr, $state, $stateDsc, $duration ) = GetQueueItem_Done_Attrs( $data );
-						unset( $state, $stateDsc, $duration );
-
-						$bPut = false;
-						if( $iconClr == 'error' )
-						{
-							if( $nDoneErr < 10 )
-							{
-								$bPut = true;
-								$nDoneErr++;
-							}
-						}
-						else
-						{
-							if( $nDone < 10 )
-							{
-								$bPut = true;
-								$nDone++;
-							}
-						}
-
-						if( $bPut )
-							Gen::ArrSplice( $aDoneNew, 0, 0, array( $aDone -> key() => $item ) );
-
-						if( $nDone == 10 && $nDoneErr == 10 )
-							break;
-					}
-
-					$aDone -> clear();
-					$aDone -> setItems( $aDoneNew );
+					list( $iconClr, $state, $stateDsc, $duration ) = GetQueueItem_Done_Attrs( $data );
+					unset( $state, $stateDsc, $duration );
 				}
+
+				$bKeepInDone = false;
+				$bRepeat = false;
+				if( $iconClr == 'error' )
+				{
+					if( $nDoneErr < 10 )
+					{
+						$bKeepInDone = true;
+						$nDoneErr++;
+					}
+				}
+				else
+				{
+					if( $nDone < 10 )
+					{
+						$bKeepInDone = true;
+						$nDone++;
+					}
+				}
+
+				if( ( $repeatVal = ($data[ 'rpt' ]??null) ) )
+				{
+					$bKeepInDone = true;
+
+					if( $repeatVal === true )
+						$bRepeat = true;
+					else if( ( $tmCur - $repeatVal ) > ($settCacheGlobal[ 'procIntervalShort' ]??0) )
+						$bRepeat = true;
+					else
+						$pushQueueImmediately = false;
+
+					if( $bRepeat )
+						$data[ 'rpt' ] = false;
+				}
+
+				$item[ 'd' ] = Gen::Serialize( $data );
+
+				if( $bKeepInDone )
+					Gen::ArrSplice( $aDoneNew, 0, 0, array( $id => $item ) );
+
+				if( $bRepeat )
+				{
+					$item[ 's' ] = $siteId;
+					$aRestartItem[ $id ] = $item;
+				}
+
 			}
-			else
-			{
-				if( $n > 10 )
-					$aDone -> splice( 0, $n - 10 );
-			}
+
+			$aDone -> clear();
+			$aDone -> setItems( $aDoneNew );
+
+			unset( $aDoneNew, $id, $item, $data );
 		}
 
 		$aDone -> dispose(); $aProgress -> dispose(); $lock -> Release();
 		unset( $aDone, $aProgress, $lock );
 	}
+
+	if( $aRestartItem )
+	{
+		foreach( $aRestartItem as $item )
+		{
+			$data = Gen::GetArrField( Gen::Unserialize( ($item[ 'd' ]??null) ), array( '' ), array() );
+			$itemType = ( int )($item[ 'tp' ]??0);
+			if( $itemType == 0 )
+				CachePostPreparePageEx( ($data[ 'm' ]??null), ($data[ 'u' ]??null), ($item[ 's' ]??null), isset( $data[ 'l' ] ) ? -480 : ( int )($data[ 'p' ]??null), ($data[ 'p' ]??null), ($data[ 'h' ]??null), $data[ 'to' ], isset( $data[ 'rdr' ] ) ? ( $data[ 'rdr' ] + 1 ) : null, ($data[ 'l' ]??null) );
+			else
+				CachePostPrepareObjEx( $itemType, ($data[ 'u' ]??null), ($item[ 's' ]??null), ( int )($data[ 'p' ]??null), $data, ( int )($data[ 'p' ]??null), ( float )($item[ 't' ]??null) );
+		}
+		unset( $item, $data, $itemType );
+
+		$pushQueueImmediately = true;
+	}
+
+	if( $pushQueueImmediately !== null )
+		CachePushQueueProcessor( true, $pushQueueImmediately, !$pushQueueImmediately );
 
 	if( !$nMaxItems )
 	{
@@ -4585,6 +4715,33 @@ function ProcessCtlData_Del( $fileCtl )
 	$lock -> Release();
 }
 
+function ProcessCtlData_DelSmart( $fileCtl, $bClnDsc = null )
+{
+	if( $bClnDsc !== false && ( $ctlRes = ProcessCtlData_Get( $fileCtl ) ) )
+	{
+
+		if( $bClnDsc === null && Gen::GetArrField( $ctlRes, array( 'remote' ) ) )
+		{
+			$bClnDsc = true;
+			if( $urlRemoteAbort = Gen::GetArrField( $ctlRes, array( 'remote', 'urlAbort' ) ) )
+				Wp::RemotePost( $urlRemoteAbort, array( 'timeout' => 2, 'sslverify' => false ) );
+		}
+
+		if( $bClnDsc && ( $dscFile = Gen::GetArrField( $ctlRes, array( 'dscFile' ) ) ) )
+		{
+			$lock = new DscLockUpdater();
+			$lock -> Acquire();
+
+			@unlink( $dscFile . '.pp' );
+			@unlink( $dscFile . '.p' );
+
+			$lock -> Release();
+		}
+	}
+
+	ProcessCtlData_Del( $fileCtl );
+}
+
 function ProcessCtlData_Get( $fileCtl, &$isLive = null )
 {
 	$lock = new Lock( 'pl', GetCacheDir() );
@@ -4651,7 +4808,7 @@ function ProcessCtlData_Update( $fileCtl, $data, $clearPrev = false, $lifeCtlOpe
 	else
 		$dataPrev = @unserialize( $dataPrev );
 
-	$res = @file_put_contents( $fileCtl . '.dat', @serialize( array_merge( $dataPrev, $data ) ) ) !== false;
+	$res = Gen::FileWriteTmpAndReplace( $lock, $fileCtl . '.dat', @serialize( array_merge( $dataPrev, $data ) ) ) !== false;
 	$lock -> Release();
 
 	return( $res );
@@ -4668,9 +4825,8 @@ class ProcessQueueItemCtx
 	public $dirQueue;
 	public $procTmLim = 60 * 60 * 24;
 
-	public $needRepeatPage = false;
 	public $needLrn = false;
-	public $repeatIdx = null;
+
 	public $skipStatus = null;
 	public $warns = null;
 	public $infos = array();
@@ -4731,28 +4887,33 @@ class ProcessQueueItemCtx
 		if( ( int )($this -> item[ 'p' ]??null) == -480 )
 			$prepArgs[ 'lrn' ] = ($this -> data[ 'l' ]??null);
 
-		$this -> method = ( string )($this -> data[ 'm' ]??'GET');
-
-		$this -> url = ProcessQueueItemCtx::AdjustRequestUrl( ($this -> data[ 'u' ]??null), $this -> item[ 't' ], $prepArgs );
-
-		$this -> hdrs = ($this -> data[ 'h' ]??null);
-		if( !is_array( $this -> hdrs ) )
-			$this -> hdrs = array();
-
-		$this -> hdrsForRequest = $this -> hdrs;
-		Net::GetUrlWithoutProtoEx( $this -> url, $proto );
-		if( strtolower( $proto ) == 'https' )
+		if( ($this -> item[ 'tp' ]??0) == 0 )
 		{
-			Net::RemoveHeader( $this -> hdrsForRequest, 'Upgrade-Insecure-Requests' );
-			Net::RemoveHeader( $this -> hdrsForRequest, 'Ssl' );
+			$this -> method = ( string )($this -> data[ 'm' ]??'GET');
+
+			$this -> url = ProcessQueueItemCtx::AdjustRequestUrl( ($this -> data[ 'u' ]??null), $this -> item[ 't' ], $prepArgs );
+
+			$this -> hdrs = ($this -> data[ 'h' ]??null);
+			if( !is_array( $this -> hdrs ) )
+				$this -> hdrs = array();
+
+			$this -> hdrsForRequest = $this -> hdrs;
+			Net::GetUrlWithoutProtoEx( $this -> url, $proto );
+			if( strtolower( $proto ) == 'https' )
+			{
+				Net::RemoveHeader( $this -> hdrsForRequest, 'Upgrade-Insecure-Requests' );
+				Net::RemoveHeader( $this -> hdrsForRequest, 'Ssl' );
+
+			}
+
+			Net::RemoveHeader( $this -> hdrsForRequest, 'Accept-Encoding' );
+			Net::RemoveHeader( $this -> hdrsForRequest, 'Cloud-Protector-Client-Ip' );
+
+			unset( $proto );
 
 		}
 
-		Net::RemoveHeader( $this -> hdrsForRequest, 'Accept-Encoding' );
-		Net::RemoveHeader( $this -> hdrsForRequest, 'Cloud-Protector-Client-Ip' );
-
-		unset( $proto );
-
+		ProcessCtlData_Update( $this -> fileCtl, array( 'queue' => array( 'id' => $this -> id, 'siteId' => $this -> siteId, 'hdrsForRequest' => $this -> hdrsForRequest ) ), true );
 	}
 
 	function WaitForEndRequest()
@@ -4803,6 +4964,9 @@ class ProcessQueueItemCtx
 					break;
 				}
 
+				if( Gen::GetArrField( $ctlRes, array( 'remote' ) ) )
+					return( false );
+
 				if( !$isLive )
 				{
 					$this -> hr = Gen::E_INVALID_STATE;
@@ -4820,13 +4984,20 @@ class ProcessQueueItemCtx
 			if( ProcessCtlData_IsAborted( $this -> fileCtl ) )
 			{
 				$this -> hr = Gen::S_ABORTED;
+				$this -> httpCode = null;
 				$this -> requestRes = null;
 			}
 			else if( $this -> httpCode && $this -> httpCode != 500 )
 			{
-				if( $this -> httpCode == 524 || $this -> httpCode == 522 || $this -> httpCode == 504 || $this -> httpCode == 503 )
-					if( ( $this -> repeatIdx = ($this -> data[ 'rdr' ]??0) ) <= 3 )
-						$this -> needRepeatPage = true;
+				if( ( $this -> httpCode == 524 || $this -> httpCode == 522 || $this -> httpCode == 504 || $this -> httpCode == 503 ) && ($this -> data[ 'rdr' ]??0) < 4 )
+				{
+					$this -> data[ 'rpt' ] = true;
+					if( !isset( $this -> data[ 'rdr' ] ) )
+						$this -> data[ 'rdr' ] = 0;
+					$this -> immediatelyPushQueue = true;
+
+				}
+
 				$this -> hr = Gen::HrSuccFromFail( $this -> hr );
 			}
 		}
@@ -4848,10 +5019,12 @@ class ProcessQueueItemCtx
 				$this -> urlRedir = Net::GetSiteAddrFromUrl( $this -> url, true ) . $this -> urlRedir;
 
 			if( ( int )($this -> item[ 'p' ]??null) !== 10 )
-				if( ( $redirIdx = ($this -> data[ 'rdr' ]??0) ) <= 4 )
+				if( ( $redirIdx = ($this -> data[ 'rdr' ]??0) ) < 5 )
 					if( CachePostPreparePageEx( ($this -> data[ 'm' ]??null), $this -> urlRedir, $this -> siteId, ( int )($this -> item[ 'p' ]??null), ($this -> data[ 'p' ]??null), $this -> hdrs, $this -> data[ 'to' ], $redirIdx + 1, ($this -> data[ 'l' ]??null) ) )
 						$this -> immediatelyPushQueue = true;
 		}
+
+		return( true );
 	}
 
 	function Finish()
@@ -4870,7 +5043,21 @@ class ProcessQueueItemCtx
 			$this -> data[ 'r' ] = $this -> skipStatus;
 
 			if( $this -> skipStatus == 'alreadyProcessing' || $this -> skipStatus == 'lrnNeed' )
-				$this -> needRepeatPage = true;
+			{
+				$this -> data[ 'rpt' ] = true;
+				$this -> immediatelyPushQueue = true;
+
+			}
+			else if( Gen::StrStartsWith( $this -> skipStatus, 'engineRemote' ) && !( $this -> skipStatus == 'engineRemoteMgrAccessDenied' || $this -> skipStatus == 'engineRemoteAccessDenied' || $this -> skipStatus == 'engineRemoteNoLicense' ) )
+			{
+				if( ($this -> data[ 'rdr' ]??0) < 1000000 )
+				{
+					$this -> data[ 'rpt' ] = $this -> tmFinish;
+					if( !isset( $this -> data[ 'rdr' ] ) )
+						$this -> data[ 'rdr' ] = 0;
+					$this -> immediatelyPushQueue = true;
+				}
+			}
 			else if( Gen::StrStartsWith( $this -> skipStatus, 'lrnNeed:' ) )
 				$this -> needLrn = substr( $this -> skipStatus, 8 );
 		}
@@ -4933,11 +5120,15 @@ class ProcessQueueItemCtx
 					$dataExtUpdated = $aProgress[ $this -> id ];
 					if( $dataExtUpdated )
 					{
-						if( $dataExtUpdated = Gen::GetArrField( Gen::Unserialize( ($dataExtUpdated[ 'd' ]??null) ), array( '' ), array() ) )
-							if( ($dataExtUpdated[ 'rpt' ]??null) )
-								$this -> needRepeatPage = true;
+					    if( $dataExtUpdated = Gen::GetArrField( Gen::Unserialize( ($dataExtUpdated[ 'd' ]??null) ), array( '' ), array() ) )
+					        if( $repeatVal = ($dataExtUpdated[ 'rpt' ]??null) )
+							{
+								$this -> data[ 'rpt' ] = $repeatVal;
+								$this -> immediatelyPushQueue = true;
 
-						unset( $dataExtUpdated );
+							}
+
+					    unset( $dataExtUpdated );
 					}
 				}
 
@@ -4957,9 +5148,6 @@ class ProcessQueueItemCtx
 
 		PluginFileValues::SetEx( PluginFileValues::GetDirVar( '' ), 'pelt', ( int )$this -> tmFinish );
 
-		if( $this -> needRepeatPage && CachePostPreparePageEx( ($this -> data[ 'm' ]??null), ($this -> data[ 'u' ]??null), $this -> siteId, $priorOrig, ($this -> data[ 'p' ]??null), $this -> hdrs, $this -> data[ 'to' ], $this -> repeatIdx !== null ? ( $this -> repeatIdx + 1 ) : null, ($this -> data[ 'l' ]??null) ) )
-			$this -> immediatelyPushQueue = true;
-
 		CachePushQueueProcessor( true, $this -> immediatelyPushQueue, $this -> hr != Gen::S_OK && Gen::HrSucc( $this -> hr ) );
 
 	}
@@ -4973,11 +5161,19 @@ function PackKvArrInfo( $a )
 	return( Gen::ArrMap( $a, function( $k, $v ) { return( LocId::Pack( 'NameToDetails_%1$s%2$s', null, array( ( string )$k, is_string( $v ) ? $v : json_encode( $v ) ) ) ); } ) );
 }
 
-function _CacheProcessItem_RunSmpOpt( $asyncMode )
+function _CacheProcessItem_RunSmpOpt( $asyncMode, $url )
 {
 
+	$fileIdx = OnAsyncTasksGetPushUrlFile( true );
+	if( isset( $_SERVER[ 'PHP_SELF' ] ) && ( $uriPath = Gen::GetArrField( Net::UrlParse( $url ), 'path' ) ) && $uriPath != '/' )
+	{
+		$uriPath = substr( $uriPath, strlen( Gen::GetFileDir( $_SERVER[ 'REQUEST_URI' ] ) ) );
+		if( @file_exists( Gen::GetFileDir( $_SERVER[ 'SCRIPT_FILENAME' ] ) . $uriPath . '/' . $fileIdx ) )
+			$fileIdx = $uriPath . '/' . $fileIdx;
+	}
+
 	$tmStamp = microtime( true );
-	return( ProcessQueueItemCtx::MakeRequest( $asyncMode, 'GET', Net::UrlAddArgs( Plugin::AsyncTaskPushGetUrlEx( Wp::GetSiteWpRootUrl( OnAsyncTasksGetPushUrlFile( true ) ), 'O', $tmStamp ), array( 'nonce' => hash_hmac( 'md5', Plugin::AsyncTaskPushGetTimerun( $tmStamp ), GetSalt() ) ) ), array(  ) ) );
+	return( ProcessQueueItemCtx::MakeRequest( $asyncMode, 'GET', Net::UrlAddArgs( Plugin::AsyncTaskPushGetUrlEx( Wp::GetSiteWpRootUrl( $fileIdx ), 'O', $tmStamp ), array( 'nonce' => hash_hmac( 'md5', Plugin::AsyncTaskPushGetTimerun( $tmStamp ), GetSalt() ) ) ), array(  ) ) );
 }
 
 function OnAsyncTask_CacheProcessItem( $args )
@@ -5090,49 +5286,30 @@ function OnAsyncTask_CacheProcessItem( $args )
 			$ctx -> httpCode = Net::GetResponseCodeFromHr( $ctx -> hr );
 
 		}
-
-		$ctx -> WaitForEndRequest();
 	}
 	else
 	{
+		$ctx -> PrepareRequest();
+
 		global $seraph_accel_g_prepPrms;
 
 		$seraph_accel_g_prepPrms = array( 'pc' => $ctx -> fileCtl, 'p' => ( int )($ctx -> item[ 'p' ]??null) );
 		$sett = Plugin::SettGet();
-
 		$ctxProcess = &GetContentProcessCtx( $_SERVER, $sett );
+		$skipStatus = '';
 
-		if( $itemType == 10 )
-		{
-			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'stage' => 'images' ) );
+		ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'stage' => 'get' ) );
 
-			$file = ($ctx -> data[ 'u' ]??null);
-			Images_ProcessSrc_ConvertAll( $ctxProcess, Gen::GetArrField( $sett, array( 'contPr', 'img' ), array() ), null, $file, Images_ProcessSrcEx_FileMTime( $file ), false );
-		}
-		else if( $itemType == 20 )
-		{
-			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array( 'stage' => 'images' ) );
+			$skipStatus = ContentProcess_ItemType( $itemType, $ctx -> data, $ctxProcess, $sett );
 
-			$file = ($ctx -> data[ 'u' ]??null);
-			Images_ProcessSrc_SizeAlternatives( $ctxProcess, $file, $sett, ($ctx -> data[ 'ai' ]??null) );
-		}
+		ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'skip' => $skipStatus, 'warns' => LastWarnDscs_Get() ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( LocId::Pack( 'ProcStat' ) => PackKvArrInfo( ($ctxProcess[ 'stat' ]??null) ) ) ) : array() ) );
 
 		unset( $ctxProcess );
-
-		if( Gen::LastErrDsc_Is() )
-		{
-			$ctx -> hr = Gen::E_FAIL;
-			$ctx -> skipStatus = 'err:' . rawurlencode( Gen::LastErrDsc_Get() );
-		}
-
-		$ctx -> warns = LastWarnDscs_Get();
-
 		unset( $seraph_accel_g_prepPrms );
-
-		$ctx -> tmFinish = microtime( true );
 	}
 
-	$ctx -> Finish();
+	if( $ctx -> WaitForEndRequest() )
+		$ctx -> Finish();
 }
 
 function GetHeadersResString( $hdrs )
@@ -5234,7 +5411,7 @@ function GetViewDeviceGrpNameFromData( $viewsDeviceGrp )
 	return( $viewName );
 }
 
-function _CachePostPreparePageEx_StopAndRepeat( $aProgress, $id, $data = null )
+function _CachePostPreparePageEx_StopAndRepeat( $aProgress, $id, $repeatVal = null, $data = null )
 {
 	$item = $aProgress[ $id ];
 	if( !$item )
@@ -5245,17 +5422,18 @@ function _CachePostPreparePageEx_StopAndRepeat( $aProgress, $id, $data = null )
 	if( ($itemInProgressData[ 'rpt' ]??null) || !( $fileCtl = ProcessCtlData_GetFullPath( ($itemInProgressData[ 'pc' ]??null) ) ) )
 		return;
 
-	ProcessCtlData_Del( $fileCtl );
+	ProcessCtlData_DelSmart( $fileCtl );
 
 	if( $data )
 		$itemInProgressData = array_merge( $data, $itemInProgressData );
-	$itemInProgressData[ 'rpt' ] = true;
+	if( $repeatVal )
+		$itemInProgressData[ 'rpt' ] = $repeatVal;
 
 	$item[ 'd' ] = Gen::Serialize( $itemInProgressData );
 	$aProgress[ $id ] = $item;
 }
 
-function CachePostPreparePageEx( $method , $url, $siteId, $priority, $priorityInitiator, $headers = null, $time = null, $redirIdx = null, $lrnId = null )
+function CachePostPreparePageEx( $method , $url, $siteId, $priority, $priorityInitiator, $headers = null, $time = null, $retryIdx = null, $lrnId = null )
 {
 
 	if( !$url )
@@ -5319,8 +5497,8 @@ function CachePostPreparePageEx( $method , $url, $siteId, $priority, $priorityIn
 	$data = array( 'p' => $priorityInitiator, 'u' => $url, 'h' => $headers, 'v' => $viewName );
 	if( $method && $method != 'GET' )
 		$data[ 'm' ] = $method;
-	if( $redirIdx )
-		$data[ 'rdr' ] = $redirIdx;
+	if( $retryIdx )
+		$data[ 'rdr' ] = $retryIdx;
 	if( $lrnId )
 		$data[ 'l' ] = $lrnId;
 
@@ -5347,7 +5525,7 @@ function CachePostPreparePageEx( $method , $url, $siteId, $priority, $priorityIn
 
 		if( $priority !== 10 )
 		{
-			_CachePostPreparePageEx_StopAndRepeat( $aProgress, $id, $data );
+			_CachePostPreparePageEx_StopAndRepeat( $aProgress, $id, true, $data );
 			if( $id != $idLearn )
 				_CachePostPreparePageEx_StopAndRepeat( $aProgress, $idLearn );
 		}
@@ -5433,31 +5611,127 @@ function CacheQueueDelete( $siteId )
 	return( $res );
 }
 
-function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCmn = true, $timeout = 30, $rememberServerState = true )
+function ExtContents_Local_GetIdxPrms( $dir )
 {
-	$extCacheId = null;
-	if( $ctxProcess !== null )
-	{
-		$extCacheId = md5( $url );
-		$file = null;
-		$cont = null;
+	return( array( 'dirFilesPattern' => $dir . '/i/*.dat.gz' ) );
+}
 
-		$lock = new Lock( Gen::GetFileDir( $ctxProcess[ 'dataPath' ] ) . '/eo/l', false );
-		if( $lock -> Acquire() )
+function ExtContents_Local_CacheGet( $siteCacheDir, $extCacheId )
+{
+	$file = null;
+	$cont = null;
+
+	$cacheDirExtObj = $siteCacheDir . '/eo';
+
+	$lock = new Lock( $cacheDirExtObj . '/l', false );
+	if( $lock -> Acquire() )
+	{
+		$aIdx = new ArrayOnFiles( ExtContents_Local_GetIdxPrms( $cacheDirExtObj ) );
+
+		$contId = $aIdx[ $extCacheId ];
+
+		if( is_string( $contId ) )
 		{
-			foreach( glob( Gen::GetFileDir( $lock -> GetFileName() ) . '/' . $extCacheId . '.*', GLOB_NOSORT ) as $file )
+			foreach( glob( $cacheDirExtObj . '/' . bin2hex( $contId ) . '.*', GLOB_NOSORT ) as $file )
 				break;
 
 			if( $file && ( $tmFile = @filemtime( $file ) ) !== false )
 			{
 				if( $tmFile > time() )
+				{
 					$cont = @file_get_contents( $file );
+					$file = Gen::GetFileName( $file );
+				}
 				else
+				{
 					@unlink( $file );
-			}
+					$file = null;
 
-			$lock -> Release();
+					unset( $aIdx[ $extCacheId ] );
+				}
+			}
+			else
+				unset( $aIdx[ $extCacheId ] );
 		}
+
+		$aIdx -> dispose();
+		unset( $aIdx );
+
+		$lock -> Release();
+	}
+
+	return( array( $file, $cont ) );
+}
+
+function ExtContents_Local_CacheSet( $siteCacheDir, $extCacheId, $fileType, $contCacheTtl, $contId, $contCache )
+{
+	$cacheDirExtObj = $siteCacheDir . '/eo';
+
+	$lock = new Lock( $cacheDirExtObj . '/l', false );
+
+	Gen::FileWriteTmpAndReplace( $lock, Gen::GetFileDir( $lock -> GetFileName() ) . '/' . bin2hex( $contId ) . '.' . $fileType, $contCache, time() + $contCacheTtl );
+
+	if( $lock -> Acquire() )
+	{
+		$aIdx = new ArrayOnFiles( ExtContents_Local_GetIdxPrms( $cacheDirExtObj ) );
+
+		$aIdx[ $extCacheId ] = $contId;
+
+		$aIdx -> dispose();
+		unset( $aIdx );
+
+		$lock -> Release();
+	}
+}
+
+function ExtContents_Local_CacheClean( $siteCacheDir, $tm, $tmCur, $cbIsAborted )
+{
+	$lock = new Lock( $siteCacheDir . '/eo/l', false );
+
+	$ctx = new AnyObj();
+	$ctx -> tm = $tm;
+	$ctx -> tmCur = $tmCur;
+	$ctx -> cbIsAborted = $cbIsAborted;
+
+	$bAborted = false;
+
+	if( Gen::DirEnum( $siteCacheDir . '/eo', $ctx,
+		function( $path, $item, &$ctx )
+		{
+			if( @call_user_func( $ctx -> cbIsAborted ) )
+				return( false );
+
+			$path = $path . '/' . $item;
+			if( @is_dir( $path ) || !Gen::GetFileExt( $item ) )
+				return;
+
+			$tmFile = @filectime( $path );
+			if( $tmFile !== false )
+			{
+				if( $tmFile < $ctx -> tm )
+					@unlink( $path );
+				else if( ( $tmFile = @filemtime( $path ) ) !== false && $tmFile < $ctx -> tmCur )
+					@unlink( $path );
+			}
+		}
+	, true ) === false )
+	{
+		$bAborted = true;
+	}
+
+	return( !$bAborted );
+}
+
+function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCmn = true, $timeout = 30, $rememberServerState = true )
+{
+	global $seraph_accel_g_aGetExtContentsFailedSrvs;
+	global $seraph_accel_g_getExtContentsNetTransport;
+
+	$extCacheId = null;
+	if( $ctxProcess !== null )
+	{
+		$extCacheId = md5( $url, true );
+		list( $file, $cont ) = $ctxProcess[ 'cbs' ] -> ExtContents_CacheGet( $extCacheId );
 
 		if( is_string( $cont ) && Gen::GetFileExt( $file ) == 'gz' && is_string( $cont = @gzdecode( $cont ) ) )
 			$file = Gen::GetFileName( $file, true, true );
@@ -5473,9 +5747,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.15';
-
-	global $seraph_accel_g_aGetExtContentsFailedSrvs;
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.16';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -5487,6 +5759,21 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	if( $rememberServerState && $serverId && Gen::HrFail( ($seraph_accel_g_aGetExtContentsFailedSrvs[ $serverId ]??null) ) )
 		return( false );
+
+	if( $seraph_accel_g_getExtContentsNetTransport === null )
+	{
+		$seraph_accel_g_getExtContentsNetTransport = Wp::GetRemoteTransport();
+		if( !$seraph_accel_g_getExtContentsNetTransport )
+			$seraph_accel_g_getExtContentsNetTransport = false;
+	}
+
+	if( $seraph_accel_g_getExtContentsNetTransport )
+	{
+		$args[ 'transport' ] = $seraph_accel_g_getExtContentsNetTransport;
+
+		$args[ 'headers' ][ 'Connection' ] = 'keep-alive';
+		$args[ 'headers' ][ 'Keep-Alive' ] = 'timeout=570, max=1000';
+	}
 
 	$res = Wp::RemoteGet( $url, $args );
 	$hr = Net::GetHrFromWpRemoteGet( $res );
@@ -5540,17 +5827,12 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 					$fileType .= '.gz';
 			}
 
-			_FileWriteTmpAndReplace( Gen::GetFileDir( $lock -> GetFileName() ) . '/' . $extCacheId . '.' . $fileType, time() + $contCacheTtl, $contCache, null, $lock );
+			$ctxProcess[ 'cbs' ] -> ExtContents_CacheSet( $extCacheId, $fileType, $contCacheTtl, md5( $cont, true ), $contCache );
 			unset( $contCache );
 		}
 	}
 
 	return( $cont );
-}
-
-function Images_ProcessSrcEx_FileMTime( $file )
-{
-	return( Gen::FileSize( $file ) ? @filemtime( $file ) : false );
 }
 
 function CacheExtractPreparePageParams( &$args )
@@ -5693,50 +5975,6 @@ function VirtUriPath2Real( $path, array $aVPth )
 function GetVirtUriPathsFromSett( $sett )
 {
 	return( Gen::GetArrField( unserialize( ( string )base64_decode( Gen::GetArrField( $sett, array( 'cache', '_vPth' ), '' ) ) ), array( '' ), array() ) );
-}
-
-function _FileWriteTmpAndReplace( $file, $fileTime = null, $data = null, $fileTmp = null, $lock = null )
-{
-
-	if( $fileTmp === null )
-		$fileTmp = $file . '.tmp';
-
-	if( !$lock )
-		$lock = new Lock( $fileTmp . '.l', false, true );
-
-	if( ( $lr = $lock -> Acquire() ) !== false )
-	{
-		if( $data === null || @file_put_contents( $fileTmp, $data ) )
-		{
-			if( $fileTime === null || @touch( $fileTmp, $fileTime ) )
-			{
-				if( @file_exists( $file ) )
-					@unlink( $file );
-
-				if( @rename( $fileTmp, $file ) )
-				{
-					$lock -> Release();
-					return( true );
-				}
-				else
-					Gen::LastErrDsc_Set( LocId::Pack( 'FileRenameErr_%1$s%2$s', 'Common', array( $fileTmp, $file ) ) );
-			}
-			else
-				Gen::LastErrDsc_Set( LocId::Pack( 'FileWriteErr_%1$s', 'Common', array( $fileTmp ) ) );
-		}
-		else
-			Gen::LastErrDsc_Set( LocId::Pack( 'FileWriteErr_%1$s', 'Common', array( $fileTmp ) ) );
-
-		if( $lr )
-			$lock -> Release();
-	}
-	else
-		Gen::LastErrDsc_Set( $lock -> GetErrDescr() );
-
-	@unlink( $fileTmp );
-	@unlink( $file );
-
-	return( false );
 }
 
 function _FileReadWithLocker( $file, $lock = null )
@@ -5952,6 +6190,44 @@ function DepsRemove( &$a, $aRem )
 	}
 }
 
+class DscLockUpdater
+{
+	private $timeout;
+
+	private $lock;
+	private $tmLastUpdate = 0.0;
+
+	function __construct( $timeout = 0.0 )
+	{
+		$this -> timeout = $timeout;
+		$this -> lock = new Lock( 'dl', GetCacheDir() );
+	}
+
+	function __destruct()
+	{
+		$this -> Release();
+	}
+
+	function Acquire()
+	{
+		return( $this -> lock -> Acquire() );
+	}
+
+	function Release( $force = false )
+	{
+		if( $this -> timeout && !$force )
+		{
+			$tmCur = microtime( true );
+			if( $tmCur - $this -> tmLastUpdate < $this -> timeout )
+				return;
+
+			$this -> tmLastUpdate = $tmCur;
+		}
+
+		$this -> lock -> Release();
+	}
+}
+
 function CacheExt_Clear_CopyHdrs( &$aSrv )
 {
 	if( isset( $aSrv[ 'cw_allowed_ip' ] ) )
@@ -5981,7 +6257,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.15');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.16');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )
@@ -6017,7 +6293,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	}
 }
 
-function CacheAdditional_UpdateCurUrl( $settCache, $srvUpd = false )
+function CacheAdditional_UpdateCurUrl( $settCache, $srvUpd = false, $urlCur = null )
 {
 	global $seraph_accel_g_simpCacheMode;
 
@@ -6025,31 +6301,29 @@ function CacheAdditional_UpdateCurUrl( $settCache, $srvUpd = false )
 
 		return;
 
-	$url = null;
-
 	if( IsBatCacheRtm() )
 	{
-		if( $url === null )
-		    $url = GetCurRequestUrl();
-		BatCache_Clear( $url );
+		if( $urlCur === null )
+		    $urlCur = GetCurRequestUrl();
+		BatCache_Clear( $urlCur );
 	}
 
 	if( Gen::GetArrField( $settCache, array( 'srvClr' ), false ) && function_exists( 'seraph_accel\\CacheExt_Clear' ) )
 	{
-		if( $url === null )
-			$url = GetCurRequestUrl();
-		CacheExt_Clear( $url );
+		if( $urlCur === null )
+			$urlCur = GetCurRequestUrl();
+		CacheExt_Clear( $urlCur );
 	}
 
 	if( $srvUpd && Gen::GetArrField( $settCache, array( 'srvUpd' ), false ) )
 	{
-		if( $url === null )
-			$url = GetCurRequestUrl();
+		if( $urlCur === null )
+			$urlCur = GetCurRequestUrl();
 
 		global $seraph_accel_g_ctxCache;
 
 		$aHdrs = array( $seraph_accel_g_ctxCache !== null ? $seraph_accel_g_ctxCache -> viewId : 'cur' => Net::GetRequestHeaders() );
-		CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs );
+		CacheAdditional_WarmupUrl( $settCache, $urlCur, $aHdrs );
 	}
 }
 

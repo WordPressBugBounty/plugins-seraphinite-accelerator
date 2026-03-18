@@ -416,44 +416,6 @@ function CacheGetInfo( $siteId, $cbCancel )
 	return( $info );
 }
 
-class DscLockUpdater
-{
-	private $timeout;
-
-	private $lock;
-	private $tmLastUpdate = 0.0;
-
-	function __construct( $timeout = 0.0 )
-	{
-		$this -> timeout = $timeout;
-		$this -> lock = new Lock( 'dl', GetCacheDir() );
-	}
-
-	function __destruct()
-	{
-		$this -> Release();
-	}
-
-	function Acquire()
-	{
-		return( $this -> lock -> Acquire() );
-	}
-
-	function Release( $force = false )
-	{
-		if( $this -> timeout && !$force )
-		{
-			$tmCur = microtime( true );
-			if( $tmCur - $this -> tmLastUpdate < $this -> timeout )
-				return;
-
-			$this -> tmLastUpdate = $tmCur;
-		}
-
-		$this -> lock -> Release();
-	}
-}
-
 function _CacheOp_Clear_Dsc_MarkExistedParts( &$datasDel, $dsc, $aTypes )
 {
 	{
@@ -725,29 +687,8 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $langId = n
 						if( Images_ProcessSrcSizeAlternatives_Cache_Cleanup( $siteDir . '/d', $ctx -> tmCur - $ctx -> timeout, array( $ctx, 'isAborted' ) ) === false )
 							return( false );
 
-						if( Gen::DirEnum( $siteDir . '/eo', $ctx,
-							function( $path, $item, &$ctx )
-							{
-								if( $ctx -> isAborted() )
-									return( false );
-
-								$path = $path . '/' . $item;
-								if( @is_dir( $path ) || !Gen::GetFileExt( $item ) )
-									return;
-
-								$tmFile = @filectime( $path );
-								if( $tmFile !== false )
-								{
-									if( $tmFile < $ctx -> tmCur - $ctx -> timeoutExtObj )
-										@unlink( $path );
-									else if( ( $tmFile = @filemtime( $path ) ) !== false && $tmFile < $ctx -> tmCur )
-										@unlink( $path );
-								}
-							}
-						, true ) === false )
-						{
+						if( ExtContents_Local_CacheClean( $siteDir, $ctx -> tmCur - $ctx -> timeoutExtObj, $ctx -> tmCur, array( $ctx, 'isAborted' ) ) === false )
 							return( false );
-						}
 					}
 				}
 			}
@@ -1215,7 +1156,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.15' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.16' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1354,7 +1295,7 @@ function _CacheGetEnvConfPrms( $settGlob, $sett, $init, $bAllMultisites = false 
 	$dataPath = GetCacheDir();
 	{
 		$bCurBlogRevert = false;
-		if( is_multisite() && defined( 'BLOG_ID_CURRENT_SITE' ) && get_current_blog_id() != BLOG_ID_CURRENT_SITE )
+		if( Wp::IsMultisite() && get_current_blog_id() != BLOG_ID_CURRENT_SITE )
 		{
 			switch_to_blog( BLOG_ID_CURRENT_SITE );
 			$bCurBlogRevert = true;
@@ -1971,7 +1912,7 @@ function _AddSiteIdSites( &$sitesIds, $addrSite, $siteId, $availablePlugins )
 function _DropInInit_EnumSites( $cb, $sett, $init = true, $bAllMultisites = false )
 {
 
-	if( !Gen::DoesFuncExist( 'get_sites' ) || !is_multisite() )
+	if( !Gen::DoesFuncExist( 'get_sites' ) || !Wp::IsMultisite() )
 	{
 		$settSite = $init ? $sett : null;
 		call_user_func( $cb, 'm', null, $settSite, $settSite ? Plugin::GetAvailablePlugins() : array() );
@@ -2119,21 +2060,6 @@ function GetObjCacheFileContent( $sett, $init = true )
 	}
 
 	return( $content );
-}
-
-function GetLoadAvg( $def = 0 )
-{
-	if( !function_exists( 'sys_getloadavg' ) )
-		return( $def );
-
-	$loadavg = sys_getloadavg();
-	if( !is_array( $loadavg ) )
-		return( $def );
-
-	$loadavg = ( float )($loadavg[ 0 ]??null);
-	if( $loadavg > 1 )
-		$loadavg = 1;
-	return( $loadavg !== null ? ( int )( round( 100 * $loadavg ) ) : $def );
 }
 
 function UpdateClientSessId( $curUserId, $token = null, $expirationNew = null )

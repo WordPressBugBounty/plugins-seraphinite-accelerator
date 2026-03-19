@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.16' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.17' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -2511,14 +2511,17 @@ function _SettingsPage_Html( $callbacks_args, $box )
 										}
 
 										{
+											$fldId = 'alws';
+											$o .= ( Ui::Tag( 'tr', Ui::Tag( 'td', Ui::CheckBox( esc_html_x( 'AlwaysChk', 'admin.Settings_Html_Rpl', 'seraphinite-accelerator' ), $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, false, '/' ), true ), array( 'colspan' => 2 ) ) ) );
+										}
+
+										{
 											$fldId = 'expr';
 											$o .= ( Ui::Tag( 'tr', Ui::Tag( 'td', Ui::TextBox( $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, '', '/' ), array( 'masked' => true, 'placeholder' => _x( 'FindExprPhlr', 'admin.Settings_Html_Rpl', 'seraphinite-accelerator' ), 'style' => array( 'width' => '100%' ) ), true ), array( 'colspan' => 2 ) ) ) );
 										}
 
-										;
-
 										{
-											$fldId = 'scope';
+											$fldId = 'sel';
 											$o .= ( Ui::Tag( 'tr', Ui::Tag( 'td', Ui::TextBox( $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, '', '/' ), array( 'masked' => true, 'class' => 'ctlMaxSizeX', 'placeholder' => _x( 'SelectorPhlr', 'admin.Settings_Html_Rpl', 'seraphinite-accelerator' ) ), true ), array( 'colspan' => 2 ) ) ) );
 										}
 
@@ -6546,6 +6549,7 @@ function _OnSaveSettings( $args )
 
 					{ $fldId = 'enable';						Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
 					{ $fldId = 'descr';							Gen::SetArrField( $item, $fldId, Wp::SanitizeText( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ), '/' ); }
+					{ $fldId = 'alws';							Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
 					{ $fldId = 'expr';							Gen::SetArrField( $item, $fldId, @trim( Ui::UnmaskValue( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ) ), '/' ); }
 					{ $fldId = 'sel';							Gen::SetArrField( $item, $fldId, @trim( Wp::SanitizeXPath( Ui::UnmaskValue( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ) ) ), '/' ); }
 					{ $fldId = 'data';							Gen::SetArrField( $item, $fldId, Ui::UnmaskValue( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ), '/' ); }

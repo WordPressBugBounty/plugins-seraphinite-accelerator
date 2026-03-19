@@ -2171,6 +2171,8 @@ class Gen
 
 	static function GetScriptCpuTime()
 	{
+		if( !function_exists( 'getrusage' ) )
+			return( 0.0 );
 
 		$v = getrusage();
 		if( !is_array( $v ) )
@@ -3890,7 +3892,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.28.16';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.28.17';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

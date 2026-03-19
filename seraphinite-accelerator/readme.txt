@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.9
-Stable tag: 2.28.16
+Stable tag: 2.28.17
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -161,6 +161,18 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.28.17 =
+
+Improvements:
+
+* Defining scope in HTML replacement.
+* FOX - Currency Switcher.
+
+Fixes:
+
+* PHP error on some sites: Call to undefined function getrusage().
+* Simple thread of optimization doesnt work with custom 'index.php'.
 
 = 2.28.16 =
 

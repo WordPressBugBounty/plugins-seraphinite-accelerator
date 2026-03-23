@@ -42,7 +42,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.28.17', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.28.18', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -1286,7 +1286,7 @@ function _OnUpdateGeoDb_Mm_Finish()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.17' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.18' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1453,7 +1453,7 @@ function _ManagePage()
 						Ui::Button( Wp::safe_html_x( 'CheckRevalidate', 'admin.Manage_Operate', 'seraphinite-accelerator' ), false, null, null, 'button', array( 'class' => array( 'ctlSpaceAfter', 'ctlSpaceVBefore', 'ctlVaMiddle' ), 'style' => array( 'min-width' => '7em' ), 'onclick' => 'seraph_accel.Manager._int.OnCacheOp(this,3,"' . wp_create_nonce( 'op-3' ) . '");return false;' ) ) .
 						Ui::Button( Wp::safe_html_x( 'SrvDel', 'admin.Manage_Operate', 'seraphinite-accelerator' ), false, null, null, 'button', array( 'class' => array( 'ctlSpaceAfter', 'ctlSpaceVBefore', 'ctlVaMiddle' ), 'style' => array( 'min-width' => '7em' ), 'onclick' => 'seraph_accel.Manager._int.OnCacheOp(this,10,"' . wp_create_nonce( 'op-10' ) . '");return false;' ) ) .
 						Ui::Button( Wp::GetLocString( 'Cancel' ), false, null, null, 'button', array( 'class' => array( 'ctlSpaceAfter', 'ctlSpaceVBefore', 'ctlVaMiddle', 'cancel' ), 'style' => array( 'min-width' => '7em' ), 'disabled' => true, 'onclick' => 'seraph_accel.Manager._int.OnCacheOpCancel(this,undefined,"' . wp_create_nonce( 'op-cancel' ) . '");return false;' ) ) .
-						Ui::NumberBox( null, 5, array( 'min' => 1, 'class' => array( 'ctlSpaceAfter', 'ctlSpaceVBefore', 'ctlVaMiddle', 'tmDataRefresh' ), 'style' => array( 'display' => 'none', 'width' => '4em' ) ) ) .
+						Ui::NumberBox( null, 5, array( 'min' => 1, 'class' => array( 'ctlSpaceAfter', 'ctlSpaceVBefore', 'ctlVaMiddle', 'tmDataRefresh' ), 'placeholder' => '0', 'style' => array( 'display' => 'none', 'width' => '4em' ) ) ) .
 						Ui::Spinner( false, array( 'class' => 'ctlSpaceAfter ctlSpaceVBefore ctlVaMiddle', 'style' => array( 'display' => 'none' ) ) ) .
 						Ui::Tag( 'span', null, array( 'class' => 'ctlSpaceAfter ctlSpaceVBefore ctlVaMiddle ctlInlineBlock descr', 'style' => array( 'display' => 'none' ) ) ) .
 						''
@@ -1528,7 +1528,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.28.17' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.28.18' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -2338,6 +2338,141 @@ function OnAdminApi_GetData( $args )
 	);
 
 	return( $res );
+}
+
+function GetQueueItem_Done_Attrs( $data )
+{
+	$iconClr = '';
+	$stateDsc = '';
+	$hr = ($data[ 'hr' ]??null);
+	$error = ($data[ 'r' ]??null);
+
+	if( !$error )
+	{
+		$httpCode = Net::GetResponseCodeFromHr( $hr );
+		if( $httpCode )
+		{
+			$error = ( string )$httpCode;
+		}
+		else if( $hr == Gen::E_INVALID_STATE )
+		{
+			$error = esc_html_x( 'ErrTerminated', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+			$stateDsc = esc_html_x( 'ErrTerminatedDsc', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+		}
+		else if( $hr == Gen::E_TIMEOUT )
+		{
+			$error = esc_html_x( 'ErrTimeout', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+			$stateDsc = esc_html_x( 'ErrTimeoutDsc', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+		}
+		else if( $hr == Gen::S_TIMEOUT )
+		{
+			$error = esc_html_x( 'WarnTimeout', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+			$stateDsc = esc_html_x( 'WarnTimeoutDsc', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+		}
+		else if( $hr == Gen::S_ABORTED )
+			$error = esc_html_x( 'WarnAborted', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+		else
+			$error = sprintf( '0x%08X', $hr );
+	}
+	else
+	{
+		if( Gen::StrStartsWith( $error, 'err:' ) )
+			$error = substr( $error, 4 );
+		else if( Gen::StrStartsWith( $error, 'httpCode:' ) )
+		{
+			$error = substr( $error, 9 );
+			switch( substr( $error, 0, 3 ) )
+			{
+			case '404':	$error = esc_html_x( 'ErrNotFound', 'admin.Manage_Queue', 'seraphinite-accelerator' ) . substr( $error, 3 ); break;
+			case '308':
+			case '301':	$error = esc_html_x( 'ErrRedir', 'admin.Manage_Queue', 'seraphinite-accelerator' ) . substr( $error, 3 ); break;
+			case '307':
+			case '302':	$error = esc_html_x( 'ErrRedirTmp', 'admin.Manage_Queue', 'seraphinite-accelerator' ) . substr( $error, 3 ); break;
+			}
+		}
+		else if( $error == 'lrnNeed' )
+		{
+			$error = esc_html_x( 'LearnNeeded', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+		}
+		else if( Gen::StrStartsWith( $error, 'engineRemote' ) )
+		{
+			if( $error == 'engineRemoteAccessDenied' || $error == 'engineRemoteNoLicense' )
+				$error = esc_html_x( 'EngineRemoteAccessDenied', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+			else
+				$error = esc_html_x( 'EngineRemoteBusy', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+		}
+
+		if( ( $pos = strpos( $error, ":" ) ) !== false )
+		{
+			$stateDsc = MsgUnpackLocIds( rawurldecode( substr( $error, $pos + 1 ) ) );
+			$error = substr( $error, 0, $pos );
+		}
+
+		$error = MsgUnpackLocIds( rawurldecode( $error ) );
+	}
+
+	if( $hr == Gen::S_OK )
+	{
+		$state = esc_html_x( 'StateOk', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+		$iconClr = 'success';
+
+		$stateDsc = MsgUnpackLocIds( Gen::GetArrField( $data, array( 'w' ), array() ) );
+		foreach( $stateDsc as &$stateDscItem )
+		{
+			if( Gen::StrStartsWith( $stateDscItem, 'engineRemote' ) )
+			{
+				if( $stateDscItem == 'engineRemoteAccessDenied' || $stateDscItem == 'engineRemoteNoLicense' )
+					$stateDscItem = esc_html_x( 'EngineRemoteAccessDenied', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+				else
+					$stateDscItem = esc_html_x( 'EngineRemoteBusy', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+			}
+			else
+				$iconClr = 'warning';
+		}
+		unset( $stateDscItem );
+		$stateDsc = implode( "\n", $stateDsc );
+	}
+	else if( Gen::HrSucc( $hr ) )
+	{
+		if( $error === 'alreadyProcessed' )
+			$state = esc_html_x( 'StateSkipAlreadyProcessed', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+		else if( $error === 'notChanged' )
+			$state = esc_html_x( 'StateSkipNotChanged', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+		else
+			$state = sprintf( esc_html_x( 'StateSkip_%1$s', 'admin.Manage_Queue', 'seraphinite-accelerator' ), $error );
+		$iconClr = 'normal';
+	}
+	else
+	{
+		$state = sprintf( esc_html_x( 'StateErr_%1$s', 'admin.Manage_Queue', 'seraphinite-accelerator' ), $error );
+		$iconClr = 'error';
+	}
+
+	$duration = ($data[ 'td' ]??null);
+
+	if( $aInfo = Gen::GetArrField( $data, array( 'i' ), array() ) )
+	{
+		foreach( $aInfo as $infoKey => $infoVal )
+		{
+			if( !$infoVal )
+				continue;
+
+			if( $stateDsc )
+				$stateDsc .= "\n";
+			if( is_string( $infoKey ) )
+			{
+				$infoKey = MsgUnpackLocIds( $infoKey );
+				$stateDsc .= '{TAG_U_OPEN}' . $infoKey . '{TAG_U_CLOSE}' . "\n";
+			}
+			$infoVal = MsgUnpackLocIds( $infoVal );
+			if( is_array( $infoVal ) )
+				$stateDsc .= implode( "\n", $infoVal );
+			else
+				$stateDsc .= $infoVal;
+		}
+	}
+
+	return( array( $iconClr, $state, $stateDsc, $duration ) );
 }
 
 function OnAsyncTask_CacheRevalidateAll( $args )

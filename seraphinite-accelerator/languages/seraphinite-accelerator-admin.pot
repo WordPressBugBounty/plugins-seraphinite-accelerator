@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.28.17)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.28.17\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.28.18)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.28.18\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.28.17)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.28.17\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.28.18)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.28.18\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -200,6 +200,12 @@ msgstr ""
 # Start
 msgctxt "admin.Common"
 msgid "Start"
+msgstr ""
+
+# %1$s %2$s
+#, php-format
+msgctxt "admin.Common"
+msgid "HumanTimeDiffDigitbefore_%1$s%2$s"
 msgstr ""
 
 # Function '%1$s' is blocked
@@ -883,6 +889,98 @@ msgstr ""
 #, php-format
 msgctxt "admin.Msg"
 msgid "RemoteSiteGetDataErr_%1$s"
+msgstr ""
+
+# Ended unexpectedly
+msgctxt "admin.Manage_Queue"
+msgid "ErrTerminated"
+msgstr ""
+
+# Probably, there is not enough memory or was external termination
+msgctxt "admin.Manage_Queue"
+msgid "ErrTerminatedDsc"
+msgstr ""
+
+# Maximum execution time exceeded
+msgctxt "admin.Manage_Queue"
+msgid "ErrTimeout"
+msgstr ""
+
+# Probably, PHP execution time should be increased
+msgctxt "admin.Manage_Queue"
+msgid "ErrTimeoutDsc"
+msgstr ""
+
+# Maximum waiting time exceeded
+msgctxt "admin.Manage_Queue"
+msgid "WarnTimeout"
+msgstr ""
+
+# Probably, remote optimization is busy
+msgctxt "admin.Manage_Queue"
+msgid "WarnTimeoutDsc"
+msgstr ""
+
+# Stopped
+msgctxt "admin.Manage_Queue"
+msgid "WarnAborted"
+msgstr ""
+
+# Not found
+msgctxt "admin.Manage_Queue"
+msgid "ErrNotFound"
+msgstr ""
+
+# Redirection
+msgctxt "admin.Manage_Queue"
+msgid "ErrRedir"
+msgstr ""
+
+# Redirection (temporary)
+msgctxt "admin.Manage_Queue"
+msgid "ErrRedirTmp"
+msgstr ""
+
+# Self-learning completion is needed
+msgctxt "admin.Manage_Queue"
+msgid "LearnNeeded"
+msgstr ""
+
+# Remote processing is not allowed
+msgctxt "admin.Manage_Queue"
+msgid "EngineRemoteAccessDenied"
+msgstr ""
+
+# Remote processing is busy
+msgctxt "admin.Manage_Queue"
+msgid "EngineRemoteBusy"
+msgstr ""
+
+# Completed
+msgctxt "admin.Manage_Queue"
+msgid "StateOk"
+msgstr ""
+
+# Already optimized
+msgctxt "admin.Manage_Queue"
+msgid "StateSkipAlreadyProcessed"
+msgstr ""
+
+# Not changed
+msgctxt "admin.Manage_Queue"
+msgid "StateSkipNotChanged"
+msgstr ""
+
+# Skipped: %1$s
+#, php-format
+msgctxt "admin.Manage_Queue"
+msgid "StateSkip_%1$s"
+msgstr ""
+
+# Failed: %1$s
+#, php-format
+msgctxt "admin.Manage_Queue"
+msgid "StateErr_%1$s"
 msgstr ""
 
 # Geo location

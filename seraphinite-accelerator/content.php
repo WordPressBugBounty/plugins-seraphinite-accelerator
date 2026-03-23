@@ -100,6 +100,192 @@ function &GetContentProcessCtx( $serverArgs, $sett )
 	return( $seraph_accel_g_ctxProcess );
 }
 
+function ContentProcess_InitLocalCbs( &$ctxProcess )
+{
+	$cbs = new AnyObj();
+	$cbs -> ctxProcess = &$ctxProcess;
+
+	$cbs -> ReportStage =
+		function( $cbs, $stage = null, $stageDsc = null )
+		{
+			$dataUpd = array( 'stageDsc' => $stageDsc );
+			if( $stage )
+				$dataUpd[ 'stage' ] = $stage;
+
+			global $seraph_accel_g_prepPrms;
+			return( $seraph_accel_g_prepPrms ? ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), $dataUpd ) : true );
+		};
+
+	$cbs -> IsAborted =
+		function( $cbs, $ctxProcess = null, $settCache = null )
+		{
+			return( ContentProcess_IsAborted( $ctxProcess, $settCache ) );
+		};
+
+	$cbs -> GetContentProcessorForce =
+		function( $cbs, $sett )
+		{
+			return( GetContentProcessorForce( $sett ) );
+		};
+
+	$cbs -> ContPostProc =
+		function( $cbs, $type, $content, $isFile = true )
+		{
+			if( $type == 'css' )
+				$content = apply_filters( 'seraph_accel_css_content', $content, $isFile );
+			else if( $type == 'js' )
+				$content = apply_filters( 'seraph_accel_js_content', $content, $isFile );
+			return( $content );
+		};
+
+	$cbs -> PreFetchLocalFiles =
+		function( $cbs, $a, $cont = true )
+		{
+			return( array_keys( ContentProcess_PreFetchLocalFiles_Expand( $cbs -> ctxProcess, $a ) ) );
+		};
+
+	$cbs -> LocalFileExists =
+		function( $cbs, $filePath, $filePathRoot = null )
+		{
+			return( @file_exists( $filePath ) );
+		};
+
+	$cbs -> ReadLocalFile =
+		function( $cbs, $filePath, $filePathRoot = null )
+		{
+			if( !$filePath )
+				return( null );
+
+			$cont = Gen::FileGetContents( $filePath );
+			if( $cont === false && $filePathRoot && !Gen::DoesFileDirExist( $filePath, $filePathRoot ) )
+				$cont = null;
+			return( $cont );
+		};
+
+	$cbs -> WriteLocalFile =
+		function( $cbs, $filePath, $data, $fileTime = null, $delIfFail = false )
+		{
+			$lock = new Lock( 'il', $cbs -> ctxProcess[ 'siteCacheRootDir' ] );
+			return( Gen::FileWriteTmpAndReplace( $lock, $filePath, $data, $fileTime, $delIfFail ) );
+		};
+
+	$cbs -> GetLocalFileSize =
+		function( $cbs, $filePath )
+		{
+			return( Gen::FileSize( $filePath ) );
+		};
+
+	$cbs -> GetLocalFileMTime =
+		function( $cbs, $filePath )
+		{
+			return( Gen::FileMTime( $filePath ) );
+		};
+
+	$cbs -> DeleteLocalFile =
+		function( $cbs, $filePath )
+		{
+			return( Gen::Unlink( $filePath ) );
+		};
+
+	$cbs -> asuxsadkxsshi =
+		function( $cbs, $dataPath, $type, $oiCfn )
+		{
+			return( CacheCcEx( $dataPath, $type, $oiCfn ) );
+		};
+
+	$cbs -> ScRd =
+		function( $cbs, $dataPath, $settCache, $type, $oiCi, $oiCfn )
+		{
+			return( CacheCrEx( $dataPath, $settCache, $type, $oiCi, $oiCfn ) );
+		};
+
+	$cbs -> ScWr =
+		function( $cbs, $settCache, $dataPath, $composite, $content, $type, $oiCfn )
+		{
+			return( CacheCwEx( $settCache, $dataPath, $composite, $content, $type, $oiCfn ) );
+		};
+
+	$cbs -> Tof_GetFileDataEx =
+		function( $cbs, $dir, $id )
+		{
+			return( Tof_GetFileDataEx( $dir, $id ) );
+		};
+
+	$cbs -> Tof_SetFileDataEx =
+		function( $cbs, $dir, $id, $data, $overwrite = true )
+		{
+			return( Tof_SetFileDataEx( $dir, $id, $data, $overwrite ) );
+		};
+
+	$cbs -> Learn_ReadDsc =
+		function( $cbs, $lrnFile )
+		{
+			return( Learn_ReadDsc( $lrnFile ) );
+		};
+
+	$cbs -> Learn_Clear =
+		function( $cbs, $lrnFile, $bMain = true, $bPending = true )
+		{
+			Learn_Clear( $lrnFile, $bMain, $bPending );
+		};
+
+	$cbs -> Learn_IsStarted =
+		function( $cbs, $ctxProcess )
+		{
+			return( Learn_IsStarted( $ctxProcess ) );
+		};
+
+	$cbs -> Learn_Start =
+		function( $cbs, $ctxProcess )
+		{
+			return( Learn_Start( $ctxProcess ) );
+		};
+
+	$cbs -> Learn_Finish =
+		function( $cbs, $ctxProcess )
+		{
+			return( Learn_Finish( $ctxProcess ) );
+		};
+
+	$cbs -> ExtContents_CacheGet =
+		function( $cbs, $extCacheId )
+		{
+			return( ExtContents_Local_CacheGet( Gen::GetFileDir( $cbs -> ctxProcess[ 'dataPath' ] ), $extCacheId ) );
+		};
+
+	$cbs -> ExtContents_CacheSet =
+		function( $cbs, $extCacheId, $fileType, $contCacheTtl, $contId, $contCache )
+		{
+			ExtContents_Local_CacheSet( Gen::GetFileDir( $cbs -> ctxProcess[ 'dataPath' ] ), $extCacheId, $fileType, $contCacheTtl, $contId, $contCache );
+		};
+
+	$cbs -> CustomMethod =
+		function( $cbs, $name, $args )
+		{
+			return( ContentProcess_CallCustomMethod( $name, $args ) );
+		};
+
+	$cbs -> ImagesProcessSrcSizeAlternatives_CacheGet =
+		function( $cbs, $imgStgId )
+		{
+			return( Images_ProcessSrcSizeAlternatives_Cache_Get( $cbs -> ctxProcess[ 'dataPath' ], $imgStgId ) );
+		};
+
+	$cbs -> ImagesProcessSrcSizeAlternatives_CacheSet =
+		function( $cbs, $imgStgId, $v )
+		{
+			return( Images_ProcessSrcSizeAlternatives_Cache_Set( $cbs -> ctxProcess[ 'dataPath' ], $imgStgId, $v ) );
+		};
+
+	$cbs -> PostPrepareObj =
+		function( $cbs, $type, $addr, $priority, $data = array(), $priorityInitiator = null, $time = null )
+		{
+			return( CachePostPrepareObjEx( $type, $addr, $cbs -> ctxProcess[ 'siteId' ], $priority, $data, $priorityInitiator, $time ) );
+		};
+
+	$ctxProcess[ 'cbs' ] = $cbs;
+}
+
 function _JsClk_XpathExtFunc_ifExistsThenCssSel( $v, $cssSel )
 {
 	if( !is_array( $v ) || count( $v ) < 1 )

@@ -3892,7 +3892,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.28.17';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.28.18';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -5541,13 +5541,17 @@ class Wp
 		$ctx = null;
 		if( is_array( $id ) )
 		{
-			$ctx = $id[ 1 ];
+			$ctx = ($id[ 1 ]??null);
 			$id = $id[ 0 ];
+			if( !is_array( $id ) )
+				$id = array( $id, $id );
 		}
+		else
+			$id = array( $id, $id );
 
 		if( $number !== null )
-			return( $ctx ? _nx( $id, $id, $number, $ctx, $domain ) : _n( $id, $id, $number, $domain ) );
-		return( $ctx ? _x( $id, $ctx, $domain ) : __( $id, $domain ) );
+			return( $ctx ? _nx( $id[ 0 ], $id[ 1 ], $number, $ctx, $domain ) : _n( $id[ 0 ], $id[ 1 ], $number, $domain ) );
+		return( $ctx ? _x( $id[ 0 ], $ctx, $domain ) : __( $id[ 0 ], $domain ) );
 	}
 
 	static function GetPostIdBySlug( $slug, $post_type = 'post', $status = 'publish', $lang = null )
@@ -7059,6 +7063,53 @@ class Wp
 			return( Gen::E_FAIL );
 
 		return( Gen::S_OK );
+	}
+
+	static function HumanTimeDiff( $from = 0, $to = 0, $signed = false )
+	{
+		if( !$from )
+			$from = time();
+
+		$diff = ( int )( $to - $from );
+		if( $diff < 0 )
+			$diff = -1 * $diff;
+		else
+			$signed = false;
+
+		$since = '';
+
+		$secs = ( int )( ( $diff % MINUTE_IN_SECONDS ) / 1 );
+		{
+			if( $signed )
+				$secs *= -1;
+			$since = sprintf( Wp::GetLocString( array( array( '%s second', '%s seconds' ), null ), $secs ), $secs );
+		}
+
+		$mins = ( int )( ( $diff % HOUR_IN_SECONDS ) / MINUTE_IN_SECONDS );
+		if( $mins )
+		{
+			if( $signed )
+				$mins *= -1;
+			$since = sprintf( Wp::GetLocString( array( 'HumanTimeDiffDigitbefore_%1$s%2$s', 'admin.Common' ), null, 'seraphinite-accelerator' ), sprintf( Wp::GetLocString( array( array( '%s minute', '%s minutes' ) ), $mins ), $mins ), $since );
+		}
+
+		$hours = ( int )( ( $diff % DAY_IN_SECONDS ) / HOUR_IN_SECONDS );
+		if( $hours )
+		{
+			if( $signed )
+				$hours *= -1;
+			$since = sprintf( Wp::GetLocString( array( array( '%s hour', '%s hours' ) ), $hours ), $hours ) . ' ' . $since;
+		}
+
+		$days = ( int )( $diff / DAY_IN_SECONDS );
+		if( $days )
+		{
+			if( $signed )
+				$days *= -1;
+			$since = sprintf( Wp::GetLocString( array( array( '%s day', '%s days' ) ), $days ), $days ) . ' ' . $since;
+		}
+
+		return( $since );
 	}
 }
 

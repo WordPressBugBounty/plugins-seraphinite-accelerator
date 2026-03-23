@@ -1156,7 +1156,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.17' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.28.18' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1886,6 +1886,19 @@ function _AddSiteIdSites( &$sitesIds, $addrSite, $siteId, $availablePlugins )
 				else if( $urlComps = Net::UrlParse( $url ) )
 					$aAddrSite[] = trim( Net::UrlDeParse( $urlComps, 0, array(), array( PHP_URL_HOST, PHP_URL_PORT, PHP_URL_PATH ) ), '/' );
 			}
+		}
+	}
+
+	if( in_array( 'translatepress-multilingual', $availablePlugins ) )
+	{
+
+		foreach( Gen::GetArrField( get_option( 'trp_settings' ), array( 'trp-multiple-domains' ), array() ) as $lang => $aInfo )
+		{
+			if( !($aInfo[ 'enabled' ]??null) )
+				continue;
+
+			if( $domain = Gen::GetArrField( $aInfo, array( 'domain' ), '' ) )
+				$aAddrSite[] = trim( Net::UrlDeParse( Net::UrlParse( $domain ), 0, array(), array( PHP_URL_HOST, PHP_URL_PORT, PHP_URL_PATH ) ), '/' );
 		}
 	}
 

@@ -2647,7 +2647,7 @@ function OnOptGetDef_Sett()
 		'hdrTrace' => false,
 		'debugInfo' => false,
 		'debug' => false,
-		'emojiIcons' => false,
+		'emojiIcons' => true,
 
 		'log' => false,
 		'logScope' => array(
@@ -4232,7 +4232,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.17 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.28.18 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4511,7 +4511,7 @@ function OnAsyncTask_QueueProcessItems( $args )
 			$data = Gen::GetArrField( Gen::Unserialize( ($item[ 'd' ]??null) ), array( '' ), array() );
 			$itemType = ( int )($item[ 'tp' ]??0);
 			if( $itemType == 0 )
-				CachePostPreparePageEx( ($data[ 'm' ]??null), ($data[ 'u' ]??null), ($item[ 's' ]??null), isset( $data[ 'l' ] ) ? -480 : ( int )($data[ 'p' ]??null), ($data[ 'p' ]??null), ($data[ 'h' ]??null), $data[ 'to' ], isset( $data[ 'rdr' ] ) ? ( $data[ 'rdr' ] + 1 ) : null, ($data[ 'l' ]??null) );
+				CachePostPreparePageEx( ($data[ 'm' ]??null), ($data[ 'u' ]??null), ($item[ 's' ]??null), isset( $data[ 'l' ] ) ? -480 : ( int )($data[ 'p' ]??null), ($data[ 'p' ]??null), ($data[ 'h' ]??null), $data[ 'to' ], isset( $data[ 'rdr' ] ) ? ( $data[ 'rdr' ] + 1 ) : 0, ($data[ 'l' ]??null) );
 			else
 				CachePostPrepareObjEx( $itemType, ($data[ 'u' ]??null), ($item[ 's' ]??null), ( int )($data[ 'p' ]??null), $data, ( int )($data[ 'p' ]??null), ( float )($item[ 't' ]??null) );
 		}
@@ -4724,7 +4724,7 @@ function ProcessCtlData_DelSmart( $fileCtl, $bClnDsc = null )
 		{
 			$bClnDsc = true;
 			if( $urlRemoteAbort = Gen::GetArrField( $ctlRes, array( 'remote', 'urlAbort' ) ) )
-				Wp::RemotePost( $urlRemoteAbort, array( 'timeout' => 2, 'sslverify' => false ) );
+				Wp::RemotePost( $urlRemoteAbort, array( 'timeout' => 5, 'sslverify' => false ) );
 		}
 
 		if( $bClnDsc && ( $dscFile = Gen::GetArrField( $ctlRes, array( 'dscFile' ) ) ) )
@@ -5048,7 +5048,7 @@ class ProcessQueueItemCtx
 				$this -> immediatelyPushQueue = true;
 
 			}
-			else if( Gen::StrStartsWith( $this -> skipStatus, 'engineRemote' ) && !( $this -> skipStatus == 'engineRemoteMgrAccessDenied' || $this -> skipStatus == 'engineRemoteAccessDenied' || $this -> skipStatus == 'engineRemoteNoLicense' ) )
+			else if( Gen::StrStartsWith( $this -> skipStatus, 'engineRemote' ) && !( $this -> skipStatus == 'engineRemoteAccessDenied' || $this -> skipStatus == 'engineRemoteNoLicense' ) )
 			{
 				if( ($this -> data[ 'rdr' ]??0) < 1000000 )
 				{
@@ -5164,16 +5164,8 @@ function PackKvArrInfo( $a )
 function _CacheProcessItem_RunSmpOpt( $asyncMode, $url )
 {
 
-	$fileIdx = OnAsyncTasksGetPushUrlFile( true );
-	if( isset( $_SERVER[ 'PHP_SELF' ] ) && ( $uriPath = Gen::GetArrField( Net::UrlParse( $url ), 'path' ) ) && $uriPath != '/' )
-	{
-		$uriPath = substr( $uriPath, strlen( Gen::GetFileDir( $_SERVER[ 'REQUEST_URI' ] ) ) );
-		if( @file_exists( Gen::GetFileDir( $_SERVER[ 'SCRIPT_FILENAME' ] ) . rawurldecode( $uriPath ) . '/' . $fileIdx ) )
-			$fileIdx = $uriPath . '/' . $fileIdx;
-	}
-
 	$tmStamp = microtime( true );
-	return( ProcessQueueItemCtx::MakeRequest( $asyncMode, 'GET', Net::UrlAddArgs( Plugin::AsyncTaskPushGetUrlEx( Wp::GetSiteWpRootUrl( $fileIdx ), 'O', $tmStamp ), array( 'nonce' => hash_hmac( 'md5', Plugin::AsyncTaskPushGetTimerun( $tmStamp ), GetSalt() ) ) ), array(  ) ) );
+	return( ProcessQueueItemCtx::MakeRequest( $asyncMode, 'GET', Net::UrlAddArgs( Plugin::AsyncTaskPushGetUrlEx( $url, 'O', $tmStamp ), array( 'nonce' => hash_hmac( 'md5', Plugin::AsyncTaskPushGetTimerun( $tmStamp ), GetSalt() ) ) ), array(  ) ) );
 }
 
 function OnAsyncTask_CacheProcessItem( $args )
@@ -5470,7 +5462,7 @@ function CachePostPreparePageEx( $method , $url, $siteId, $priority, $priorityIn
 
 	$dirQueue = GetCacheDir() . '/q/' . $siteId;
 
-	if( $priority == 10 )
+	if( $priority == 10 && $retryIdx === null )
 	{
 		$count = 0;
 		{
@@ -5747,7 +5739,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.17';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.28.18';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -6263,7 +6255,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 seraph-accel-Agent/2.28.17');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.28.18');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

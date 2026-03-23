@@ -8,10 +8,13 @@ if( !defined( 'ABSPATH' ) )
 class Ui
 {
 
-	static function Link( $content, $href, $newWnd = false, $prms = null, $attrs = null )
+	static function Link( $content, $href = null, $newWnd = false, $prms = null, $attrs = null )
 	{
 		if( $attrs === null )
 			$attrs = array();
+
+		if( $href === null )
+			$href = $content;
 
 		$showLink = !empty( $href ) || ($prms[ 'showIfNoHref' ]??null);
 

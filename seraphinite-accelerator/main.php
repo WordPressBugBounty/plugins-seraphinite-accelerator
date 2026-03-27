@@ -42,7 +42,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.28.18', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.28.19', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -1286,7 +1286,7 @@ function _OnUpdateGeoDb_Mm_Finish()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.18' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.19' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1528,7 +1528,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.28.18' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.28.19' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -1649,7 +1649,7 @@ function _CacheOperScheduler_ItemTime_GetNextRunTime( $timeItem, $dtCur, $dtCurV
 		break;
 
 	case 168:
-		$dtTest -> setISODate( $dtCurVals[ DateTime::FMT_YEAR ], $dtCurVals[ DateTime::FMT_WEEK ], SettTimeoutEditor_GetDays( $timeItemTm ) % 7 + 1 ) -> setTime( SettTimeoutEditor_GetHours( $timeItemTm ), SettTimeoutEditor_GetMins( $timeItemTm ) );
+		$dtTest -> setISODate( $dtCurVals[ DateTime::FMT_YEAR_FOR_WEEK ], $dtCurVals[ DateTime::FMT_WEEK ], SettTimeoutEditor_GetDays( $timeItemTm ) % 7 + 1 ) -> setTime( SettTimeoutEditor_GetHours( $timeItemTm ), SettTimeoutEditor_GetMins( $timeItemTm ) );
 		$operPrms = array( DateTime::FMT_WEEK_USINGFIRSTDAY, 'FromWeeks' );
 		break;
 
@@ -2398,6 +2398,8 @@ function GetQueueItem_Done_Attrs( $data )
 		{
 			if( $error == 'engineRemoteAccessDenied' || $error == 'engineRemoteNoLicense' )
 				$error = esc_html_x( 'EngineRemoteAccessDenied', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+			else if( $error == 'engineRemoteQuotaReached' )
+				$error = esc_html_x( 'EngineRemoteQuotaReached', 'admin.Manage_Queue', 'seraphinite-accelerator' );
 			else
 				$error = esc_html_x( 'EngineRemoteBusy', 'admin.Manage_Queue', 'seraphinite-accelerator' );
 		}
@@ -2423,6 +2425,8 @@ function GetQueueItem_Done_Attrs( $data )
 			{
 				if( $stateDscItem == 'engineRemoteAccessDenied' || $stateDscItem == 'engineRemoteNoLicense' )
 					$stateDscItem = esc_html_x( 'EngineRemoteAccessDenied', 'admin.Manage_Queue', 'seraphinite-accelerator' );
+				else if( $stateDscItem == 'engineRemoteQuotaReached' )
+					$stateDscItem = esc_html_x( 'EngineRemoteQuotaReached', 'admin.Manage_Queue', 'seraphinite-accelerator' );
 				else
 					$stateDscItem = esc_html_x( 'EngineRemoteBusy', 'admin.Manage_Queue', 'seraphinite-accelerator' );
 			}

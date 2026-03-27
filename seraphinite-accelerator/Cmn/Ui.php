@@ -522,8 +522,8 @@ class Ui
 						}
 					}
 				}
-				else
-					$res .= Ui::EscHtml( $attrVal );
+				else if( $attrVal !== null )
+					$res .= Ui::EscHtml( ( string )$attrVal );
 
 				$res .= '"';
 			}

@@ -425,7 +425,7 @@ function CacheExt_Clear( $url = null )
 			$requestRes =
 				Net::RemoteRequest
 
-				( 'POST', $urlFpcMicroservice, array( 'timeout' => 4, 'sslverify' => false, 'data' => $data, 'referer' => home_url(), 'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . get_bloginfo( 'url' ), 'headers' => array( 'Accept' => 'application/json', 'Content-Type' => 'application/json', 'Content-Length' => strlen( $data ) ) ) );
+				( 'POST', $urlFpcMicroservice, array( 'timeout' => 4, 'sslverify' => false, 'body' => $data, 'referer' => home_url(), 'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . get_bloginfo( 'url' ), 'headers' => array( 'Accept' => 'application/json', 'Content-Type' => 'application/json', 'Content-Length' => strlen( $data ) ) ) );
 
 			if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 				LogWrite( 'CloudWays (CloudFlare): ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
@@ -475,11 +475,14 @@ function CacheExt_Clear( $url = null )
 		if( $url )
 		{
             if( $urlComps = Net::UrlParse( $url ) )
-				$requestRes = Wp::RemoteGet( Net::UrlDeParse( $urlComps, 0, array( PHP_URL_PATH, PHP_URL_QUERY, PHP_URL_FRAGMENT ) ) . '/kinsta-clear-cache' . ( isset( $urlComps[ 'path' ] ) ? $urlComps[ 'path' ] : '/' ), array( 'timeout' => 5, 'sslverify' => false ) );
-
+				$requestRes = Net::RemoteRequest( 'POST', 'https://localhost/kinsta-clear-cache/v2/immediate', array( 'sslverify' => false, 'timeout' => Gen::Constant( 'KINSTAMU_CACHE_PURGE_TIMEOUT', 5 ), 'body' => Net::UrlBuildQuery( array( 'single|custom|0' => ltrim( Net::UrlDeParse( $urlComps, 0, array(), array( PHP_URL_HOST, PHP_URL_PORT, PHP_URL_PATH ) ), '/' ) ) ) ) );
 		}
 		else
+		{
 			$requestRes = Wp::RemoteGet( 'https://localhost/kinsta-clear-cache-all', array( 'timeout' => 5, 'sslverify' => false ) );
+			$requestRes = Wp::RemoteGet( 'https://localhost/kinsta-clear-cache-cdn', array( 'timeout' => 5, 'sslverify' => false ) );
+
+		}
 
 		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'Kinsta: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );

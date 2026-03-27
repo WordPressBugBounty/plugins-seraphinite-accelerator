@@ -136,7 +136,7 @@ class Gen
 	static private function _GetArrField( $v, array $fieldPath, $defVal = null, $bCaseIns = false, $bSafe = true, &$bFound = null )
 	{
 		if( !count( $fieldPath ) )
-			return( $defVal );
+		    return( $defVal );
 
 		$bFoundLastKey = false;
 		foreach( $fieldPath as $fld )
@@ -147,6 +147,9 @@ class Gen
 
 			if( $fld === '' )
 				continue;
+
+			if( $fld === null )
+			    return( $defVal );
 
 			$vNext = $isArr ? ($v[ $fld ]??null) : ($v -> { $fld }??null);
 			if( $vNext === null && !( $isArr ? array_key_exists( $fld, $v ) : property_exists( $v, $fld ) ) )
@@ -1086,7 +1089,7 @@ class Gen
 
 		if( ( $lr = $lock ? $lock -> Acquire() : null ) !== false )
 		{
-			if( @file_put_contents( $fileTmp, $data ) )
+			if( @file_put_contents( $fileTmp, $data ) !== false )
 			{
 				if( $fileTime === null || @touch( $fileTmp, $fileTime ) )
 				{
@@ -1292,6 +1295,18 @@ class Gen
 				Gen::ArrSet( $v, $vSrc );
 			else
 				$v = $vSrc;
+		}
+	}
+
+	static function ArrPlus( &$arr, $arrSrc )
+	{
+		foreach( $arrSrc as $k => $vSrc )
+		{
+			$v = &$arr[ $k ];
+			if( is_array( $vSrc ) )
+				Gen::ArrPlus( $v, $vSrc );
+			else
+				$v += $vSrc;
 		}
 	}
 
@@ -1990,16 +2005,12 @@ class Gen
 		switch( gettype( $v ) )
 		{
 		case 'boolean':
-			return( $v ? 'true' : 'false' );
 		case 'integer':
-			return( ( string )$v );
+		case 'string':
+			return( var_export( $v, true ) );
+
 		case 'double':
 			return( preg_replace( '@([^\\.])0+$@', '${1}', sprintf( '%.' . ( string )$fmt[ 'floatPrec' ] . 'F', $v ) ) );
-
-		case 'string':
-			$v = json_encode( $v, JSON_UNESCAPED_SLASHES );
-			$v = str_replace( array( '${' ), array( '\\${' ), $v );
-			return( $v );
 
 		case 'array':
 			$res = 'array(' . $fmt[ 'elemSpace' ];
@@ -2068,6 +2079,9 @@ class Gen
 
 	static function CheckNonce( $nonce, $data, $key, $ttl = null, $time = null )
 	{
+		if( empty( $nonce ) )
+			return( false );
+
 		if( $ttl )
 		{
 			if( $time === null )
@@ -3264,11 +3278,12 @@ class DateTime
 	const FMT_WEEK						= 'W';
 	const FMT_WEEK_USINGFIRSTDAY		= 'W+';
 	const FMT_MONTH						= 'n';
-	const FMT_YEAR						= 'o';
+	const FMT_YEAR						= 'Y';
+	const FMT_YEAR_FOR_WEEK				= 'o';
 
 	const RFC2822						= "D, d M Y H:i:s O";
 
-	static function GetFmtVals( $dt, $firstWeekDay = 1, $a = array( DateTime::FMT_YEAR, DateTime::FMT_MONTH, DateTime::FMT_WEEK, DateTime::FMT_DAY, DateTime::FMT_WEEKDAY, DateTime::FMT_HOUR, DateTime::FMT_MINUTE ) )
+	static function GetFmtVals( $dt, $firstWeekDay = 1, $a = array( DateTime::FMT_YEAR_FOR_WEEK, DateTime::FMT_YEAR, DateTime::FMT_MONTH, DateTime::FMT_WEEK, DateTime::FMT_DAY, DateTime::FMT_WEEKDAY, DateTime::FMT_HOUR, DateTime::FMT_MINUTE ) )
 	{
 		if( !$dt )
 			return( array() );
@@ -3445,6 +3460,7 @@ class Net
 
 	const E_HTTP_STATUS_400							= 0x80190290;
 	const E_HTTP_STATUS_403							= 0x80190293;
+	const E_HTTP_STATUS_404							= 0x80190294;
 
 	const E_HTTP_STATUS_500							= 0x801902F4;
 
@@ -3892,7 +3908,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.28.18';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.28.19';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -3911,14 +3927,15 @@ class Net
 		curl_setopt( $hCurl, CURLOPT_USERAGENT, $args[ 'user-agent' ] );
 		if( isset( $args[ 'referer' ] ) )
 			curl_setopt( $hCurl, CURLOPT_REFERER, $args[ 'referer' ] );
+		curl_setopt( $hCurl, CURLOPT_CONNECTTIMEOUT, $args[ 'timeout' ] );
 		curl_setopt( $hCurl, CURLOPT_TIMEOUT, $args[ 'timeout' ] );
 		curl_setopt( $hCurl, CURLOPT_MAXREDIRS, 2 );
 		curl_setopt( $hCurl, CURLOPT_FOLLOWLOCATION, true );
 
-		if( $method === 'POST' && isset( $args[ 'data' ] ) )
+		if( $method === 'POST' && isset( $args[ 'body' ] ) )
 		{
-			$requestRes[ 'data_sent' ] = $args[ 'data' ];
-			curl_setopt( $hCurl, CURLOPT_POSTFIELDS, $args[ 'data' ] );
+			$requestRes[ 'data_sent' ] = $args[ 'body' ];
+			curl_setopt( $hCurl, CURLOPT_POSTFIELDS, $args[ 'body' ] );
 		}
 
 		{
@@ -3943,6 +3960,23 @@ class Net
 	static function GetTimeFromHdrVal( $v )
 	{
 		return( strtotime( preg_replace( '@;.*$@', '', $v ) ) );
+	}
+
+	static function GetSiteId( $siteUrl, $binary = false )
+	{
+		$siteUrlParts = @parse_url( $siteUrl );
+		if( !is_array( $siteUrlParts ) )
+			return( '' );
+
+		$res = $siteUrlParts[ 'host' ];
+
+		if( isset( $siteUrlParts[ 'port' ] ) )
+			$res .= '_' . $siteUrlParts[ 'port' ];
+
+		if( isset( $siteUrlParts[ 'path' ] ) )
+			$res .= '_' . str_replace( array( '/', '\\' ), '_', $siteUrlParts[ 'path' ] );
+
+		return( md5( $res, $binary ) );
 	}
 }
 
@@ -5226,19 +5260,7 @@ class Wp
 		else
 			$siteUrl = Wp::GetSiteRootUrl();
 
-		$siteUrlParts = @parse_url( $siteUrl );
-		if( !is_array( $siteUrlParts ) )
-			return( '' );
-
-		$res = $siteUrlParts[ 'host' ];
-
-		if( isset( $siteUrlParts[ 'port' ] ) )
-			$res .= '_' . $siteUrlParts[ 'port' ];
-
-		if( isset( $siteUrlParts[ 'path' ] ) )
-			$res .= '_' . str_replace( array( '/', '\\' ), '_', $siteUrlParts[ 'path' ] );
-
-		return( md5( $res ) );
+		return( Net::GetSiteId( $siteUrl ) );
 	}
 
 	static function GetSiteDisplayName()

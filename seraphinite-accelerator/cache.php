@@ -100,14 +100,6 @@ function _Process( $sites )
 			return( Gen::E_FAIL );
 		}
 
-		register_shutdown_function(
-			function()
-			{
-				for( $l = ob_get_level(); $l > 0; $l-- )
-					ob_end_flush();
-			}
-		);
-
 	}
 
 	{

@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 191;
+const PLUGIN_SETT_VER								= 192;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1223,6 +1223,11 @@ function OnOptRead_Sett( $sett, $verFrom )
 	    Gen::SetArrField( $sett, array( 'cache', 'procEngn' ), 1 );
 	}
 
+	if( $verFrom && $verFrom < 192 )
+	{
+		Gen::SetArrField( $sett, array( 'contPr', 'cp', 'vhcThCarFldGall' ), true );
+	}
+
 	return( $sett );
 }
 
@@ -2127,6 +2132,7 @@ function OnOptGetDef_Sett()
 				'wooNasaPrdGall' => true,
 				'wooPrdGallSld' => true,
 				'xstrThSwpr' => true,
+				'vhcThCarFldGall' => true,
 				'bdeSwpr' => true,
 				'bdeTabs' => true,
 				'btCntSld' => true,
@@ -2158,6 +2164,8 @@ function OnOptGetDef_Sett()
 					'body:@currentScript\\s*\\.\\s*getAttribute\\(\\s*\'data-gt-widget-id\'@',
 
 					'src:@\\.cloudflare\\.com/turnstile/@',
+
+					'id:@^e-sticky-js$@',
 				),
 
 				'min' => false,
@@ -2257,6 +2265,8 @@ function OnOptGetDef_Sett()
 						'.//a[contains(concat(" ",normalize-space(@class)," ")," wd-load-more ")]',
 
 						'click:.//presto-player | .//presto-player-js-lzl-ing || .//presto-playlist | .//presto-playlist-js-lzl-ing',
+
+						'.//vehica-car-field-gallery',
 					),
 				),
 
@@ -4232,7 +4242,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.28.18 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.28.19 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4472,7 +4482,7 @@ function OnAsyncTask_QueueProcessItems( $args )
 
 					if( $repeatVal === true )
 						$bRepeat = true;
-					else if( ( $tmCur - $repeatVal ) > ($settCacheGlobal[ 'procIntervalShort' ]??0) )
+					else if( ( $tmCur - $repeatVal ) > 60 )
 						$bRepeat = true;
 					else
 						$pushQueueImmediately = false;
@@ -5739,7 +5749,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.28.18';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.28.19';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -6255,7 +6265,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.28.18');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.28.19');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

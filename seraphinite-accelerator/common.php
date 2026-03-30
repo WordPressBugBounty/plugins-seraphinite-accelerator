@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 192;
+const PLUGIN_SETT_VER								= 193;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1342,6 +1342,14 @@ function OnOptGetDef_Sett()
 			'srvClr' => true,
 			'srvUpd' => false,
 			'srvUpdTimeout' => 5,
+			'sucuri' => array(
+				'apiKey' => '',
+				'apiSecret' => '',
+			),
+			'cloudflare' => array(
+				'zoneId' => '',
+				'apiToken' => '',
+			),
 			'nginx' => array(
 				'method'=> '3rdp',
 				'url' => '',
@@ -1349,12 +1357,8 @@ function OnOptGetDef_Sett()
 				'fastCgiDir' => '',
 				'fastCgiLevels' => '1:2',
 			),
-			'sucuri' => array(
-				'apiKey' => '',
-				'apiSecret' => '',
-			),
 
-			'cron' => true,
+			'cron' => false,
 			'forceAdvCache' => false,
 
 			'lazyInv' => true,
@@ -1376,20 +1380,8 @@ function OnOptGetDef_Sett()
 			),
 			'updPostMeta' => false,
 			'updPostMetaExcl' => array(
+				'!@^_stock$@ & !@^_stock_status$@ & !@^_low_stock_amount$@',
 
-				'@.*@',
-				'@^\\d+$@',
-				'@^_edit_lock$@',
-				'@^_edit_last$@',
-				'@^classic-editor-remember$@',
-				'@post_views_@',
-				'@^import_started_at@',
-				'@^_wc_gla_@',
-				'@^_yoast_@',
-				'@^cwg_total_subscribers@',
-				'@^_backorders$@',
-				'@^_last_seen$@',
-				'@^woodmart_history_of_visits$@',
 			),
 
 			'updGlobs' => array(
@@ -1862,6 +1854,12 @@ function OnOptGetDef_Sett()
 			),
 			'rpl' => array(
 				'items' => array(
+					array(
+						'enable' => false,
+						'descr' => 'DNS Prefetch',
+						'expr' => '@<head[^>]*>()@',
+						'data' => '<link rel="dns-prefetch" href="//fonts.gstatic.com">'
+					),
 					array(
 						'enable' => true,
 						'expr' => '@<link\\s+rel="stylesheet"[^>]+(consent-original-href-_)=[^>]+>@',
@@ -3738,7 +3736,7 @@ function _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $cookies, $pa
 					$argKeyCmp = strtolower( $argKey );
 
 					foreach( $exclArgs as $a )
-						if( _ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
+						if( ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
 							return( 'exclArgs:' . $a );
 
 					foreach( $ctxGrps as $ctxGrp )
@@ -3770,7 +3768,7 @@ function _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $cookies, $pa
 						$argKeyCmp = strtolower( $argKey );
 
 						foreach( $skipArgs as $a )
-							if( _ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
+							if( ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
 								unset( $aArgProcess[ $argKey ] );
 					}
 				}
@@ -3787,7 +3785,7 @@ function _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $cookies, $pa
 					$argKeyCmp = strtolower( $argKey );
 
 					foreach( $exclArgs as $a )
-						if( _ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
+						if( ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
 							return( 'exclArgs:' . $a );
 
 					foreach( $ctxGrps as $ctxGrp )
@@ -3802,7 +3800,7 @@ function _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $cookies, $pa
 					}
 
 					foreach( $skipArgs as $a )
-						if( _ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
+						if( ContProcGetExclStatus_KeyValMatch( $a, $argKeyCmp, $argVal ) )
 						{
 							$aArgRemove[] = $argKey;
 							unset( $aArgProcess[ $argKey ] );
@@ -3832,7 +3830,7 @@ function _ContProcGetExclStatus( $settCache, $ctxGrps, $userAgent, $cookies, $pa
 	return( false );
 }
 
-function _ContProcGetExclStatus_KeyValMatch( $expr, $k, $v, $sep = '=' )
+function ContProcGetExclStatus_KeyValMatch( $expr, $k, $v, $sep = '=' )
 {
 	$found = false;
 	foreach( ExprConditionsSet_Parse( $expr ) as $e )
@@ -4242,7 +4240,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.28.19 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5749,7 +5747,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.28.19';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -6265,7 +6263,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.28.19');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

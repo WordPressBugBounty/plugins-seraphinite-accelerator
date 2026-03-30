@@ -352,86 +352,6 @@ function CacheExt_Clear( $url = null )
 			LogWrite( 'EasyWP: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
-	if( ( isset( $aSrv[ 'HTTP_X_SERAPH_ACCEL_CW_ALLOWED_IP' ] ) || @preg_match( '@/home/.*?cloudways.*@', __DIR__ ) ) )
-	{
-
-		{
-			if( $url )
-			{
-				$method = 'URLPURGE';
-				$urlRequest = $url;
-			}
-			else
-			{
-				$method = 'PURGE';
-				$urlRequest = Wp::GetSiteRootUrl( '.*' );
-			}
-
-			$urlComps = Net::UrlParse( $urlRequest );
-			$requestRes = $urlComps ? _CacheExt_SockDoRequest( '127.0.0.1', $method, $urlRequest, array( 'Host' => $urlComps[ 'host' ], 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36' ), null, null ) : Gen::E_INVALIDARG;
-
-			if( strlen( Gen::GetArrField( $requestRes, array( 'body' ), '' ) ) )
-				Gen::SetArrField( $requestRes, array( 'body' ), '' );
-
-			if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
-				LogWrite( 'CloudWays (Varhish): ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
-		}
-
-		if( defined( 'CDN_SITE_ID' ) && defined( 'CDN_SITE_TOKEN' ) && ( $urlFpcMicroservice = getenv( 'FPC_ENV' ) ) )
-		{
-			$data = array(
-				'urls'     => array(),
-				'appToken' => CDN_SITE_TOKEN,
-				'appId'    => CDN_SITE_ID,
-				'platform' => 'fmp',
-			);
-
-			if( $url )
-			{
-				$endpoint_path = 'purge-fpc-url';
-				$data[ 'urls' ][] = $url;
-			}
-			else
-			{
-				$endpoint_path = 'purge-fpc-domain';
-				$data[ 'urls' ][] = Wp::GetSiteRootUrl( '', false );
-
-				if( Wp::IsMultisite() && !is_subdomain_install() )
-				{
-					$endpoint_path = 'purge-fpc-sub-dir';
-					foreach( $data[ 'urls' ] as &$urlE )
-						$urlE = Gen::SetLastSlash( $urlE, false );
-					unset( $urlE );
-				}
-				else
-				{
-					foreach( $data[ 'urls' ] as &$urlE )
-					{
-						$urlE = trim( $urlE );
-						$urlE = ltrim( $urlE, 'https:' );
-						$urlE = ltrim( $urlE, '//' );
-						$urlE = Gen::SetLastSlash( $urlE, false );
-					}
-					unset( $urlE );
-				}
-			}
-
-			if( strpos( $aSrv[ 'DOCUMENT_ROOT' ], 'cloudwaysstagingapps.com' ) !== false || strpos( $aSrv[ 'DOCUMENT_ROOT' ], 'cloudwaysapps.com' ) !== false )
-				$data[ 'platform' ] = 'fp';
-
-			$data = @json_encode( $data );
-			$urlFpcMicroservice = Gen::SetLastSlash( $urlFpcMicroservice ) . $endpoint_path;
-
-			$requestRes =
-				Net::RemoteRequest
-
-				( 'POST', $urlFpcMicroservice, array( 'timeout' => 4, 'sslverify' => false, 'body' => $data, 'referer' => home_url(), 'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . get_bloginfo( 'url' ), 'headers' => array( 'Accept' => 'application/json', 'Content-Type' => 'application/json', 'Content-Length' => strlen( $data ) ) ) );
-
-			if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
-				LogWrite( 'CloudWays (CloudFlare): ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
-		}
-	}
-
 	if( ( @preg_match( '@^dp-.+@', $hostname ) ) )
 	{
 		$requestRes = Gen::E_INVALIDARG;
@@ -985,7 +905,101 @@ function CacheExt_Clear( $url = null )
 			LogWrite( 'Hostinger: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
-	if( Gen::DoesFuncExist( '\\Cloudflare\\APO\\WordPress\\Hooks::purgeCacheEverything' ) )
+	if( ( isset( $aSrv[ 'HTTP_X_SERAPH_ACCEL_CW_ALLOWED_IP' ] ) || @preg_match( '@/home/.*?cloudways.*@', __DIR__ ) ) )
+	{
+
+		{
+			if( $url )
+			{
+				$method = 'URLPURGE';
+				$urlRequest = $url;
+			}
+			else
+			{
+				$method = 'PURGE';
+				$urlRequest = Wp::GetSiteRootUrl( '.*' );
+			}
+
+			$urlComps = Net::UrlParse( $urlRequest );
+			$requestRes = $urlComps ? _CacheExt_SockDoRequest( '127.0.0.1', $method, $urlRequest, array( 'Host' => $urlComps[ 'host' ], 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36' ), null, null ) : Gen::E_INVALIDARG;
+
+			if( strlen( Gen::GetArrField( $requestRes, array( 'body' ), '' ) ) )
+				Gen::SetArrField( $requestRes, array( 'body' ), '' );
+
+			if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
+				LogWrite( 'CloudWays (Varhish): ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
+		}
+
+		if( defined( 'CDN_SITE_ID' ) && defined( 'CDN_SITE_TOKEN' ) && ( $urlFpcMicroservice = getenv( 'FPC_ENV' ) ) )
+		{
+			$data = array(
+				'urls'     => array(),
+				'appToken' => CDN_SITE_TOKEN,
+				'appId'    => CDN_SITE_ID,
+				'platform' => 'fmp',
+			);
+
+			if( $url )
+			{
+				$endpoint_path = 'purge-fpc-url';
+				$data[ 'urls' ][] = $url;
+			}
+			else
+			{
+				$endpoint_path = 'purge-fpc-domain';
+				$data[ 'urls' ][] = Wp::GetSiteRootUrl( '', false );
+
+				if( Wp::IsMultisite() && !is_subdomain_install() )
+				{
+					$endpoint_path = 'purge-fpc-sub-dir';
+					foreach( $data[ 'urls' ] as &$urlE )
+						$urlE = Gen::SetLastSlash( $urlE, false );
+					unset( $urlE );
+				}
+				else
+				{
+					foreach( $data[ 'urls' ] as &$urlE )
+					{
+						$urlE = trim( $urlE );
+						$urlE = ltrim( $urlE, 'https:' );
+						$urlE = ltrim( $urlE, '//' );
+						$urlE = Gen::SetLastSlash( $urlE, false );
+					}
+					unset( $urlE );
+				}
+			}
+
+			if( strpos( $aSrv[ 'DOCUMENT_ROOT' ], 'cloudwaysstagingapps.com' ) !== false || strpos( $aSrv[ 'DOCUMENT_ROOT' ], 'cloudwaysapps.com' ) !== false )
+				$data[ 'platform' ] = 'fp';
+
+			$data = @json_encode( $data );
+			$urlFpcMicroservice = Gen::SetLastSlash( $urlFpcMicroservice ) . $endpoint_path;
+
+			$requestRes =
+				Net::RemoteRequest
+
+				( 'POST', $urlFpcMicroservice, array( 'timeout' => 4, 'sslverify' => false, 'body' => $data, 'referer' => home_url(), 'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . get_bloginfo( 'url' ), 'headers' => array( 'Accept' => 'application/json', 'Content-Type' => 'application/json', 'Content-Length' => strlen( $data ) ) ) );
+
+			if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
+				LogWrite( 'CloudWays (CloudFlare): ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
+		}
+	}
+
+	if( Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'zoneId' ), '' ) && Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'apiToken' ), '' ) )
+	{
+
+		$requestBody = '';
+		if( $url )
+			$requestBody = '{"files": ["' . $url . '"]}';
+		else
+			$requestBody = '{"purge_everything":true}';
+
+		$requestRes = Wp::RemoteRequest( 'POST', 'https://api.cloudflare.com/client/v4/zones/' . rawurlencode( Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'zoneId' ), '' ) ) . '/purge_cache', array( 'body' => $requestBody, 'headers' => array( 'Content-Type' => 'application/json', 'Authorization' => 'Bearer ' . Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'apiToken' ), '' ) ), 'sslverify' => false ) );
+
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
+			LogWrite( 'CloudFlare: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
+	}
+	else if( Gen::DoesFuncExist( '\\Cloudflare\\APO\\WordPress\\Hooks::purgeCacheEverything' ) )
 	{
 		$logInfo = '';
 

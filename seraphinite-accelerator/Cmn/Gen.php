@@ -1797,8 +1797,24 @@ class Gen
 					return( $g_nCpu = count( $m[ 0 ] ) );
 
 			if( function_exists( 'shell_exec' ) )
+			{
 				if( $n = ( int )shell_exec( 'cat /proc/cpuinfo | grep processor | wc -l' ) )
 					return( $g_nCpu = $n );
+			}
+			else if( function_exists( 'proc_open' ) && function_exists( 'proc_close' ) )
+			{
+				if( $hProc = @proc_open( 'cat /proc/cpuinfo | grep processor | wc -l', array( 1 => array( 'pipe', 'w' ) ), $aPipe ) )
+				{
+					$n = ( int )stream_get_contents( $aPipe[ 1 ] );
+					@fclose( $aPipe[ 1 ] );
+
+					@proc_close( $hProc );
+
+					if( $n )
+						return( $g_nCpu = $n );
+				}
+			}
+
 		}
 
 		return( $g_nCpu = false );
@@ -3908,7 +3924,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.28.19';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.28.19' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1480,6 +1480,66 @@ function _SettingsPage_Server( $callbacks_args, $box )
 					}
 					$o .= ( Ui::SettBlock_Item_End() );
 
+					$o .= ( Ui::SettBlock_Item_Begin( esc_html_x( 'Lbl', 'admin.Settings_Cache_Srv_CloudFlare', 'seraphinite-accelerator' ) . Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Cache_Srv_CloudFlare' ) ) ), Ui::AdminHelpBtnModeText ) ) );
+					{
+						$o .= ( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'std ctlMaxSizeX' ) ) );
+						{
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/cloudflare/zoneId';
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'ZoneId_%1$s', 'admin.Settings_Cache_Srv_CloudFlare', 'seraphinite-accelerator' ), Ui::TextBox( 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, '', '/' ), array( 'style' => array( 'width' => '100%' ) ), true ) ), false, array( 'class' => 'ctlMaxSizeX' ) ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/cloudflare/apiToken';
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'ApiToken_%1$s', 'admin.Settings_Cache_Srv_CloudFlare', 'seraphinite-accelerator' ), Ui::InputBox( 'password', 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, '', '/' ), array( 'style' => array( 'width' => '100%' ) ), true ) ), false, array( 'class' => 'ctlMaxSizeX' ) ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+						}
+						$o .= ( Ui::SettBlock_ItemSubTbl_End() );
+					}
+					$o .= ( Ui::SettBlock_Item_End() );
+
+					$o .= ( Ui::SettBlock_Item_Begin( esc_html_x( 'Lbl', 'admin.Settings_Cache_Srv_Sucuri', 'seraphinite-accelerator' ) . Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Cache_Srv_Sucuri' ) ) ), Ui::AdminHelpBtnModeText ) ) );
+					{
+						$o .= ( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'std ctlMaxSizeX' ) ) );
+						{
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/sucuri/apiKey';
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'ApiKey_%1$s', 'admin.Settings_Cache_Srv_Sucuri', 'seraphinite-accelerator' ), Ui::TextBox( 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, '', '/' ), array( 'style' => array( 'width' => '100%' ) ), true ) ), false, array( 'class' => 'ctlMaxSizeX' ) ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/sucuri/apiSecret';
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'ApiSecret_%1$s', 'admin.Settings_Cache_Srv_Sucuri', 'seraphinite-accelerator' ), Ui::InputBox( 'password', 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, '', '/' ), array( 'style' => array( 'width' => '100%' ) ), true ) ), false, array( 'class' => 'ctlMaxSizeX' ) ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+						}
+						$o .= ( Ui::SettBlock_ItemSubTbl_End() );
+					}
+					$o .= ( Ui::SettBlock_Item_End() );
+
 					$o .= ( Ui::SettBlock_Item_Begin( esc_html_x( 'Lbl', 'admin.Settings_Cache_Srv_Nginx', 'seraphinite-accelerator' ) . Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Cache_Srv_Nginx' ) ) ), Ui::AdminHelpBtnModeText ) ) );
 					{
 						$o .= ( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'std ctlMaxSizeX' ) ) );
@@ -1542,36 +1602,6 @@ function _SettingsPage_Server( $callbacks_args, $box )
 								{
 									$fldId = 'cache/nginx/fastCgiLevels';
 									$o .= ( Ui::Label( sprintf( esc_html_x( 'FastCgiCacheLevels_%1$s', 'admin.Settings_Cache_Srv_Nginx', 'seraphinite-accelerator' ), Ui::TextBox( 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, '', '/' ), array( 'style' => array( 'width' => '7em' ) ), true ) ) ) );
-								}
-								$o .= ( Ui::TagClose( 'td' ) );
-							}
-							$o .= ( Ui::TagClose( 'tr' ) );
-						}
-						$o .= ( Ui::SettBlock_ItemSubTbl_End() );
-					}
-					$o .= ( Ui::SettBlock_Item_End() );
-
-					$o .= ( Ui::SettBlock_Item_Begin( esc_html_x( 'Lbl', 'admin.Settings_Cache_Srv_Sucuri', 'seraphinite-accelerator' ) . Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Cache_Srv_Sucuri' ) ) ), Ui::AdminHelpBtnModeText ) ) );
-					{
-						$o .= ( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'std ctlMaxSizeX' ) ) );
-						{
-							$o .= ( Ui::TagOpen( 'tr' ) );
-							{
-								$o .= ( Ui::TagOpen( 'td' ) );
-								{
-									$fldId = 'cache/sucuri/apiKey';
-									$o .= ( Ui::Label( sprintf( esc_html_x( 'ApiKey_%1$s', 'admin.Settings_Cache_Srv_Sucuri', 'seraphinite-accelerator' ), Ui::TextBox( 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, '', '/' ), array( 'style' => array( 'width' => '100%' ) ), true ) ), false, array( 'class' => 'ctlMaxSizeX' ) ) );
-								}
-								$o .= ( Ui::TagClose( 'td' ) );
-							}
-							$o .= ( Ui::TagClose( 'tr' ) );
-
-							$o .= ( Ui::TagOpen( 'tr' ) );
-							{
-								$o .= ( Ui::TagOpen( 'td' ) );
-								{
-									$fldId = 'cache/sucuri/apiSecret';
-									$o .= ( Ui::Label( sprintf( esc_html_x( 'ApiSecret_%1$s', 'admin.Settings_Cache_Srv_Sucuri', 'seraphinite-accelerator' ), Ui::TextBox( 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, '', '/' ), array( 'style' => array( 'width' => '100%' ) ), true ) ), false, array( 'class' => 'ctlMaxSizeX' ) ) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) );
 							}
@@ -5894,6 +5924,8 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'cache/nginx/fastCgiLevels';				Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
 		{ $fldId = 'cache/sucuri/apiKey';					Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
 		{ $fldId = 'cache/sucuri/apiSecret';				Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
+		{ $fldId = 'cache/cloudflare/zoneId';				Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
+		{ $fldId = 'cache/cloudflare/apiToken';				Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
 
 		{ $fldId = 'cache/cron';							Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 

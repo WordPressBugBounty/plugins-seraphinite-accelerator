@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.9
-Stable tag: 2.28.19
+Stable tag: 2.29
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -62,6 +62,8 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 
 **Premium features**
 
+*	**Remote optimization**
+	Optimization can be performed remotely on our cloud servers. Includes CPU seconds: 1000/hour, 10000/day and 300000/month.
 *	**No page views limits**
 	There is no limit of 5000 page views per month. In free version after reaching that limit the product will just cache pages without optimization.
 *	**No banner**
@@ -161,6 +163,19 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.29 =
+
+New features:
+
+* Remote optimization.
+
+Improvements:
+
+* Extended regular expressions in exclusion list for meta fields.
+* Images lazy loading: apply placeholders to 'srcset' attribute.
+* Operating with CloudFlare cache without installing separate plugin.
+* Revolution Slider 6.7 and higher.
 
 = 2.28.19 =
 

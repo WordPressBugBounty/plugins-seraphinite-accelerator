@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.29)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.29\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.29.1)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.29.1\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.29)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.29\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.29.1)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.29.1\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1718,18 +1718,38 @@ msgctxt "admin.Settings_Cache_Srv"
 msgid "SrvUpdChk_%1$s"
 msgstr ""
 
+# CloudFlare
 msgctxt "admin.Settings_Cache_Srv_CloudFlare"
 msgid "Lbl"
 msgstr ""
 
+# Zone ID: %1$s
 #, php-format
 msgctxt "admin.Settings_Cache_Srv_CloudFlare"
 msgid "ZoneId_%1$s"
 msgstr ""
 
+# API token: %1$s
 #, php-format
 msgctxt "admin.Settings_Cache_Srv_CloudFlare"
 msgid "ApiToken_%1$s"
+msgstr ""
+
+# Sucuri
+msgctxt "admin.Settings_Cache_Srv_Sucuri"
+msgid "Lbl"
+msgstr ""
+
+# API key: %1$s
+#, php-format
+msgctxt "admin.Settings_Cache_Srv_Sucuri"
+msgid "ApiKey_%1$s"
+msgstr ""
+
+# API secret: %1$s
+#, php-format
+msgctxt "admin.Settings_Cache_Srv_Sucuri"
+msgid "ApiSecret_%1$s"
 msgstr ""
 
 # NGINX
@@ -1779,23 +1799,6 @@ msgstr ""
 #, php-format
 msgctxt "admin.Settings_Cache_Srv_Nginx"
 msgid "FastCgiCacheLevels_%1$s"
-msgstr ""
-
-# Sucuri
-msgctxt "admin.Settings_Cache_Srv_Sucuri"
-msgid "Lbl"
-msgstr ""
-
-# API key: %1$s
-#, php-format
-msgctxt "admin.Settings_Cache_Srv_Sucuri"
-msgid "ApiKey_%1$s"
-msgstr ""
-
-# API secret: %1$s
-#, php-format
-msgctxt "admin.Settings_Cache_Srv_Sucuri"
-msgid "ApiSecret_%1$s"
 msgstr ""
 
 # URI paths
@@ -3815,6 +3818,11 @@ msgstr ""
 # Simple thread of optimization
 msgctxt "admin.Settings_Advanced_Common"
 msgid "AsyncSmpOptChk"
+msgstr ""
+
+#, php-format
+msgctxt "admin.Settings_Advanced_Common"
+msgid "AsyncMgrMaxRunTime_%1$s"
 msgstr ""
 
 # Using external Cron requires additional setup. Please, read related %1$sdocumentation%2$s.

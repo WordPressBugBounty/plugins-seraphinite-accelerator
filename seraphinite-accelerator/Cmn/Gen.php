@@ -3016,7 +3016,7 @@ class ArrayOnFiles implements \Iterator, \ArrayAccess, \Countable
 		foreach( $this -> aChunk as $chunk )
 		    $chunk -> a = null;
 		$this -> aChunk = null;
-		$this -> dir = null;
+
 		$this -> options = null;
 	}
 
@@ -3924,7 +3924,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.1';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -5440,12 +5440,18 @@ class Wp
 		$obj = new AnyObj();
 		$obj -> method = $method;
 		$obj -> transport = ($args[ 'transport' ]??null);
+		$obj -> connect_timeout = ($args[ 'connect_timeout' ]??null);
 
 		$obj -> _cbRequestBefore =
 			function( $obj, $url, $p1, $p2, $p3, &$options )
 			{
-				if( $options && isset( $options[ 'timeout' ] ) && $options[ 'timeout' ] )
-					$options[ 'connect_timeout' ] = $options[ 'timeout' ] - 1;
+				if( $options )
+				{
+					if( $obj -> connect_timeout )
+						$options[ 'connect_timeout' ] = $obj -> connect_timeout;
+					else if( isset( $options[ 'timeout' ] ) && $options[ 'timeout' ] )
+						$options[ 'connect_timeout' ] = $options[ 'timeout' ] - 1;
+				}
 				if( $obj -> transport )
 					$options[ 'transport' ] = $obj -> transport;
 			};

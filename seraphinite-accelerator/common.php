@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 193;
+const PLUGIN_SETT_VER								= 194;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1228,6 +1228,11 @@ function OnOptRead_Sett( $sett, $verFrom )
 		Gen::SetArrField( $sett, array( 'contPr', 'cp', 'vhcThCarFldGall' ), true );
 	}
 
+	if( $verFrom && $verFrom < 194 )
+	{
+		Gen::SetArrField( $sett, array( 'asyncMgrMaxRunTime' ), 60 );
+	}
+
 	return( $sett );
 }
 
@@ -1309,6 +1314,13 @@ function OnAsyncTasksPushGetMode( $settGlob = null )
 	if( $settGlob === null )
 		$settGlob = Plugin::SettGetGlobal();
 	return( Gen::GetArrField( $settGlob, array( 'asyncMode' ), '' ) );
+}
+
+function OnAsyncTasksMgrMaxRunTime( $settGlob = null )
+{
+	if( $settGlob === null )
+		$settGlob = Plugin::SettGetGlobal();
+	return( Gen::GetArrField( $settGlob, array( 'asyncMgrMaxRunTime' ), 0 ) );
 }
 
 function OnAsyncTasksPushReGetLauncher()
@@ -2323,6 +2335,8 @@ function OnOptGetDef_Sett()
 
 						'id:@^cookieyes$@',
 
+						'id:@^cmplz-cookiebanner-js@',
+
 						'src:@\\.elfsight\\.com/platform/@',
 
 						'src:@\\.elfsight\\.com/platform/@',
@@ -2671,6 +2685,7 @@ function OnOptGetDef_Sett()
 		'asyncMode' => '',
 		'asyncUseCmptNbr' => false,
 		'asyncSmpOpt' => true,
+		'asyncMgrMaxRunTime' => 7,
 	) );
 }
 
@@ -4240,7 +4255,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.1 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5747,7 +5762,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.1';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -6263,7 +6278,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.1');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

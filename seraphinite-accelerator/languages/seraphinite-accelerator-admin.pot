@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.29.1)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.29.1\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.29.2)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.29.2\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.29.1)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.29.1\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.29.2)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.29.2\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -3237,6 +3237,58 @@ msgctxt "admin.Settings_Frames_ContParts_SlckGen_Item"
 msgid "SlidesToScroll_%1$s"
 msgstr ""
 
+# Swiper Slider generic
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "SwprGenChk"
+msgstr ""
+
+# %1$s pagination via %2$s element
+#, php-format
+msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
+msgid "PaginationChk_%1$s%2$s%3$s"
+msgstr ""
+
+# Bullets
+msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
+msgid "PagBullets"
+msgstr ""
+
+# Progressbar
+msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
+msgid "PagProgressbar"
+msgstr ""
+
+msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
+msgid "PagClickable"
+msgstr ""
+
+msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
+msgid "PagNonClickable"
+msgstr ""
+
+# infinite
+msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
+msgid "MaxWidthInf"
+msgstr ""
+
+# Widht of %1$s minimum and %2$s maximum
+#, php-format
+msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
+msgid "MinMaxWidth_%1$s%2$s"
+msgstr ""
+
+# %1$s space between
+#, php-format
+msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
+msgid "SpaceBetween_%1$s"
+msgstr ""
+
+# %1$s slides per view
+#, php-format
+msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
+msgid "SlidesPerView_%1$s"
+msgstr ""
+
 # General
 msgctxt "admin.Settings_Scripts_Common"
 msgid "Lbl"
@@ -3820,6 +3872,7 @@ msgctxt "admin.Settings_Advanced_Common"
 msgid "AsyncSmpOptChk"
 msgstr ""
 
+# Duration of task manager thread: %1$s second(s)
 #, php-format
 msgctxt "admin.Settings_Advanced_Common"
 msgid "AsyncMgrMaxRunTime_%1$s"

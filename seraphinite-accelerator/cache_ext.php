@@ -921,7 +921,7 @@ function CacheExt_Clear( $url = null )
 			}
 
 			$urlComps = Net::UrlParse( $urlRequest );
-			$requestRes = $urlComps ? _CacheExt_SockDoRequest( '127.0.0.1', $method, $urlRequest, array( 'Host' => $urlComps[ 'host' ], 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36' ), null, null ) : Gen::E_INVALIDARG;
+			$requestRes = $urlComps ? _CacheExt_SockDoRequest( '127.0.0.1', $method, $urlRequest, array( 'Host' => ($urlComps[ 'host' ]??''), 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36' ), null, null ) : Gen::E_INVALIDARG;
 
 			if( strlen( Gen::GetArrField( $requestRes, array( 'body' ), '' ) ) )
 				Gen::SetArrField( $requestRes, array( 'body' ), '' );

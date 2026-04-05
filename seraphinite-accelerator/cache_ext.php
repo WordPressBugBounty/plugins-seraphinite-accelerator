@@ -985,7 +985,7 @@ function CacheExt_Clear( $url = null )
 		}
 	}
 
-	if( Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'zoneId' ), '' ) && Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'apiToken' ), '' ) )
+	if( Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'zoneId' ), '' ) )
 	{
 
 		$requestBody = '';
@@ -994,7 +994,19 @@ function CacheExt_Clear( $url = null )
 		else
 			$requestBody = '{"purge_everything":true}';
 
-		$requestRes = Wp::RemoteRequest( 'POST', 'https://api.cloudflare.com/client/v4/zones/' . rawurlencode( Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'zoneId' ), '' ) ) . '/purge_cache', array( 'body' => $requestBody, 'headers' => array( 'Content-Type' => 'application/json', 'Authorization' => 'Bearer ' . Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'apiToken' ), '' ) ), 'sslverify' => false ) );
+		$aHdr = array( 'Content-Type' => 'application/json' );
+		switch( Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'auth' ), '' ) )
+		{
+		case 'key':
+			$aHdr[ 'X-Auth-Email' ] = Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'email' ), '' );
+			$aHdr[ 'X-Auth-Key' ] = Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'apiKey' ), '' );
+			break;
+		case 'token':
+			$aHdr[ 'Authorization' ] = 'Bearer ' . Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'apiToken' ), '' );
+			break;
+		}
+
+		$requestRes = Wp::RemoteRequest( 'POST', 'https://api.cloudflare.com/client/v4/zones/' . rawurlencode( Gen::GetArrField( $sett, array( 'cache', 'cloudflare', 'zoneId' ), '' ) ) . '/purge_cache', array( 'body' => $requestBody, 'headers' => $aHdr, 'sslverify' => false ) );
 
 		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'CloudFlare: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );

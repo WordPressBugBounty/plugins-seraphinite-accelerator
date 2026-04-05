@@ -2013,6 +2013,7 @@ class Gen
 		$fmt[ 'assignSpaceBefore' ] = Gen::GetArrField( $fmt, array( 'assignSpaceBefore' ), ' ' );
 		$fmt[ 'assignSpaceAfter' ] = Gen::GetArrField( $fmt, array( 'assignSpaceAfter' ), ' ' );
 		$fmt[ 'escValNl' ] = Gen::GetArrField( $fmt, array( 'escValNl' ), false );
+		$fmt[ 'nonScalar' ] = Gen::GetArrField( $fmt, array( 'nonScalar' ), false );
 		return( self::_VarExport( $v, $fmt, $level ) );
 	}
 
@@ -2022,8 +2023,18 @@ class Gen
 		{
 		case 'boolean':
 		case 'integer':
-		case 'string':
 			return( var_export( $v, true ) );
+
+		case 'string':
+			$v = var_export( $v, true );
+
+			if( $fmt[ 'escValNl' ] )
+			{
+				$v = str_replace( array( "\r", "\n" ), array( '\'."\\r".\'', '\'."\\n".\'' ), $v );
+				$v = str_replace( array( '\'\'.', '.\'\'', '\\r"."\\n', '\\n"."\\r' ), array( '', '', '\\r\\n', '\\n\\r' ), $v );
+			}
+
+			return( $v );
 
 		case 'double':
 			return( preg_replace( '@([^\\.])0+$@', '${1}', sprintf( '%.' . ( string )$fmt[ 'floatPrec' ] . 'F', $v ) ) );
@@ -2036,6 +2047,24 @@ class Gen
 			return( $res );
 
 		case 'object':
+			if( $v instanceof \Closure )
+			{
+				if( $fmt[ 'nonScalar' ] )
+				{
+					if( class_exists( '\\ReflectionFunction' ) )
+					{
+						$v = ( string )( new \ReflectionFunction( $v ) );
+						if( $fmt[ 'escValNl' ] )
+							$v = trim( Gen::StrReplaceWhileChanging( '  ', ' ', str_replace( "\n", ' ', $v ) ) );
+						return( $v );
+					}
+
+					return( '{Closure}' );
+				}
+
+				return( 'null' );
+			}
+
 			return( self::_VarExport( ( array )$v, $fmt, $level ) );
 		}
 
@@ -3924,7 +3953,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.2';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.3';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

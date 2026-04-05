@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.29.2)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.29.2\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.29.3)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.29.3\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.29.2)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.29.2\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.29.3)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.29.3\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -629,9 +629,16 @@ msgctxt "admin.Manage_HtmlChecker_Fix"
 msgid "TidyChk"
 msgstr ""
 
-# Check
-msgctxt "admin.Manage_Operate"
+msgctxt "admin.Manage_HtmlChecker"
 msgid "Check"
+msgstr ""
+
+msgctxt "admin.Manage_HtmlChecker"
+msgid "InfoLbl"
+msgstr ""
+
+msgctxt "admin.Manage_HtmlChecker"
+msgid "HtmlLogLbl"
 msgstr ""
 
 # Hosting
@@ -1727,6 +1734,34 @@ msgstr ""
 #, php-format
 msgctxt "admin.Settings_Cache_Srv_CloudFlare"
 msgid "ZoneId_%1$s"
+msgstr ""
+
+# Authorization : %1$s
+#, php-format
+msgctxt "admin.Settings_Cache_Srv_CloudFlare"
+msgid "Auth_%1$s"
+msgstr ""
+
+# Key
+msgctxt "admin.Settings_Cache_Srv_CloudFlare_Auth"
+msgid "Key"
+msgstr ""
+
+# Token
+msgctxt "admin.Settings_Cache_Srv_CloudFlare_Auth"
+msgid "Token"
+msgstr ""
+
+# E-mail: %1$s
+#, php-format
+msgctxt "admin.Settings_Cache_Srv_CloudFlare"
+msgid "Email_%1$s"
+msgstr ""
+
+# API key: %1$s
+#, php-format
+msgctxt "admin.Settings_Cache_Srv_CloudFlare"
+msgid "ApiKey_%1$s"
 msgstr ""
 
 # API token: %1$s
@@ -3200,6 +3235,23 @@ msgctxt "admin.Settings_Frames_ContParts_SlckGen_Item"
 msgid "SelCssPhlr"
 msgstr ""
 
+# HTML template %1$s for previous arrow, %2$s for next arrow, %3$s for pagination
+#, php-format
+msgctxt "admin.Settings_Frames_ContParts_SlckGen_Item"
+msgid "TplsLbl_%1$s%2$s%3$s"
+msgstr ""
+
+# infinite
+msgctxt "admin.Settings_Frames_ContParts"
+msgid "MaxWidthInf"
+msgstr ""
+
+# Widht of %1$s maximum
+#, php-format
+msgctxt "admin.Settings_Frames_ContParts_SlckGen_Item"
+msgid "MinMaxWidth_%1$s"
+msgstr ""
+
 # Arrows
 msgctxt "admin.Settings_Frames_ContParts_SlckGen_Item"
 msgid "ArrowsChk"
@@ -3242,7 +3294,7 @@ msgctxt "admin.Settings_Frames_ContParts"
 msgid "SwprGenChk"
 msgstr ""
 
-# %1$s pagination via %2$s element
+# %1$s pagination %2$s via %3$s element
 #, php-format
 msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
 msgid "PaginationChk_%1$s%2$s%3$s"
@@ -3258,17 +3310,14 @@ msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
 msgid "PagProgressbar"
 msgstr ""
 
+# clickable
 msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
 msgid "PagClickable"
 msgstr ""
 
+# non-clickable
 msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
 msgid "PagNonClickable"
-msgstr ""
-
-# infinite
-msgctxt "admin.Settings_Frames_ContParts_SwprGen_Item"
-msgid "MaxWidthInf"
 msgstr ""
 
 # Widht of %1$s minimum and %2$s maximum

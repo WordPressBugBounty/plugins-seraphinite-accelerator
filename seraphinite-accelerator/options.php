@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.2' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.3' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1482,7 +1482,7 @@ function _SettingsPage_Server( $callbacks_args, $box )
 
 					$o .= ( Ui::SettBlock_Item_Begin( esc_html_x( 'Lbl', 'admin.Settings_Cache_Srv_CloudFlare', 'seraphinite-accelerator' ) . Ui::AdminBtnsBlock( array( array( 'type' => Ui::AdminBtn_Help, 'href' => Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Help.Settings_Cache_Srv_CloudFlare' ) ) ), Ui::AdminHelpBtnModeText ) ) );
 					{
-						$o .= ( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'std ctlMaxSizeX' ) ) );
+						$o .= ( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'std ctlMaxSizeX blck' ) ) );
 						{
 							$o .= ( Ui::TagOpen( 'tr' ) );
 							{
@@ -1496,6 +1496,45 @@ function _SettingsPage_Server( $callbacks_args, $box )
 							$o .= ( Ui::TagClose( 'tr' ) );
 
 							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/cloudflare/auth';
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'Auth_%1$s', 'admin.Settings_Cache_Srv_CloudFlare', 'seraphinite-accelerator' ), Ui::ComboBox(
+										'seraph_accel/' . $fldId,
+										array(
+											'key'		=> esc_html_x( 'Key', 'admin.Settings_Cache_Srv_CloudFlare_Auth', 'seraphinite-accelerator' ),
+											'token'		=> esc_html_x( 'Token', 'admin.Settings_Cache_Srv_CloudFlare_Auth', 'seraphinite-accelerator' ),
+										),
+										Gen::GetArrField( $sett, $fldId, '', '/' ), true, array( 'class' => 'ctlMaxSizeX', 'data-oninit' => 'jQuery(this).change()', 'onchange' => 'seraph_accel.Ui.ComboShowDependedItems( this, jQuery( this.parentNode ).closest( ".blck" ).first().get( 0 ) )' ) ) ) ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr', array( 'class' => 'ns-key', 'style' => array( 'display' => 'none' ) ) ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/cloudflare/email';
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'Email_%1$s', 'admin.Settings_Cache_Srv_CloudFlare', 'seraphinite-accelerator' ), Ui::InputBox( 'email', 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, '', '/' ), array( 'style' => array( 'width' => '100%' ) ), true ) ), false, array( 'class' => 'ctlMaxSizeX' ) ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr', array( 'class' => 'ns-key', 'style' => array( 'display' => 'none' ) ) ) );
+							{
+								$o .= ( Ui::TagOpen( 'td' ) );
+								{
+									$fldId = 'cache/cloudflare/apiKey';
+									$o .= ( Ui::Label( sprintf( esc_html_x( 'ApiKey_%1$s', 'admin.Settings_Cache_Srv_CloudFlare', 'seraphinite-accelerator' ), Ui::InputBox( 'password', 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, '', '/' ), array( 'style' => array( 'width' => '100%' ) ), true ) ), false, array( 'class' => 'ctlMaxSizeX' ) ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr', array( 'class' => 'ns-token', 'style' => array( 'display' => 'none' ) ) ) );
 							{
 								$o .= ( Ui::TagOpen( 'td' ) );
 								{
@@ -4105,7 +4144,17 @@ function _SettingsPage_Frames( $callbacks_args, $box )
 				$o .= ( Ui::TagOpen( 'div', array( 'class' => 'blck', 'style' => array( 'display' => 'none' ) ) ) );
 				{
 					$fldId = 'contPr/cp/slckGen_a';
+
 					$items = Gen::GetArrField( $sett, $fldId, array(), '/' );
+					foreach( $items as $i => $ai )
+					{
+						$bps = array();
+						foreach( $ai[ 'bps' ] as $dim => $aiR )
+							$bps[] = array_merge( array( 'maxWidth' => $dim ), $aiR );
+						$ai[ 'bps' ] = $bps;
+
+						$items[ $i ] = $ai;
+					}
 
 					$itemsListPrms = array( 'editorAreaCssPath' => '.blck', 'sortable' => true );
 					$o .= ( Ui::ItemsList( $itemsListPrms, $items, 'seraph_accel/' . $fldId,
@@ -4137,34 +4186,115 @@ function _SettingsPage_Frames( $callbacks_args, $box )
 
 								$o .= ( Ui::TagOpen( 'tr' ) . Ui::TagOpen( 'td' ) );
 								{
-									$fldId = 'arrows';
-									$o .= ( Ui::CheckBox( esc_html_x( 'ArrowsChk', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, true, '/' ), true, array( 'class' => 'ctlSpaceAfter' ) ) );
-
-									$fldId = 'dots';
-									$o .= ( Ui::CheckBox( esc_html_x( 'DotsChk', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, false, '/' ), true, array( 'class' => 'ctlSpaceAfter' ) ) );
-
-									$fldId = 'infinite';
-									$o .= ( Ui::CheckBox( esc_html_x( 'InfiniteChk', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, true, '/' ), true, array( 'class' => 'ctlSpaceAfter' ) ) );
-
-									$fldId = 'centerMode';
-									$o .= ( Ui::CheckBox( esc_html_x( 'CenterModeChk', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, false, '/' ), true, array( 'class' => 'ctlSpaceAfter' ) ) );
-
-									$fldId = 'vertical';
-									$o .= ( Ui::CheckBox( esc_html_x( 'VerticalChk', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, false, '/' ), true, array( 'class' => 'ctlSpaceAfter' ) ) );
+									$fldId1 = 'prevArrow';
+									$fldId2 = 'nextArrow';
+									$fldId3 = 'customPaging';
+									$o .= ( sprintf( esc_html_x( 'TplsLbl_%1$s%2$s%3$s', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ),
+										Ui::TextBox( $idItems . '/' . $itemKey . '/' . $fldId1, Gen::GetArrField( $item, $fldId1, '', '/' ), array( 'masked' => true, 'class' => 'inline ctlSpaceVBefore', 'style' => array( 'width' => '20em' ), 'placeholder' => '<button class="slick-prev" aria-label="Previous" type="button">Previous</button>' ), true ),
+										Ui::TextBox( $idItems . '/' . $itemKey . '/' . $fldId2, Gen::GetArrField( $item, $fldId2, '', '/' ), array( 'masked' => true, 'class' => 'inline ctlSpaceVBefore', 'style' => array( 'width' => '20em' ), 'placeholder' => '<button class="slick-next" aria-label="Next" type="button">Next</button>' ), true ),
+										Ui::TextBox( $idItems . '/' . $itemKey . '/' . $fldId3, Gen::GetArrField( $item, $fldId3, '', '/' ), array( 'masked' => true, 'class' => 'inline ctlSpaceVBefore', 'style' => array( 'width' => '20em' ), 'placeholder' => '<li><button type="button">{{SLIDE_NUMBER}}</button></li>' ), true ),
+									) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) . Ui::TagClose( 'tr' ) );
 
-								$o .= ( Ui::TagOpen( 'tr' ) . Ui::TagOpen( 'td' ) );
+								$o .= ( Ui::TagOpen( 'tr' ) . Ui::TagOpen( 'td', array( 'class' => 'blck' ) ) );
 								{
-									$fldId = 'slidesToShow';
-									$o .= sprintf( esc_html_x( 'SlidesToShow_%1$s', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), Ui::NumberBox( $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, 1, '/' ), array( 'style' => array( 'width' => '4em' ) ), true ) );
-								}
-								$o .= ( Ui::TagClose( 'td' ) . Ui::TagClose( 'tr' ) );
+									$fldId = 'bps';
 
-								$o .= ( Ui::TagOpen( 'tr' ) . Ui::TagOpen( 'td' ) );
-								{
-									$fldId = 'slidesToScroll';
-									$o .= sprintf( esc_html_x( 'SlidesToScroll_%1$s', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), Ui::NumberBox( $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, 1, '/' ), array( 'style' => array( 'width' => '4em' ) ), true ) );
+									$itemsListPrmsSub = array( 'editorAreaCssPath' => '.blck', 'sortable' => true );
+									$o .= ( Ui::ItemsList( $itemsListPrmsSub, Gen::GetArrField( $item, $fldId, array( array() ), '/' ), $idItems . '/' . $itemKey . '/' . $fldId,
+										function( $cbArgs, $idItems, $items, $itemKey, $item )
+										{
+											extract( $cbArgs );
+
+											$o = '';
+
+											$o .= ( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'ctlMaxSizeX' ) ) . Ui::TagOpen( 'tr' ) );
+											{
+												$o .= ( Ui::TagOpen( 'td' ) );
+												{
+													$o .= ( Ui::SettBlock_ItemSubTbl_Begin( array( 'class' => 'ctlMaxSizeX' ) ) );
+													{
+														$o .= ( Ui::TagOpen( 'tr' ) . Ui::TagOpen( 'td' ) );
+														{
+															$fldId = 'maxWidth';
+															$o .= sprintf( esc_html_x( 'MinMaxWidth_%1$s', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), Ui::NumberBox( $idItems . '/' . $itemKey . '/' . $fldId, ( $v = Gen::GetArrField( $item, $fldId, null, '/' ) ) ? $v : '', array( 'style' => array( 'width' => '8em' ), 'placeholder' => esc_html_x( 'MaxWidthInf', 'admin.Settings_Frames_ContParts', 'seraphinite-accelerator' ) ), true ) );
+														}
+														$o .= ( Ui::TagClose( 'td' ) . Ui::TagClose( 'tr' ) );
+
+														$o .= ( Ui::TagOpen( 'tr' ) . Ui::TagOpen( 'td' ) );
+														{
+															$fldId = 'arrows';
+															$o .= ( Ui::CheckBox( esc_html_x( 'ArrowsChk', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, true, '/' ), true, array( 'class' => 'ctlSpaceAfter' ) ) );
+
+															$fldId = 'dots';
+															$o .= ( Ui::CheckBox( esc_html_x( 'DotsChk', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, false, '/' ), true, array( 'class' => 'ctlSpaceAfter' ) ) );
+
+															$fldId = 'infinite';
+															$o .= ( Ui::CheckBox( esc_html_x( 'InfiniteChk', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, true, '/' ), true, array( 'class' => 'ctlSpaceAfter' ) ) );
+
+															$fldId = 'centerMode';
+															$o .= ( Ui::CheckBox( esc_html_x( 'CenterModeChk', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, false, '/' ), true, array( 'class' => 'ctlSpaceAfter' ) ) );
+
+															$fldId = 'vertical';
+															$o .= ( Ui::CheckBox( esc_html_x( 'VerticalChk', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, false, '/' ), true, array( 'class' => 'ctlSpaceAfter' ) ) );
+														}
+														$o .= ( Ui::TagClose( 'td' ) . Ui::TagClose( 'tr' ) );
+
+														$o .= ( Ui::TagOpen( 'tr' ) . Ui::TagOpen( 'td' ) );
+														{
+															$fldId = 'slidesToShow';
+															$o .= sprintf( esc_html_x( 'SlidesToShow_%1$s', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), Ui::NumberBox( $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, 1, '/' ), array( 'style' => array( 'width' => '4em' ) ), true ) );
+														}
+														$o .= ( Ui::TagClose( 'td' ) . Ui::TagClose( 'tr' ) );
+
+														$o .= ( Ui::TagOpen( 'tr' ) . Ui::TagOpen( 'td' ) );
+														{
+															$fldId = 'slidesToScroll';
+															$o .= sprintf( esc_html_x( 'SlidesToScroll_%1$s', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ), Ui::NumberBox( $idItems . '/' . $itemKey . '/' . $fldId, Gen::GetArrField( $item, $fldId, 1, '/' ), array( 'style' => array( 'width' => '4em' ) ), true ) );
+														}
+														$o .= ( Ui::TagClose( 'td' ) . Ui::TagClose( 'tr' ) );
+
+														$o .= ( Ui::TagOpen( 'tr' ) . Ui::TagOpen( 'td' ) );
+														{
+															$fldId1 = 'prevArrow';
+															$fldId2 = 'nextArrow';
+															$fldId3 = 'customPaging';
+															$o .= ( sprintf( esc_html_x( 'TplsLbl_%1$s%2$s%3$s', 'admin.Settings_Frames_ContParts_SlckGen_Item', 'seraphinite-accelerator' ),
+																Ui::TextBox( $idItems . '/' . $itemKey . '/' . $fldId1, Gen::GetArrField( $item, $fldId1, '', '/' ), array( 'masked' => true, 'class' => 'inline ctlSpaceVBefore', 'style' => array( 'width' => '20em' ), 'placeholder' => '<button class="slick-prev" aria-label="Previous" type="button">Previous</button>' ), true ),
+																Ui::TextBox( $idItems . '/' . $itemKey . '/' . $fldId2, Gen::GetArrField( $item, $fldId2, '', '/' ), array( 'masked' => true, 'class' => 'inline ctlSpaceVBefore', 'style' => array( 'width' => '20em' ), 'placeholder' => '<button class="slick-next" aria-label="Next" type="button">Next</button>' ), true ),
+																Ui::TextBox( $idItems . '/' . $itemKey . '/' . $fldId3, Gen::GetArrField( $item, $fldId3, '', '/' ), array( 'masked' => true, 'class' => 'inline ctlSpaceVBefore', 'style' => array( 'width' => '20em' ), 'placeholder' => '<li><button type="button">{{SLIDE_NUMBER}}</button></li>' ), true ),
+															) );
+														}
+														$o .= ( Ui::TagClose( 'td' ) . Ui::TagClose( 'tr' ) );
+													}
+													$o .= ( Ui::SettBlock_ItemSubTbl_End() );
+												}
+												$o .= ( Ui::TagClose( 'td' ) );
+
+												$o .= ( Ui::TagOpen( 'td', array( 'class' => 'ctlMinSizeX' ) ) );
+												{
+													$o .= ( Ui::Tag( 'div', Ui::ItemsList_ItemOperateBtns( $itemsListPrmsSub, array( 'class' => 'ctlSpaceVAfterSm' ) ) ) );
+												}
+												$o .= ( Ui::TagClose( 'td' ) );
+											}
+											$o .= ( Ui::TagClose( 'tr' ) . Ui::SettBlock_ItemSubTbl_End() );
+
+											$o .= ( Ui::SepLine( 'div', array( 'class' => 'ctlSpaceVBefore ctlSpaceVAfter' ) ) );
+
+											return( $o );
+										},
+
+										function( $cbArgs, $attrs )
+										{
+											Gen::SetArrField( $attrs, 'class.+', 'ctlSpaceVAfter' );
+											return( Ui::Tag( 'div', Ui::Tag( 'label', Ui::ItemsList_NoItemsContent() ), $attrs ) );
+										},
+
+										array( 'itemsListPrmsSub' => $itemsListPrmsSub ), array( 'class' => 'ctlMaxSizeX' )
+									) );
+
+									$o .= ( Ui::Tag( 'div', Ui::ItemsList_OperateBtns( $itemsListPrmsSub, array( 'class' => 'ctlSpaceBefore' ) ), array( 'class' => 'ctlAlignRight' ) ) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) . Ui::TagClose( 'tr' ) );
 							}
@@ -4280,7 +4410,7 @@ function _SettingsPage_Frames( $callbacks_args, $box )
 														{
 															$fldId1 = 'minWidth';
 															$fldId2 = 'maxWidth';
-															$o .= sprintf( esc_html_x( 'MinMaxWidth_%1$s%2$s', 'admin.Settings_Frames_ContParts_SwprGen_Item', 'seraphinite-accelerator' ), Ui::NumberBox( $idItems . '/' . $itemKey . '/' . $fldId1, Gen::GetArrField( $item, $fldId1, null, '/' ), array( 'style' => array( 'width' => '4em' ), 'placeholder' => '0' ), true ), Ui::NumberBox( $idItems . '/' . $itemKey . '/' . $fldId2, Gen::GetArrField( $item, $fldId2, null, '/' ), array( 'style' => array( 'width' => '8em' ), 'placeholder' => esc_html_x( 'MaxWidthInf', 'admin.Settings_Frames_ContParts_SwprGen_Item', 'seraphinite-accelerator' ) ), true ) );
+															$o .= sprintf( esc_html_x( 'MinMaxWidth_%1$s%2$s', 'admin.Settings_Frames_ContParts_SwprGen_Item', 'seraphinite-accelerator' ), Ui::NumberBox( $idItems . '/' . $itemKey . '/' . $fldId1, Gen::GetArrField( $item, $fldId1, null, '/' ), array( 'style' => array( 'width' => '4em' ), 'placeholder' => '0' ), true ), Ui::NumberBox( $idItems . '/' . $itemKey . '/' . $fldId2, Gen::GetArrField( $item, $fldId2, null, '/' ), array( 'style' => array( 'width' => '8em' ), 'placeholder' => esc_html_x( 'MaxWidthInf', 'admin.Settings_Frames_ContParts', 'seraphinite-accelerator' ) ), true ) );
 														}
 														$o .= ( Ui::TagClose( 'td' ) . Ui::TagClose( 'tr' ) );
 
@@ -6095,6 +6225,9 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'cache/sucuri/apiKey';					Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
 		{ $fldId = 'cache/sucuri/apiSecret';				Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
 		{ $fldId = 'cache/cloudflare/zoneId';				Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
+		{ $fldId = 'cache/cloudflare/auth';					Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
+		{ $fldId = 'cache/cloudflare/email';				Gen::SetArrField( $sett, $fldId, trim( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'cache/cloudflare/apiKey';				Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
 		{ $fldId = 'cache/cloudflare/apiToken';				Gen::SetArrField( $sett, $fldId, Gen::SanitizeTextData( trim( $args[ 'seraph_accel/' . $fldId ] ) ), '/' ); }
 
 		{ $fldId = 'cache/cron';							Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
@@ -6659,24 +6792,62 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'contPr/cp/slckGen';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{
 			$fldId = 'contPr/cp/slckGen_a';
-			Gen::SetArrField( $sett, $fldId, Ui::ItemsList_GetSaveItems( 'seraph_accel/' . $fldId, '/', $args,
+
+			$items = Ui::ItemsList_GetSaveItems( 'seraph_accel/' . $fldId, '/', $args,
 				function( $cbArgs, $idItems, $itemKey, $item, $args )
 				{
 					$item = array();
 
 					{ $fldId = 'enable';					Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
 					{ $fldId = 'selCss';					Gen::SetArrField( $item, $fldId, Wp::SanitizeText( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ), '/' ); }
-					{ $fldId = 'arrows';					Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
-					{ $fldId = 'dots';						Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
-					{ $fldId = 'infinite';					Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
-					{ $fldId = 'centerMode';				Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
-					{ $fldId = 'vertical';					Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
-					{ $fldId = 'slidesToShow';				Gen::SetArrField( $item, $fldId, @intval( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
-					{ $fldId = 'slidesToScroll';			Gen::SetArrField( $item, $fldId, @intval( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
+					{ $fldId = 'prevArrow';					Gen::SetArrField( $item, $fldId, Ui::UnmaskValue( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ), '/' ); }
+					{ $fldId = 'nextArrow';					Gen::SetArrField( $item, $fldId, Ui::UnmaskValue( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ), '/' ); }
+					{ $fldId = 'customPaging';				Gen::SetArrField( $item, $fldId, Ui::UnmaskValue( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ), '/' ); }
+
+					{
+						$fldId = 'bps';
+						Gen::SetArrField( $item, $fldId, Ui::ItemsList_GetSaveItems( $idItems . '/' . $itemKey . '/' . $fldId, '/', $args,
+							function( $cbArgs, $idItems, $itemKey, $item, $args )
+							{
+								$item = array();
+
+								{ $fldId = 'maxWidth';					Gen::SetArrField( $item, $fldId, @intval( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
+								{ $fldId = 'arrows';					Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
+								{ $fldId = 'dots';						Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
+								{ $fldId = 'infinite';					Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
+								{ $fldId = 'centerMode';				Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
+								{ $fldId = 'vertical';					Gen::SetArrField( $item, $fldId, isset( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
+								{ $fldId = 'slidesToShow';				Gen::SetArrField( $item, $fldId, @intval( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
+								{ $fldId = 'slidesToScroll';			Gen::SetArrField( $item, $fldId, @intval( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ), '/' ); }
+								{ $fldId = 'prevArrow';					Gen::SetArrField( $item, $fldId, Ui::UnmaskValue( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ), '/' ); }
+								{ $fldId = 'nextArrow';					Gen::SetArrField( $item, $fldId, Ui::UnmaskValue( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ), '/' ); }
+								{ $fldId = 'customPaging';				Gen::SetArrField( $item, $fldId, Ui::UnmaskValue( @stripslashes( $args[ $idItems . '/' . $itemKey . '/' . $fldId ] ) ), '/' ); }
+
+								return( $item );
+							}
+						), '/' );
+					}
 
 					return( $item );
 				}
-			), '/' );
+			);
+
+			foreach( $items as $i => $ai )
+			{
+				$bps = array();
+				foreach( $ai[ 'bps' ] as $aiR )
+				{
+					$dim = ( int )($aiR[ 'maxWidth' ]??0);
+					unset( $aiR[ 'maxWidth' ] );
+					$bps[ $dim ] = $aiR;
+				}
+				ksort( $bps );
+				$ai[ 'bps' ] = $bps;
+
+				$items[ $i ] = $ai;
+			}
+
+			Gen::SetArrField( $sett, $fldId, $items, '/' );
 		}
 
 		{ $fldId = 'contPr/cp/swprGen';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }

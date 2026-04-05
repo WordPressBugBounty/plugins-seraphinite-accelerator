@@ -1156,7 +1156,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.2' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.3' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1536,7 +1536,7 @@ function GetDropinLockedFileContent( $sett, $sLock, $init = true, $bAllMultisite
 	{
 		$contNew = 'define( \'SERAPH_ACCEL_ADVCACHE_COMP\', true );' . "\n" . $contNew;
 		if( $sLock == 'batcache' )
-			$contNew .= '$batcache[ \'cache_control\' ] = false; $batcache[ \'use_stale\' ] = false; $batcache[ \'times\' ] = 1; $batcache[ \'unique\' ][] = !empty( $_SERVER[ \'HTTP_USER_AGENT\'] ) && preg_match( \'/(Android|Mobile|iPod|iPhone|MobileSafari|webOS|BlackBerry|windows phone|symbian|vodafone|opera mini|windows ce|smartphone|palm|midp)/i\', $_SERVER[ \'HTTP_USER_AGENT\' ] ) ? \'mobile\' : \'desktop\';';
+			$contNew .= '$batcache[ \'cache_control\' ] = false; $batcache[ \'use_stale\' ] = false; $batcache[ \'times\' ] = 1; if( !empty( $_SERVER[ \'HTTP_USER_AGENT\'] ) && preg_match( \'@(Android|Mobile|iPod|iPhone|MobileSafari|webOS|BlackBerry|windows phone|symbian|vodafone|opera mini|windows ce|smartphone|palm|midp)@i\', $_SERVER[ \'HTTP_USER_AGENT\' ] ) ) $batcache[ \'unique\' ][ \'mobile\' ] = \'dumb\';';
 		$contNew = "\n" . $contNew . "\n";
 	}
 

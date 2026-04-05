@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 195;
+const PLUGIN_SETT_VER								= 196;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1238,6 +1238,26 @@ function OnOptRead_Sett( $sett, $verFrom )
 	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'swprGen' ), true );
 	}
 
+	if( $verFrom && $verFrom < 196 )
+	{
+		{
+			$a = Gen::GetArrField( $sett, array( 'contPr', 'cp', 'slckGen_a' ), array() );
+			foreach( $a as $i => $ai )
+			{
+				$ai[ 'bps' ] = array( 0 => array() );
+				foreach( array( 'slidesToShow', 'slidesToScroll', 'arrows', 'dots', 'infinite', 'centerMode', 'vertical' ) as $fld )
+				{
+					$ai[ 'bps' ][ 0 ][ $fld ] = $ai[ $fld ];
+					unset( $ai[ $fld ] );
+				}
+				$a[ $i ] = $ai;
+			}
+			Gen::SetArrField( $sett, array( 'contPr', 'cp', 'slckGen_a' ), $a );
+		}
+
+		Gen::SetArrField( $sett,array( 'cache', 'cloudflare', 'auth' ), 'token' );
+	}
+
 	return( $sett );
 }
 
@@ -1365,6 +1385,9 @@ function OnOptGetDef_Sett()
 			),
 			'cloudflare' => array(
 				'zoneId' => '',
+				'auth' => 'key',
+				'email' => '',
+				'apiKey' => '',
 				'apiToken' => '',
 			),
 			'nginx' => array(
@@ -4263,7 +4286,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.2 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.3 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5770,7 +5793,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.2';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.3';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -6286,7 +6309,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.2');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.3');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )
@@ -6418,10 +6441,33 @@ function BatCache_Clear( $url = null )
 	if( ($urlComps[ 'scheme' ]??'') == 'https' )
 		$keys[ 'ssl' ] = true;
 
-	foreach( array( 'mobile', 'tablet', 'desktop' ) as $deviceType )
+	foreach( array( null, array( 'mobile-force', 'true' ), array( 'mobile-force', 'false' ) ) as $kv1 )
 	{
-		$keys[ 'extra' ] = array( $deviceType );
-		wp_cache_delete( md5( serialize( $keys ) ), $batcache -> group );
+		if( $kv1 )
+			$keys[ 'extra' ][ $kv1[ 0 ] ] = $kv1[ 1 ];
+
+		foreach( array( null, array( 'mobile', 'blackberry' ), array( 'mobile', 'windows-phone7' ), array( 'mobile', 'dumb' ), array( 'mobile', 'iphone' ), array( 'mobile', 'smart' ) ) as $kv2 )
+		{
+			if( $kv2 )
+				$keys[ 'extra' ][ $kv2[ 0 ] ] = $kv2[ 1 ];
+
+			foreach( array( null, array( 'ipad', 'ipad-safari' ), array( 'ipad', 'ipad' ), array( 'tablet', 'tablet' ) ) as $kv3 )
+			{
+				if( $kv3 )
+					$keys[ 'extra' ][ $kv3[ 0 ] ] = $kv3[ 1 ];
+
+				wp_cache_delete( md5( serialize( $keys ) ), $batcache -> group );
+
+				if( $kv3 )
+					unset( $keys[ 'extra' ][ $kv3[ 0 ] ] );
+			}
+
+			if( $kv2 )
+				unset( $keys[ 'extra' ][ $kv2[ 0 ] ] );
+		}
+
+		if( $kv1 )
+			unset( $keys[ 'extra' ][ $kv1[ 0 ] ] );
 	}
 
 	return( true );

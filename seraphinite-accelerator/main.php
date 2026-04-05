@@ -42,7 +42,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.29.2', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.29.3', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -1286,7 +1286,7 @@ function _OnUpdateGeoDb_Mm_Finish()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.2' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.3' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1473,7 +1473,7 @@ function _ManagePage()
 
 					echo( Ui::TagOpen( 'div', array( 'class' => 'blck' ) ) );
 					{
-						echo( Ui::Tag( 'p', Ui::TextBox( 'seraph_accel_urlCheck', '', array( 'class' => 'url', 'style' => array( 'width' => '100%' ) ), true ) ) );
+						echo( Ui::Tag( 'p', Ui::TextBox( 'seraph_accel_urlCheck', '', array( 'class' => 'url', 'placeholder' => Wp::GetSiteRootUrl(), 'style' => array( 'width' => '100%' ) ), true ) ) );
 
 						echo( Ui::Tag( 'div',
 							Ui::CheckBox( esc_html_x( 'LiteChk', 'admin.Manage_HtmlChecker_Fix', 'seraphinite-accelerator' ), null, true, false, array( 'class' => array( 'ctlSpaceAfter', 'ctlSpaceVAfter' ) ), null, array( 'class' => array( 'liteChk' ) ) ) .
@@ -1482,10 +1482,14 @@ function _ManagePage()
 						) );
 
 						echo( Ui::Tag( 'p',
-							Ui::Button( esc_html_x( 'Check', 'admin.Manage_Operate', 'seraphinite-accelerator' ), true, null, null, 'button', array( 'class' => array( 'ns-all', 'ns-uri', 'ctlSpaceAfter', 'ctlVaMiddle' ), 'style' => array( 'min-width' => '7em' ), 'onclick' => 'seraph_accel.Manager._int.OnHtmlCheck( this );return false;' ) ) .
+							Ui::Button( esc_html_x( 'Check', 'admin.Manage_HtmlChecker', 'seraphinite-accelerator' ), true, null, null, 'button', array( 'class' => array( 'ns-all', 'ns-uri', 'ctlSpaceAfter', 'ctlVaMiddle' ), 'style' => array( 'min-width' => '7em' ), 'onclick' => 'seraph_accel.Manager._int.OnHtmlCheck( this );return false;' ) ) .
 							Ui::Spinner( false, array( 'class' => 'ctlVaMiddle', 'style' => array( 'display' => 'none' ) ) )
 						) );
 
+						echo( Ui::Label( esc_html_x( 'InfoLbl', 'admin.Manage_HtmlChecker', 'seraphinite-accelerator' ) ) );
+						echo( Ui::Tag( 'div', null, array( 'class' => 'seraph_accel_textarea info', 'style' => array( 'overflow' => 'scroll', 'min-height' => '7em', 'height' => '7em', 'max-height' => '100em', 'resize' => 'vertical' ) ) ) );
+
+						echo( Ui::Label( esc_html_x( 'HtmlLogLbl', 'admin.Manage_HtmlChecker', 'seraphinite-accelerator' ) ) );
 						echo( Ui::Tag( 'div', null, array( 'class' => 'seraph_accel_textarea messages', 'style' => array( 'overflow' => 'scroll', 'min-height' => '7em', 'height' => '7em', 'max-height' => '100em', 'resize' => 'vertical' ) ) ) );
 					}
 					echo( Ui::TagClose( 'div' ) );
@@ -1528,7 +1532,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.29.2' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.29.3' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -2585,16 +2589,6 @@ function OnAdminApi_CacheOpCancel( $args )
 	return( CacheOpCancel( @intval( ($args[ 'op' ]??'0') ) ) );
 }
 
-function _HtmlCheck_NrmUrlForCheck( $url )
-{
-	$a = Net::UrlParse( $url );
-	if( !$a )
-		return( $url );
-
-	$a[ 'path' ] = Gen::SetLastSlash( ($a[ 'path' ]??'') );
-	return( Net::UrlDeParse( $a, Net::URLPARSE_F_PRESERVEEMPTIES, array( PHP_URL_SCHEME, PHP_URL_USER, PHP_URL_PASS ) ) );
-}
-
 function OnAdminApi_HtmlCheck( $args )
 {
 	if( !current_user_can( 'manage_options' ) )
@@ -2603,25 +2597,37 @@ function OnAdminApi_HtmlCheck( $args )
 	Gen::SetTimeLimit( 300 );
 	Gen::GarbageCollectorEnable( false );
 
-	$url = Wp::SanitizeUrl( ($args[ 'url' ]??null) );
-	if( strpos( $url, '//' ) === 0 )
-		$url = 'http:' . $url;
-	else if( strpos( $url, '://' ) === false )
-		$url = 'http://' . $url;
+	$aUrlSite = Net::UrlParse( Wp::GetSiteRootUrl() );
+	$aUrl = Net::UrlParse( Wp::SanitizeUrl( ($args[ 'url' ]??null) ) );
+	if( !($aUrl[ 'scheme' ]??null) )
+		$aUrl[ 'scheme' ] = ($aUrlSite[ 'scheme' ]??'http');
+	if( !($aUrl[ 'host' ]??null) )
+	{
+		$aUrl[ 'host' ] = ($aUrlSite[ 'host' ]??'');
+		if( isset( $aUrlSite[ 'port' ] ) )
+			$aUrl[ 'port' ] = $aUrlSite[ 'port' ];
+	}
+	if( !isset( $aUrl[ 'path' ] ) )
+		$aUrl[ 'path' ] = ($aUrlSite[ 'path' ]??'');
 
-	if( !Gen::StrStartsWith( _HtmlCheck_NrmUrlForCheck( $url ), _HtmlCheck_NrmUrlForCheck( Wp::GetSiteRootUrl() ) ) )
+	$url = Net::UrlDeParse( $aUrl );
+
+	if( ($aUrl[ 'host' ]??null) != ($aUrlSite[ 'host' ]??null) || ($aUrl[ 'port' ]??null) != ($aUrlSite[ 'port' ]??null) )
+		return( array( 'err' => 'access_denied' ) );
+	if( !Gen::StrStartsWith( Gen::SetLastSlash( ($aUrl[ 'path' ]??'') ), Gen::SetLastSlash( ($aUrlSite[ 'path' ]??'') ) ) )
 		return( array( 'err' => 'access_denied' ) );
 
 	$requestRes = Wp::RemoteGet( $url, array( 'timeout' => 15, 'sslverify' => false ) );
 	if( is_wp_error( $requestRes ) )
 		return( array( 'err' => $requestRes -> get_error_message() ) );
 
-	$validationErrors = array();
+	$info = '';
+	$aValidationError = array();
 
-	if( !$validationErrors )
-		$validationErrors[] = array( 'severity' => 'success', 'text' => esc_html_x( 'Ok', 'admin.Manage_HtmlChecker_Msg', 'seraphinite-accelerator' ) );
+	if( !$aValidationError )
+		$aValidationError[] = array( 'severity' => 'success', 'text' => esc_html_x( 'Ok', 'admin.Manage_HtmlChecker_Msg', 'seraphinite-accelerator' ) );
 
-	return( array( 'err' => '', 'list' => $validationErrors ) );
+	return( array( 'err' => '', 'info' => $info, 'list' => $aValidationError ) );
 }
 
 function OnAdminApi_LogClear( $args )

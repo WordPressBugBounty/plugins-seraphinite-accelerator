@@ -2239,6 +2239,13 @@ class Gen
 		return( ( float )$v[ 'ru_utime.tv_sec' ] + $v[ 'ru_utime.tv_usec' ] / ( 1000 * 1000 ) );
 	}
 
+	static function Explode( $separator, $string, $limit = PHP_INT_MAX )
+	{
+		if( !strlen( $string ) )
+			return( array() );
+		return( explode( $separator, $string, $limit ) );
+	}
+
 	static private $_lastErrDsc = null;
 	static private $_fnGetTmpDir = null;
 }
@@ -3953,7 +3960,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.3';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.4';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

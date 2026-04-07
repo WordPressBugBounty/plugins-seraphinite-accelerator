@@ -42,7 +42,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.29.3', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.29.4', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -1004,7 +1004,7 @@ function _OnCheckUpdateGlob()
 		$txt .= ' due to ' . implode( ', ', array_map(
 			function( $v )
 			{
-				static $g_aReason = array( 'term' => 'taxonomie(s)', 'menu' => 'menu(s)', 'elmntrTpl' => 'Elementor template(s)', 'tblPrss' => 'TablePress table(s)', 'flntFrm' => 'Fluent form(s)' );
+				static $g_aReason = array( 'term' => 'taxonomie(s)', 'menu' => 'menu(s)', 'tpl' => 'template(s)', 'elmntrTpl' => 'Elementor template(s)', 'tblPrss' => 'TablePress table(s)', 'flntFrm' => 'Fluent form(s)' );
 				return( ($g_aReason[ $v ]??'UNK') );
 			}
 		, array_keys( $seraph_accel_g_globUpdated ) ) ) . ' changed; scope: all';
@@ -1286,7 +1286,7 @@ function _OnUpdateGeoDb_Mm_Finish()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.3' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.4' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1487,7 +1487,7 @@ function _ManagePage()
 						) );
 
 						echo( Ui::Label( esc_html_x( 'InfoLbl', 'admin.Manage_HtmlChecker', 'seraphinite-accelerator' ) ) );
-						echo( Ui::Tag( 'div', null, array( 'class' => 'seraph_accel_textarea info', 'style' => array( 'overflow' => 'scroll', 'min-height' => '7em', 'height' => '7em', 'max-height' => '100em', 'resize' => 'vertical' ) ) ) );
+						echo( Ui::Tag( 'div', null, array( 'class' => 'seraph_accel_textarea info', 'style' => array( 'overflow' => 'scroll', 'min-height' => '7em', 'height' => '7em', 'max-height' => '100em', 'resize' => 'vertical', 'white-space' => 'nowrap' ) ) ) );
 
 						echo( Ui::Label( esc_html_x( 'HtmlLogLbl', 'admin.Manage_HtmlChecker', 'seraphinite-accelerator' ) ) );
 						echo( Ui::Tag( 'div', null, array( 'class' => 'seraph_accel_textarea messages', 'style' => array( 'overflow' => 'scroll', 'min-height' => '7em', 'height' => '7em', 'max-height' => '100em', 'resize' => 'vertical' ) ) ) );
@@ -1532,7 +1532,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.29.3' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.29.4' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -2621,11 +2621,181 @@ function OnAdminApi_HtmlCheck( $args )
 	if( is_wp_error( $requestRes ) )
 		return( array( 'err' => $requestRes -> get_error_message() ) );
 
-	$info = '';
 	$aValidationError = array();
 
 	if( !$aValidationError )
 		$aValidationError[] = array( 'severity' => 'success', 'text' => esc_html_x( 'Ok', 'admin.Manage_HtmlChecker_Msg', 'seraphinite-accelerator' ) );
+
+	$aInfo = array(
+		'all' => array( 'n' => 0, 'sz' => strlen( $contentRaw ), 'szGz' => strlen( gzencode( $contentRaw ) ) ),
+		'img' => array( 'n' => 0, 'sz' => 0, 'szGz' => 0, 'a' => array() ),
+		'svgInl' => array( 'n' => 0, 'sz' => 0, 'szGz' => 0, 'a' => array() ),
+		'jsInl' => array( 'n' => 0, 'sz' => 0, 'szGz' => 0, 'a' => array() ),
+		'cssInl' => array( 'n' => 0, 'sz' => 0, 'szGz' => 0, 'a' => array() ),
+	);
+
+	for( $item = null; $item = HtmlNd::GetNextTreeChild( $doc, $item );  )
+	{
+		if( $item -> nodeType != XML_ELEMENT_NODE )
+		    continue;
+
+		$aInfo[ 'all' ][ 'n' ] += 1;
+
+		if( $item -> nodeName == 'img' )
+		{
+			$aInfo[ 'img' ][ 'n' ] += 1;
+
+			$cont = HtmlNd::DeParse( $item );
+			$ia = array( 'sz' => strlen( $cont ), 'szGz' => strlen( gzencode( $cont ) ), 'item' => $item );
+			$aInfo[ 'img' ][ 'sz' ] += $ia[ 'sz' ];
+			$aInfo[ 'img' ][ 'szGz' ] += $ia[ 'szGz' ];
+			unset( $cont );
+
+			$aInfo[ 'img' ][ 'a' ][] = $ia;
+		}
+		else if( $item -> nodeName == 'svg' )
+		{
+			$aInfo[ 'svgInl' ][ 'n' ] += 1;
+
+			$cont = HtmlNd::DeParse( $item );
+			$ia = array( 'sz' => strlen( $cont ), 'szGz' => strlen( gzencode( $cont ) ), 'item' => $item );
+			$aInfo[ 'svgInl' ][ 'sz' ] += $ia[ 'sz' ];
+			$aInfo[ 'svgInl' ][ 'szGz' ] += $ia[ 'szGz' ];
+			unset( $cont );
+
+			$aInfo[ 'svgInl' ][ 'a' ][] = $ia;
+		}
+		else if( $item -> nodeName == 'script' )
+		{
+			if( !$item -> getAttribute( 'src' ) )
+			{
+				$aInfo[ 'jsInl' ][ 'n' ] += 1;
+
+				$ia = array( 'sz' => strlen( $item -> nodeValue ), 'szGz' => strlen( gzencode( $item -> nodeValue ) ), 'item' => $item );
+				$aInfo[ 'jsInl' ][ 'sz' ] += $ia[ 'sz' ];
+				$aInfo[ 'jsInl' ][ 'szGz' ] += $ia[ 'szGz' ];
+
+				$aInfo[ 'jsInl' ][ 'a' ][] = $ia;
+			}
+		}
+		else if( $item -> nodeName == 'style' )
+		{
+			$aInfo[ 'cssInl' ][ 'n' ] += 1;
+
+			$ia = array( 'sz' => strlen( $item -> nodeValue ), 'szGz' => strlen( gzencode( $item -> nodeValue ) ), 'item' => $item );
+			$aInfo[ 'cssInl' ][ 'sz' ] += $ia[ 'sz' ];
+			$aInfo[ 'cssInl' ][ 'szGz' ] += $ia[ 'szGz' ];
+
+			$aInfo[ 'cssInl' ][ 'a' ][] = $ia;
+		}
+	}
+
+	foreach( array( 'svgInl', 'jsInl', 'cssInl' ) as $fld )
+		usort( $aInfo[ $fld ][ 'a' ], function( $a, $b ) { return( -1 * Gen::VarCmp( $a[ 'sz' ], $b[ 'sz' ] ) ); } );
+
+	$ctxProcess = array();
+	$ctxProcess[ 'requestUriPath' ] = $aUrl[ 'path' ];
+	$ctxProcess[ 'siteRootUri' ] = '';
+
+	$bSzGzAllWarn = $aInfo[ 'all' ][ 'szGz' ] > 150 * 1024;
+
+	$info = '';
+	foreach( $aInfo as $k => $aiInfo )
+	{
+		$info .= '<strong style="font-size: 1.2em;">';
+		if( $k == 'all' )
+			$info .= 'All elements';
+		else if( $k == 'img' )
+			$info .= 'IMGs';
+		else if( $k == 'svgInl' )
+			$info .= 'SVGs (inlined)';
+		else if( $k == 'jsInl' )
+			$info .= 'Scripts (inlined)';
+		else if( $k == 'cssInl' )
+			$info .= 'Styles (inlined)';
+		$info .= '</strong><br>';
+
+		$szPercent = ( int )round( $aiInfo[ 'sz' ] / $aInfo[ 'all' ][ 'sz' ] * 100 );
+		$szGzPercent = ( int )round( $aiInfo[ 'szGz' ] / $aInfo[ 'all' ][ 'szGz' ] * 100 );
+
+		$info .= 'Count: ' . $aiInfo[ 'n' ] . '<br>';
+		$info .= 'Size: ' . size_format( $aiInfo[ 'sz' ], 1 );
+		if( $k != 'all' )
+		{
+			$info .= ' (' . $szPercent . '%)';
+		}
+		$info .= '<br>';
+		$info .= 'Size (compressed): ';
+
+		if( $k == 'all' && $bSzGzAllWarn )
+			$info .= $fmtWarnSize_Open;
+		$info .= size_format( $aiInfo[ 'szGz' ], 1 );
+		if( $k == 'all' && $bSzGzAllWarn )
+			$info .= $fmtWarnSize_Close;
+
+		if( $k != 'all' )
+		{
+			$bWarn = $bSzGzAllWarn && $szGzPercent > 20;
+			if( $bWarn )
+				$info .= $fmtWarnSize_Open;
+			$info .= ' (' . $szGzPercent . '%)';
+			if( $bWarn )
+				$info .= $fmtWarnSize_Close;
+		}
+		$info .= '<br>';
+
+		if( $a = ($aiInfo[ 'a' ]??null) )
+		{
+			$info .= '<br><u>Elements:</u><br>';
+
+			foreach( $a as $i => $ia )
+			{
+				if( $i > 10 )
+				{
+					$info .= '...<br>';
+					break;
+				}
+
+				$szPercent = ( int )round( $ia[ 'sz' ] / $aInfo[ 'all' ][ 'sz' ] * 100 );
+				$szGzPercent = ( int )round( $ia[ 'szGz' ] / $aInfo[ 'all' ][ 'szGz' ] * 100 );
+
+				$info .= 'Size: ' . size_format( $ia[ 'sz' ], 1 );
+				if( $k != 'all' )
+				{
+					$info .= ' (' . $szPercent . '%)';
+				}
+				$info .= ', size (compressed): ' . size_format( $ia[ 'szGz' ], 1 );
+				if( $k != 'all' )
+				{
+					$bWarn = $bSzGzAllWarn && $szGzPercent > 20;
+					if( $bWarn )
+						$info .= $fmtWarnSize_Open;
+					$info .= ' (' . $szGzPercent . '%)';
+					if( $bWarn )
+						$info .= $fmtWarnSize_Close;
+				}
+
+				if( $src = $ia[ 'item' ] -> getAttribute( 'src' ) )
+					$srcInfo = GetSrcAttrInfo( $ctxProcess, null, null, $src );
+				else
+					$srcInfo = null;
+				$info .= ', location: ' . GetSourceItemTracePath( $ctxProcess, $ia[ 'item' ] -> getNodePath(), $srcInfo, $ia[ 'item' ] -> getAttribute( 'id' ) );
+
+				$cont = str_replace( array( "\r", "\n" ), array( '', ' ' ), HtmlNd::DeParse( $ia[ 'item' ] ) );
+				if( $bContCut = ( mb_strlen( $cont ) > 8 * 100 ) )
+					$cont = mb_substr( $cont, 0, 8 * 100 );
+
+				$info .= ', content: ';
+				$info .= Ui::TagOpen( 'pre', array( 'style' => array( 'display' => 'inline' ) ) );
+				$info .= $fmtSrc_Open . Ui::EscHtml( $cont, true ) . $fmtSrc_Close . ( $bContCut ? '...' : '' );
+				$info .= Ui::TagClose( 'pre' );
+
+				$info .= '<br>';
+			}
+		}
+
+		$info .= '<br>';
+	}
 
 	return( array( 'err' => '', 'info' => $info, 'list' => $aValidationError ) );
 }

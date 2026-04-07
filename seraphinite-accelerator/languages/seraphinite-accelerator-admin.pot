@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.29.3)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.29.3\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.29.4)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.29.4\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.29.3)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.29.3\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.29.4)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.29.4\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -629,14 +629,17 @@ msgctxt "admin.Manage_HtmlChecker_Fix"
 msgid "TidyChk"
 msgstr ""
 
+# Check
 msgctxt "admin.Manage_HtmlChecker"
 msgid "Check"
 msgstr ""
 
+# Information:
 msgctxt "admin.Manage_HtmlChecker"
 msgid "InfoLbl"
 msgstr ""
 
+# Messages:
 msgctxt "admin.Manage_HtmlChecker"
 msgid "HtmlLogLbl"
 msgstr ""
@@ -1403,6 +1406,10 @@ msgstr ""
 # Menus
 msgctxt "admin.Settings_Cache_Revalidate_UpdGlobs"
 msgid "MenuChk"
+msgstr ""
+
+msgctxt "admin.Settings_Cache_Revalidate_UpdGlobs"
+msgid "WpTplChk"
 msgstr ""
 
 # Templates of Elementor

@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 197;
+const PLUGIN_SETT_VER								= 198;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1420,7 +1420,7 @@ function OnOptGetDef_Sett()
 			),
 			'updPostMeta' => false,
 			'updPostMetaExcl' => array(
-				'!@^_stock$@ & !@^_stock_status$@ & !@^_low_stock_amount$@',
+				'!@^_stock$@ & !@^_stock_status$@ & !@^_low_stock_amount$@ & !@_price@',
 
 			),
 
@@ -1503,7 +1503,7 @@ function OnOptGetDef_Sett()
 
 			'encs' => array( '', 'gzip', 'deflate', 'compress' ),
 			'dataCompr' => array( 'deflate' ),
-			'dataLvl' => array(),
+			'dataLvl' => array( 1, 2 ),
 			'useDataComprAssets' => true,
 
 			'chunks' => array(
@@ -1937,6 +1937,7 @@ function OnOptGetDef_Sett()
 				'wooPrdQnt' => true,
 				'asClnTlk' => true,
 				'chbsBkngFrm' => true,
+				'jegElmntr' => true,
 			),
 
 			'lazy' => array(
@@ -3341,7 +3342,7 @@ function CacheDscUpdate( $lock, $settCache, $content, $deps, $subParts, $dataPat
 					$oiCi = Gen::GetArrField( $dscOld, array( 'p', 0 ) );
 
 				if( $oiCi )
-					foreach( glob( $dataPath . '/' . $oiCi . '.html*', GLOB_NOSORT ) as $file )
+					foreach( glob( $dataPath . '/' . CacheCgif( $settCache, $oiCi ) . '.html*', GLOB_NOSORT ) as $file )
 						@unlink( $file );
 			}
 		}
@@ -4290,7 +4291,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.4 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.5 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5797,7 +5798,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.4';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.5';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -6313,7 +6314,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.4');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.5');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

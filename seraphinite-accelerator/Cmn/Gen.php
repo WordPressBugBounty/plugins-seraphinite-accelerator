@@ -712,6 +712,23 @@ class Gen
 		return( false );
 	}
 
+	static function IsOsDirSepBackSlash()
+	{
+		static $g_bIsOsDirSepBackSlash;
+
+		if( $g_bIsOsDirSepBackSlash === null )
+			$g_bIsOsDirSepBackSlash = stristr( PHP_OS, 'win' );
+
+		return( $g_bIsOsDirSepBackSlash );
+	}
+
+	static function GetNormalizedSlashPath( $path )
+	{
+		if( Gen::IsOsDirSepBackSlash() )
+			$path = str_replace( '\\', '/', $path );
+		return( $path );
+	}
+
 	static function GetNormalizedPath( $path )
 	{
 		$path = str_replace( '\\', '/', $path );
@@ -758,13 +775,13 @@ class Gen
 		if( $recurse )
 		{
 			foreach( $iterator as $file )
-				if( call_user_func_array( $cb, array( $file -> getPath(), $file -> getFilename(), &$ctx ) ) === false )
+				if( call_user_func_array( $cb, array( Gen::GetNormalizedSlashPath( $file -> getPath() ), $file -> getFilename(), &$ctx ) ) === false )
 					return( false );
 		}
 		else
 		{
 			foreach( $iterator as $file )
-				if( !$file -> isDot() && call_user_func_array( $cb, array( $file -> getPath(), $file -> getFilename(), &$ctx ) ) === false )
+				if( !$file -> isDot() && call_user_func_array( $cb, array( Gen::GetNormalizedSlashPath( $file -> getPath() ), $file -> getFilename(), &$ctx ) ) === false )
 					return( false );
 		}
 
@@ -887,6 +904,36 @@ class Gen
 		return( $h );
 	}
 
+	static function FileLock( $h, $wait = true, $mode = LOCK_EX  )
+	{
+		if( $wait === true )
+		{
+			if( @flock( $h, $mode ) )
+				return( Gen::S_OK );
+			return( Gen::E_FAIL );
+		}
+
+		if( @flock( $h, LOCK_NB | $mode ) )
+			return( Gen::S_OK );
+
+		$wait = ( float )$wait;
+
+		while( $wait )
+		{
+			usleep( 250 * 1000 );
+
+			if( @flock( $h, LOCK_NB | $mode ) )
+				return( Gen::S_OK );
+
+			if( $wait > 0.250 )
+				$wait -= 0.250;
+			else
+				$wait = 0.0;
+		}
+
+		return( Gen::E_BUSY );
+	}
+
 	static function FileOpenWithMakeDir( &$h, $filename, $mode, $use_include_path = false )
 	{
 		$h = self::_FileOpen( $filename, $mode, $use_include_path );
@@ -926,13 +973,12 @@ class Gen
 				return( $hr );
 		}
 
-		if( !@flock( $h, ( $wait ? 0 : LOCK_NB ) | LOCK_EX ) )
-		{
-			@fclose( $h );
-			$h = null;
-			return( $wait ? Gen::E_FAIL : Gen::E_BUSY );
-		}
+		$hr = Gen::FileLock( $h, $wait );
+		if( $hr == Gen::S_OK )
+			return( Gen::S_OK );
 
+		@fclose( $h );
+		$h = null;
 		return( $hr );
 	}
 
@@ -2352,45 +2398,14 @@ class Lock
 		if( !$this -> h )
 			return( false );
 
-		if( $wait === true )
-		{
-			if( @flock( $this -> h, $mode ) )
-			{
-				$this -> mode |= 2;
-				return( true );
-			}
-
-			$this -> Release();
-			$this -> hr = Gen::E_FAIL;
-			return( false );
-		}
-
-		if( @flock( $this -> h, LOCK_NB | $mode ) )
+		$this -> hr = Gen::FileLock( $this -> h, $wait, $mode );
+		if( $this -> hr == Gen::S_OK )
 		{
 			$this -> mode |= 2;
 			return( true );
 		}
 
-		$wait = ( float )$wait;
-
-		while( $wait )
-		{
-			usleep( 250 * 1000 );
-
-			if( @flock( $this -> h, LOCK_NB | $mode ) )
-			{
-				$this -> mode |= 2;
-				return( true );
-			}
-
-			if( $wait > 0.250 )
-				$wait -= 0.250;
-			else
-				$wait = 0.0;
-		}
-
 		$this -> Release();
-		$this -> hr = Gen::E_BUSY;
 		return( false );
 	}
 
@@ -3960,7 +3975,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.4';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.5';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

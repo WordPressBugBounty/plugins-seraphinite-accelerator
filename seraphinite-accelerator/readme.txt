@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.9
-Stable tag: 2.29.4
+Stable tag: 2.29.5
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -163,6 +163,16 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.29.5 =
+
+Improvements:
+
+* Preventing random content to avoid cache growing: Jeg Kit for Elementor.
+
+Fixes:
+
+* Infinite lock at 'at' file.
 
 = 2.29.4 =
 
@@ -854,10 +864,6 @@ Improvements:
 * Warning about wrong 'seraph-accel-img-compr-redir.conf' can be shown while using on multisite.
 
 = 2.27.2 =
-
-Improvements:
-
-* Cache clearing of Pressable.
 
 Fixes:
 

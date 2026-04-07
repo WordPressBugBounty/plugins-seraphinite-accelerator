@@ -316,7 +316,7 @@ class PluginRmtCfg
 			$args[ 'epid' ] = Wp::GetSiteId();
 			$args[ 'id' ] = 'wordpress-accelerator';
 			$args[ 'name' ] = 'Accelerator';
-			$args[ 'v' ] = '2.29.4';
+			$args[ 'v' ] = '2.29.5';
 			$args[ 'pk' ] = 'Base';
 			$args[ 'cfg' ] = '';
 			$args[ 'loc' ] = Wp::GetLocale();
@@ -338,11 +338,11 @@ class PluginRmtCfg
 		if( $lastCheckPackage === null && $lastCheckVer !== null )
 			$lastCheckPackage = 'Base';
 
-		if( $lastCheckVer !== '2.29.4' || $lastCheckPackage !== 'Base' )
+		if( $lastCheckVer !== '2.29.5' || $lastCheckPackage !== 'Base' )
 		{
 			$state = Plugin::StateGet();
 
-			if( $lastCheckVer !== '2.29.4' && !isset( $state[ 'changeVerCheck' ] ) )
+			if( $lastCheckVer !== '2.29.5' && !isset( $state[ 'changeVerCheck' ] ) )
 			{
 				$state[ 'changeVerCheck' ] = $lastCheckVer !== null ? $lastCheckVer : '';
 				Plugin::StateSet( $state );
@@ -359,7 +359,7 @@ class PluginRmtCfg
 
 		if( !$bForce )
 		{
-			if( $bFirstTimeOnly && $lastCheckVer == '2.29.4' )
+			if( $bFirstTimeOnly && $lastCheckVer == '2.29.5' )
 				return( Gen::S_FALSE );
 
 			$lastUpdTime = ($data[ 'updTime' ]??null);
@@ -378,7 +378,7 @@ class PluginRmtCfg
 			$args[ 'epid' ] = Wp::GetSiteId();
 			$args[ 'id' ] = 'wordpress-accelerator';
 			$args[ 'name' ] = 'Accelerator';
-			$args[ 'v' ] = '2.29.4';
+			$args[ 'v' ] = '2.29.5';
 			$args[ 'pk' ] = 'Base';
 			$args[ 'cfg' ] = '';
 			$args[ 'loc' ] = Wp::GetLocale();
@@ -395,7 +395,7 @@ class PluginRmtCfg
 			if( $data[ 'mdfTime' ] >= $timeMdf )
 			{
 				$data[ 'updTime' ] = $curUpdTime;
-				$data[ 'plgVer' ] = '2.29.4';
+				$data[ 'plgVer' ] = '2.29.5';
 				$data[ 'plgPk' ] = 'Base';
 
 				$hr = PluginOptions::Set( self::STG_VER, self::STG_ID, $data, __CLASS__ . '::' );
@@ -412,7 +412,7 @@ class PluginRmtCfg
 
 		$data[ 'mdfTime' ] = $timeMdf;
 		$data[ 'updTime' ] = $curUpdTime;
-		$data[ 'plgVer' ] = '2.29.4';
+		$data[ 'plgVer' ] = '2.29.5';
 		$data[ 'plgPk' ] = 'Base';
 
 		if( $timeMdf )
@@ -812,7 +812,7 @@ class Plugin
 	{
 
 		$dataItem = null; $hTaskCtl = null;
-		if( Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), true, 'cb+' ) == Gen::S_OK )
+		if( Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), 5, 'cb+' ) == Gen::S_OK )
 		{
 			$data = Gen::GetArrField( @unserialize( ( string )Gen::FileContentExclusive_Get( $h ) ), array( 'data' ), array() );
 			$dataItem = self::_AsyncTaskCut( $data, $taskName, $taskRunTime );
@@ -821,13 +821,18 @@ class Plugin
 			{
 				if( !Gen::FileContentExclusive_Put( $h, $data ? @serialize( array( 'data' => $data ) ) : '' ) )
 					$dataItem = null;
-				else if( isset( $dataItem[ 's' ] ) && Gen::FileContentExclusive_Open( $hTaskCtl, OnAsyncTasksGetFile() . $dataItem[ 's' ], true, 'cb+' ) != Gen::S_OK )
+				else if( isset( $dataItem[ 's' ] ) && Gen::FileContentExclusive_Open( $hTaskCtl, OnAsyncTasksGetFile() . $dataItem[ 's' ], 5, 'cb+' ) != Gen::S_OK )
+				{
+					Gen::CallFunc( 'seraph_accel\\LogWrite', array( 'Can\'t lock \'' . OnAsyncTasksGetFile() . $dataItem[ 's' ] . '\' file within 5 seconds', Ui::MsgErr, 'AsyncTasks' ) );
 					$dataItem = null;
+				}
 			}
 
 			Gen::FileContentExclusive_Close( $h );
 			unset( $h );
 		}
+		else
+			Gen::CallFunc( 'seraph_accel\\LogWrite', array( 'Can\'t lock \'' . OnAsyncTasksGetFile() . '\' file within 5 seconds', Ui::MsgErr, 'AsyncTasks' ) );
 
 		if( $dataItem )
 		{
@@ -838,7 +843,7 @@ class Plugin
 				Gen::FileContentExclusive_Close( $hTaskCtl );
 				Gen::Unlink( OnAsyncTasksGetFile() . $dataItem[ 's' ] );
 
-				if( Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), true, 'cb+' ) == Gen::S_OK )
+				if( Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), 5, 'cb+' ) == Gen::S_OK )
 				{
 					$data = Gen::GetArrField( @unserialize( ( string )Gen::FileContentExclusive_Get( $h ) ), array( 'data' ), array() );
 					if( self::_AsyncTaskCut( $data, $taskName, $taskRunTime, true ) )
@@ -846,6 +851,8 @@ class Plugin
 					Gen::FileContentExclusive_Close( $h );
 					unset( $h );
 				}
+				else
+					Gen::CallFunc( 'seraph_accel\\LogWrite', array( 'Can\'t lock \'' . OnAsyncTasksGetFile() . '\' file within 5 seconds', Ui::MsgErr, 'AsyncTasks' ) );
 			}
 		}
 
@@ -874,7 +881,7 @@ class Plugin
 		}
 
 		$dataItem = null;
-		if( Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), true, 'cb+' ) == Gen::S_OK )
+		if( Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), 5, 'cb+' ) == Gen::S_OK )
 		{
 			$data = Gen::GetArrField( @unserialize( ( string )Gen::FileContentExclusive_Get( $h ) ), array( 'data' ), array() );
 			$dataItem = self::_AsyncTaskGetNextRun( $data, false, $cbFilter, $changed );
@@ -884,6 +891,8 @@ class Plugin
 			Gen::FileContentExclusive_Close( $h );
 			unset( $h );
 		}
+		else
+			Gen::CallFunc( 'seraph_accel\\LogWrite', array( 'Can\'t lock \'' . OnAsyncTasksGetFile() . '\' file within 5 seconds', Ui::MsgErr, 'AsyncTasks' ) );
 
 		if( $dataItem && $push )
 		{
@@ -929,7 +938,7 @@ class Plugin
 		{
 
 			$dataItem = null;
-			if( Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), true, 'cb+' ) == Gen::S_OK )
+			if( Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), 5, 'cb+' ) == Gen::S_OK )
 			{
 				$data = Gen::GetArrField( @unserialize( ( string )Gen::FileContentExclusive_Get( $h ) ), array( 'data' ), array() );
 				$dataItem = self::_AsyncTaskGetNextRun( $data, true, $cbFilter, $changed );
@@ -939,6 +948,8 @@ class Plugin
 				Gen::FileContentExclusive_Close( $h );
 				unset( $h );
 			}
+			else
+				Gen::CallFunc( 'seraph_accel\\LogWrite', array( 'Can\'t lock \'' . OnAsyncTasksGetFile() . '\' file within 5 seconds', Ui::MsgErr, 'AsyncTasks' ) );
 
 			if( $dataItem )
 			{
@@ -1117,9 +1128,12 @@ class Plugin
 		if( !is_array( $args ) )
 			$args = array();
 
-		$hr = Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), true, 'cb+' );
+		$hr = Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), 5, 'cb+' );
 		if( !$h )
+		{
+			Gen::CallFunc( 'seraph_accel\\LogWrite', array( 'Can\'t lock \'' . OnAsyncTasksGetFile() . '\' file within 5 seconds', Ui::MsgErr, 'AsyncTasks' ) );
 			return( $hr );
+		}
 
 		$data = Gen::GetArrField( @unserialize( Gen::FileContentExclusive_Get( $h, '' ) ), array( 'data' ), array() );
 		if( $singleton )
@@ -1180,9 +1194,12 @@ class Plugin
 
 	static function AsyncTaskDel( $name, $args = null, $singleton = false )
 	{
-		$hr = Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), true, 'cb+' );
+		$hr = Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), 5, 'cb+' );
 		if( !$h )
+		{
+			Gen::CallFunc( 'seraph_accel\\LogWrite', array( 'Can\'t lock \'' . OnAsyncTasksGetFile() . '\' file within 5 seconds', Ui::MsgErr, 'AsyncTasks' ) );
 			return( $hr );
+		}
 
 		$blogIdCur = self::_AsyncTask_GetCurBlogId();
 
@@ -1217,9 +1234,12 @@ class Plugin
 
 	static function AsyncTaskGetTime( $name, $args = null, $singleton = false )
 	{
-		Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), true, 'cb+' );
+		Gen::FileContentExclusive_Open( $h, OnAsyncTasksGetFile(), 5, 'cb+' );
 		if( !$h )
+		{
+			Gen::CallFunc( 'seraph_accel\\LogWrite', array( 'Can\'t lock \'' . OnAsyncTasksGetFile() . '\' file within 5 seconds', Ui::MsgErr, 'AsyncTasks' ) );
 			return( false );
+		}
 
 		$blogIdCur = self::_AsyncTask_GetCurBlogId();
 
@@ -1541,10 +1561,10 @@ class Plugin
 		$rmtCfg = PluginRmtCfg::Get();
 
 		$urlProductInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlProductInfo' );
-		$urlAboutPluginImg = file_exists( __DIR__ . '/../Images/ProductLogo.png' ) ? add_query_arg( array( 'v' => '2.29.4' ), Plugin::FileUri( '../Images/ProductLogo.png', __FILE__ ) ) : null;
+		$urlAboutPluginImg = file_exists( __DIR__ . '/../Images/ProductLogo.png' ) ? add_query_arg( array( 'v' => '2.29.5' ), Plugin::FileUri( '../Images/ProductLogo.png', __FILE__ ) ) : null;
 		$urlAboutPluginDocs = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlProductDocs' );
 		$urlAboutPluginSupport = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlProductSupport' );
-		$url3rdPartySoft = file_exists( __DIR__ . '/../third-party-software.html' ) ? add_query_arg( array( 'v' => '2.29.4' ), Plugin::FileUri( '../third-party-software.html', __FILE__ ) ) : null;
+		$url3rdPartySoft = file_exists( __DIR__ . '/../third-party-software.html' ) ? add_query_arg( array( 'v' => '2.29.5' ), Plugin::FileUri( '../third-party-software.html', __FILE__ ) ) : null;
 
 		$urlEula = null;
 
@@ -1553,7 +1573,7 @@ class Plugin
 		$res .= Ui::Tag( 'p' );
 
 		{
-			$version = esc_html( '2.29.4' );
+			$version = esc_html( '2.29.5' );
 
 			$res .= Ui::TagOpen( 'div' );
 
@@ -1602,7 +1622,7 @@ class Plugin
 	{
 		$rmtCfg = PluginRmtCfg::Get();
 
-		$urlAboutUsLogoImg = file_exists( __DIR__ . '/../Images/VendorLogo.png' ) ? add_query_arg( array( 'v' => '2.29.4' ), Plugin::FileUri( '../Images/VendorLogo.png', __FILE__ ) ) : null;
+		$urlAboutUsLogoImg = file_exists( __DIR__ . '/../Images/VendorLogo.png' ) ? add_query_arg( array( 'v' => '2.29.5' ), Plugin::FileUri( '../Images/VendorLogo.png', __FILE__ ) ) : null;
 		$urlMorePlugins = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlMorePlugins' );
 		$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlMain' );
 
@@ -2131,7 +2151,7 @@ class Plugin
 				return( null );
 
 			$verFrom = self::_PrevVer_GetInt( $plgVerPrev );
-			$verTo = self::_PrevVer_GetInt( '2.29.4' );
+			$verTo = self::_PrevVer_GetInt( '2.29.5' );
 			if( $verTo < $verFrom )
 				list( $verTo, $verFrom ) = array( $verFrom, $verTo );
 
@@ -2256,7 +2276,7 @@ class Plugin
 			if( (self::$g_aAlreadyIncludedObj[ 'css' ][ $id ]??null) )
 				continue;
 
-			wp_enqueue_style( Plugin::CmnScriptId( $id ), add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.css' ), array(), '2.29.4' );
+			wp_enqueue_style( Plugin::CmnScriptId( $id ), add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.css' ), array(), '2.29.5' );
 
 			self::$g_aAlreadyIncludedObj[ 'css' ][ $id ] = true;
 		}
@@ -2323,7 +2343,7 @@ class Plugin
 
 			$scrHndId = Plugin::CmnScriptId( $id );
 
-			wp_register_script( $scrHndId, add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.js' ), $deps, '2.29.4' );
+			wp_register_script( $scrHndId, add_query_arg( Plugin::GetFileUrlPackageParams(), $fileUrl . '/' . $id . '.js' ), $deps, '2.29.5' );
 			if( $id == 'Gen' )
 				Plugin::Loc_ScriptLoad( $scrHndId );
 			wp_enqueue_script( $scrHndId );
@@ -2768,7 +2788,7 @@ class Plugin
 
 							var sendDataUrl = "<?php echo( Gen::GetArrField( $rmtCfg, 'Questionnaires.SendAnswerUrlTpl' ) ); ?>";
 							sendDataUrl = sendDataUrl.replace( "{EndPointId}",					encodeURI( "<?php echo( Wp::GetSiteId() ); ?>" ) );
-							sendDataUrl = sendDataUrl.replace( "{PluginVersion}",				encodeURI( "2.29.4" ) );
+							sendDataUrl = sendDataUrl.replace( "{PluginVersion}",				encodeURI( "2.29.5" ) );
 							sendDataUrl = sendDataUrl.replace( "{PluginMode}",					encodeURI( "base" ) );
 							sendDataUrl = sendDataUrl.replace( "{PluginPackage}",				encodeURI( "Base" ) );
 							sendDataUrl = sendDataUrl.replace( "{QuestionnaireId}",				encodeURI( "<?php echo( ($q[ 'id' ]??null) ); ?>" ) );

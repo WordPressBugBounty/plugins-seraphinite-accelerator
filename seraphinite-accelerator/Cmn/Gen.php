@@ -3968,6 +3968,19 @@ class Net
 		$_SERVER[ 'QUERY_STRING' ] = Net::UrlBuildQuery( $query_string_args );
 	}
 
+	static function CurRequestSetCookies( array $aCookie )
+	{
+		$_COOKIE = $aCookie;
+
+		$_SERVER[ 'HTTP_COOKIE' ] = '';
+		foreach( $_COOKIE as $cookKey => $cookVal )
+		{
+			if( strlen( $_SERVER[ 'HTTP_COOKIE' ] ) )
+				$_SERVER[ 'HTTP_COOKIE' ] .= ';';
+			$_SERVER[ 'HTTP_COOKIE' ] .= $cookKey . '=' . rawurlencode( $cookVal );
+		}
+	}
+
 	static function RemoteRequest( $method, $url, $args = null )
 	{
 		$requestRes = array( 'method' => $method, 'url' => $url, 'response' => array( 'code' => 0, 'message' => '' ), 'headers' => array(), 'body' => '' );
@@ -3975,7 +3988,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.5';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.6';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

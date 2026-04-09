@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 198;
+const PLUGIN_SETT_VER								= 199;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1258,6 +1258,11 @@ function OnOptRead_Sett( $sett, $verFrom )
 		Gen::SetArrField( $sett,array( 'cache', 'cloudflare', 'auth' ), 'token' );
 	}
 
+	if( $verFrom && $verFrom < 199 )
+	{
+	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'elmntrRspnsv' ), false );
+	}
+
 	return( $sett );
 }
 
@@ -1938,6 +1943,7 @@ function OnOptGetDef_Sett()
 				'asClnTlk' => true,
 				'chbsBkngFrm' => true,
 				'jegElmntr' => true,
+				'pys' => true,
 			),
 
 			'lazy' => array(
@@ -2078,6 +2084,7 @@ function OnOptGetDef_Sett()
 				'haCrsl' => true,
 				'jetCrsl' => true,
 				'jetCrslPst' => true,
+				'elmntrRspnsv' => true,
 				'elmntrTabs' => true,
 				'elmntrAccrdn' => true,
 				'elmntrAdvTabs' => true,
@@ -2216,6 +2223,23 @@ function OnOptGetDef_Sett()
 
 				'min' => false,
 				'minExcls' => array(
+					'src:@stripe@',
+
+					'src:@\\.hsforms\\.net\\W@',
+					'body:@window\\.hsFormsOnReady@',
+					'body:@hbspt\\.forms\\.create@',
+
+					'src:@//cdnjs\\.cloudflare\\.com/ajax/libs/bodymovin/[\\d\\.]+/lottie\\.@',
+					'src:@/plugins/zippy-form/public/js/flatpickr\\.@',
+					'id:@^wd-swiper-library-js@',
+					'src:@\\Wtrustedshops\\.com\\W@',
+					'body:@currentScript\\s*\\.\\s*getAttribute\\(\\s*\'data-gt-widget-id\'@',
+
+					'src:@\\.cloudflare\\.com/turnstile/@',
+
+					'id:@^e-sticky-js$@',
+
+					'src:@\\.cookiebot\\.com@',
 				),
 				'other' => array(
 					'incl' => array(
@@ -3957,19 +3981,6 @@ function ContProcGetExclStatus( $siteId, $settCache, $path, $pathOrig, $pathIsDi
 	{
 		$stateCookId = '';
 
-		$viewsGrps = Gen::GetArrField( $settCache, array( 'viewsGrps' ), array() );
-
-		foreach( array_keys( $_COOKIE ) as $cookKey )
-		{
-			$viewStateIdProbe = '';
-			if( ($settCache[ 'views' ]??null) )
-				foreach( $viewsGrps as $viewsGrp )
-					if( ($viewsGrp[ 'enable' ]??null) )
-						AccomulateCookiesState( $viewStateIdProbe, array( $cookKey => $_COOKIE[ $cookKey ] ), Gen::GetArrField( $viewsGrp, array( 'cookies' ), array() ) );
-
-			if( !strlen( $viewStateIdProbe ) )
-				unset( $_COOKIE[ $cookKey ] );
-		}
 	}
 
 	$varsOut[ 'stateCookId' ] = $stateCookId;
@@ -4083,7 +4094,7 @@ function ExprConditionsSet_Match( $expr, $cbMatch )
 	return( ExprConditionsSet_MatchEx( ExprConditionsSet_Parse( $expr ), $cbMatch ) );
 }
 
-function AccomulateCookiesState( &$state, $cookies, $elems )
+function AccomulateCookiesState( &$state, $cookies, $elems, &$aCookieMatched = null )
 {
 	foreach( $elems as $ee )
 	{
@@ -4094,8 +4105,14 @@ function AccomulateCookiesState( &$state, $cookies, $elems )
 
 			$cookieVals = array();
 			foreach( $cookies as $cookKey => $cookVal )
+			{
 				if( $isRegExp ? @preg_match( $e[ 'expr' ], $cookKey ) : Gen::StrStartsWith( $cookKey, $e[ 'expr' ] ) )
+				{
 					$cookieVals[] = $cookVal;
+					if( $aCookieMatched !== null )
+						$aCookieMatched[ $cookKey ] = $cookVal;
+				}
+			}
 			if( !$cookieVals )
 				$cookieVals = array( '' );
 
@@ -4291,7 +4308,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.5 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.6 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5798,7 +5815,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.5';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.6';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -6314,7 +6331,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.5');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.6');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

@@ -312,7 +312,8 @@ function _Process( $sites )
 	$seraph_accel_g_ctxCache = new AnyObj();
 
 	$sessId = $userId ? ($sessInfo[ 'userSessId' ]??null) : ($sessInfo[ 'sessId' ]??null);
-	$viewId = GetCacheViewId( $seraph_accel_g_ctxCache, $settCache, $userAgent, $path, $pathOrig, $args, Gen::StrStartsWith( ( string )$seraph_accel_g_simpCacheMode, 'fragments' ) );
+	$aViewCookieMatched = array();
+	$viewId = GetCacheViewId( $seraph_accel_g_ctxCache, $settCache, $userAgent, $path, $pathOrig, $args, Gen::StrStartsWith( ( string )$seraph_accel_g_simpCacheMode, 'fragments' ), $aViewCookieMatched );
 	$seraph_accel_g_ctxCache -> viewId = $viewId;
 	$cacheRootPath = GetCacheDir();
 	$siteCacheRootPath = $cacheRootPath . '/s/' . $seraph_accel_g_siteId;
@@ -372,6 +373,9 @@ function _Process( $sites )
 
 		$ctxPathId .= '/s/' . $stateCookId;
 	}
+
+	if( !$seraph_accel_g_ctxCache -> isUserSess || $seraph_accel_g_cacheCtxSkip )
+		Net::CurRequestSetCookies( $aViewCookieMatched );
 
 	$objectId = '@';
 	$objectType = 'html';

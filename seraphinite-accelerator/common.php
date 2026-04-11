@@ -2013,7 +2013,7 @@ function OnOptGetDef_Sett()
 					'load' => true,
 					'own' => true,
 					'smoothAppear' => true,
-					'plchRast' => true,
+					'plchRast' => false,
 					'del3rd' => true,
 					'excl' => array(
 
@@ -4308,7 +4308,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.6 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.7 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4456,9 +4456,15 @@ function OnAsyncTask_QueueProcessItems( $args )
 			}
 			else
 			{
-				$hrItemForce = Gen::E_TIMEOUT;
-				if( Gen::GetArrField( ProcessCtlData_Get( $fileCtl ), array( 'remote' ) ) )
-					$hrItemForce = Gen::S_TIMEOUT;
+				$ctlRes = ProcessCtlData_Get( $fileCtl, $isLive );
+
+				if( Gen::GetArrField( $ctlRes, array( 'remote' ) ) )
+				{
+					if( $tmDur > 30 + 30 )
+						$hrItemForce = Gen::S_TIMEOUT;
+				}
+				else if( !$isLive || ( $tmDur > 570 + 30 ) )
+					$hrItemForce = Gen::E_TIMEOUT;
 			}
 
 			if( $hrItemForce == Gen::S_OK )
@@ -4476,8 +4482,9 @@ function OnAsyncTask_QueueProcessItems( $args )
 			{
 				if( Gen::HrFail( $hrItemForce ) )
 				{
-					if( ($data[ 'rdr' ]??0) < 10 )
+					if( ($data[ 'rdr' ]??0) < 3 )
 					{
+
 						$data[ 'rpt' ] = true;
 						if( !isset( $data[ 'rdr' ] ) )
 							$data[ 'rdr' ] = 0;
@@ -4485,8 +4492,9 @@ function OnAsyncTask_QueueProcessItems( $args )
 				}
 				else
 				{
-					if( ($data[ 'rdr' ]??0) < 100 )
+					if( ($data[ 'rdr' ]??0) < 5 )
 					{
+
 						$data[ 'rpt' ] = true;
 						if( !isset( $data[ 'rdr' ] ) )
 							$data[ 'rdr' ] = 0;
@@ -5067,6 +5075,7 @@ class ProcessQueueItemCtx
 			{
 				if( ( $this -> httpCode == 524 || $this -> httpCode == 522 || $this -> httpCode == 504 || $this -> httpCode == 503 ) && ($this -> data[ 'rdr' ]??0) < 4 )
 				{
+
 					$this -> data[ 'rpt' ] = true;
 					if( !isset( $this -> data[ 'rdr' ] ) )
 						$this -> data[ 'rdr' ] = 0;
@@ -5120,6 +5129,7 @@ class ProcessQueueItemCtx
 
 			if( $this -> skipStatus == 'alreadyProcessing' || $this -> skipStatus == 'lrnNeed' )
 			{
+
 				$this -> data[ 'rpt' ] = true;
 				$this -> immediatelyPushQueue = true;
 
@@ -5128,6 +5138,7 @@ class ProcessQueueItemCtx
 			{
 				if( ($this -> data[ 'rdr' ]??0) < 1000000 )
 				{
+
 					$this -> data[ 'rpt' ] = $this -> tmFinish;
 					if( !isset( $this -> data[ 'rdr' ] ) )
 						$this -> data[ 'rdr' ] = 0;
@@ -5815,7 +5826,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.6';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.7';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -6331,7 +6342,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.6');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.7');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

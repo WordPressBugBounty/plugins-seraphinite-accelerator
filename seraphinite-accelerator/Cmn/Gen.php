@@ -1088,7 +1088,7 @@ class Gen
 
 	static function Unlink( $file )
 	{
-		return( @file_exists( $file ) ? @unlink( $file ) : false );
+		return( @file_exists( $file ) ? @unlink( $file ) : null );
 	}
 
 	static function Touch( $file, $mtime = null )
@@ -3988,7 +3988,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.7';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.8';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -5505,6 +5505,7 @@ class Wp
 		$obj -> method = $method;
 		$obj -> transport = ($args[ 'transport' ]??null);
 		$obj -> connect_timeout = ($args[ 'connect_timeout' ]??null);
+		$obj -> proxy = ($args[ 'proxy' ]??null);
 
 		$obj -> _cbRequestBefore =
 			function( $obj, $url, $p1, $p2, $p3, &$options )
@@ -5518,6 +5519,17 @@ class Wp
 				}
 				if( $obj -> transport )
 					$options[ 'transport' ] = $obj -> transport;
+
+				if( is_array( $obj -> proxy ) && count( $obj -> proxy ) > 1 )
+				{
+					switch( array_splice( $obj -> proxy, 0, 1 )[ 0 ] )
+					{
+					case 'http':
+						$options[ 'proxy' ] = new \WpOrg\Requests\Proxy\Http( $obj -> proxy );
+						$options[ 'proxy' ] -> register( $options[ 'hooks' ] );
+						break;
+					}
+				}
 			};
 
 		$obj -> _cbRequestsBeforeParse =

@@ -2375,6 +2375,8 @@ function OnOptGetDef_Sett()
 						'src:@web\\.cmp\\.usercentrics\\.eu/@',
 
 						'id:@^zeroy-tailwind-@',
+
+						'src:@/kit\\.fontawesome\\.com/@',
 					),
 
 					'timeout' => array(
@@ -4308,7 +4310,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.7 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.8 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -4624,10 +4626,12 @@ function OnAsyncTask_QueueProcessItems( $args )
 			return;
 	}
 
-	$items = array();
+	$aSiteItems = array();
 	foreach( GetSiteIds() as $siteId )
 	{
 		$dirQueue = GetCacheDir() . '/q/' . $siteId;
+
+		$aSiteItems[] = array( 's' => $siteId, 'a' => array() );
 
 		if( PluginFileValues::GetEx( PluginFileValues::GetDirVar( $siteId ), 'qp' ) )
 			continue;
@@ -4637,25 +4641,60 @@ function OnAsyncTask_QueueProcessItems( $args )
 			continue;
 
 		$aInitial = new ArrayOnFiles( Queue_GetStgPrms( $dirQueue, 0 ) );
-		foreach( $aInitial -> slice( 0, $nMaxItems ) as $id => $item )
-		{
-			$item[ 's' ] = $siteId;
-			$items[ $id ] = $item;
-		}
-		unset( $item );
-
+		$aSiteItems[ count( $aSiteItems ) - 1 ][ 'a' ] = $aInitial -> slice( 0, $nMaxItems );
 		$aInitial -> dispose(); $lock -> Release();
 		unset( $aInitial, $lock );
 	}
+
+	$items = array();
+	if( count( $aSiteItems ) == 1 )
+	{
+		$siteItems = &$aSiteItems[ 0 ];
+		foreach( $siteItems[ 'a' ] as $id => $item )
+		{
+			$item[ 's' ] = $siteItems[ 's' ];
+			$items[ $id ] = $item;
+		}
+		unset( $id, $item, $siteItems );
+	}
+	else if( count( $aSiteItems ) > 1 )
+	{
+		$iCurSite = ( int )Gen::FileGetContents( GetCacheDir() . '/q/csi' );
+
+		for( $iSiteTry = 0; $iSiteTry < $nMaxItems * count( $aSiteItems ); $iSiteTry++ )
+		{
+			if( $iCurSite >= count( $aSiteItems ) )
+				$iCurSite = 0;
+
+			if( count( $items ) == $nMaxItems )
+				break;
+
+			$siteItems = &$aSiteItems[ $iCurSite ];
+
+			if( count( $siteItems[ 'a' ] ) )
+			{
+				foreach( array_splice( $siteItems[ 'a' ], 0, 1 ) as $id => $item )
+				{
+					$item[ 's' ] = $siteItems[ 's' ];
+					$items[ $id ] = $item;
+				}
+			}
+
+			unset( $id, $item, $siteItems );
+
+			$iCurSite++;
+		}
+
+		Gen::FilePutContents( GetCacheDir() . '/q/csi', ( string )$iCurSite );
+		unset( $iCurSite, $iSiteTry );
+	}
+	unset( $aSiteItems );
 
 	if( !$items )
 	{
 
 		return;
 	}
-
-	uasort( $items, Gen::GetArrField( Queue_GetStgPrms( '', 0 ), array( 'options', 'cbSort' ) ) );
-	$items = array_slice( $items, 0, $nMaxItems, true );
 
 	foreach( $items as $id => $item )
 	{
@@ -5208,12 +5247,16 @@ class ProcessQueueItemCtx
 					if( $dataExtUpdated )
 					{
 					    if( $dataExtUpdated = Gen::GetArrField( Gen::Unserialize( ($dataExtUpdated[ 'd' ]??null) ), array( '' ), array() ) )
+						{
 					        if( $repeatVal = ($dataExtUpdated[ 'rpt' ]??null) )
 							{
 								$this -> data[ 'rpt' ] = $repeatVal;
 								$this -> immediatelyPushQueue = true;
 
 							}
+
+							$this -> data[ 'l' ] = ($dataExtUpdated[ 'l' ]??null);
+						}
 
 					    unset( $dataExtUpdated );
 					}
@@ -5616,6 +5659,37 @@ function CachePostPreparePageEx( $method , $url, $siteId, $priority, $priorityIn
 	return( $res );
 }
 
+function QueueItem_SetSelfLearn( $id, $siteId, $lrnId )
+{
+	$dirQueue = GetCacheDir() . '/q/' . $siteId;
+
+	$lock = new Lock( 'l', $dirQueue );
+	if( !$lock -> Acquire() )
+	{
+
+		return( false );
+	}
+
+	$aProgress = new ArrayOnFiles( Queue_GetStgPrms( $dirQueue, 1 ) );
+
+	$res = false;
+	if( $item = $aProgress[ $id ] )
+	{
+		$data = Gen::GetArrField( Gen::Unserialize( ($item[ 'd' ]??null) ), array( '' ), array() );
+		$data[ 'l' ] = $lrnId;
+
+		$item[ 'p' ] = -480;
+
+		$item[ 'd' ] = Gen::Serialize( $data );
+		if( $aProgress -> setItem( $id, $item ) )
+			$res = true;
+	}
+
+	$aProgress -> dispose();
+	$lock -> Release();
+	return( $res );
+}
+
 function CachePostPrepareObjEx( $type, $addr, $siteId, $priority, $data = array(), $priorityInitiator = null, $time = null )
 {
 
@@ -5826,7 +5900,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.7';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.8';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -6342,7 +6416,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.7');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.8');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

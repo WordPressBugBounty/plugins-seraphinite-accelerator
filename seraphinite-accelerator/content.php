@@ -217,28 +217,16 @@ function ContentProcess_InitLocalCbs( &$ctxProcess )
 			return( Tof_SetFileDataEx( $dir, $id, $data, $overwrite ) );
 		};
 
-	$cbs -> Learn_ReadDsc =
+	$cbs -> Learn_Abort =
 		function( $cbs, $lrnFile )
 		{
-			return( Learn_ReadDsc( $lrnFile ) );
+			Learn_Clear( $lrnFile, false, true );
 		};
 
-	$cbs -> Learn_Clear =
-		function( $cbs, $lrnFile, $bMain = true, $bPending = true )
+	$cbs -> Learn_Init =
+		function( $cbs, $oInit, $siteId, $bLrn, $settHash, $bAllowLearn, $aSkeletonAggr )
 		{
-			Learn_Clear( $lrnFile, $bMain, $bPending );
-		};
-
-	$cbs -> Learn_IsStarted =
-		function( $cbs, $ctxProcess )
-		{
-			return( Learn_IsStarted( $ctxProcess ) );
-		};
-
-	$cbs -> Learn_Start =
-		function( $cbs, $ctxProcess )
-		{
-			return( Learn_Start( $ctxProcess ) );
+			return( Learn_Init( $oInit, $siteId, $bLrn, $settHash, $bAllowLearn, $aSkeletonAggr ) );
 		};
 
 	$cbs -> Learn_Finish =

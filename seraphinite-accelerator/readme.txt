@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 6.9
-Stable tag: 2.29.8
+Stable tag: 2.29.9
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -71,7 +71,7 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 *	**No promotions**
 	No promotions of other related plugins.
 *	**Support**
-	Personal prioritized [support](https://www.s-sols.com/support) (5 hour per site). Additional support is for 30 EUR per hour. All issues due to product are always fixed for free.
+	Personal prioritized [support](https://www.s-sols.com/support) (3 hour per site). Additional support is for 30 EUR per hour. All issues due to product are always fixed for free.
 
 [More details](https://www.s-sols.com/products/wordpress/accelerator).
 
@@ -163,6 +163,12 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.29.9 =
+
+Improvements:
+
+* Fonts lazy loading.
 
 = 2.29.8 =
 

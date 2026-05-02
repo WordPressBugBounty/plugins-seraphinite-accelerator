@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.8' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.9' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -5140,6 +5140,30 @@ function _SettingsPage_Styles( $callbacks_args, $box )
 
 							$o .= ( Ui::TagOpen( 'tr' ) );
 							{
+								$o .= ( Ui::TagOpen( 'td', array( 'style' => array( 'padding-left' => '1.5em' ) ) ) );
+								{
+									$fldId = 'contPr/css/font/delayNonCritWithJs';
+									$o .= ( Ui::CheckBox( esc_html_x( 'FontDelayNonCritWithJsChk', 'admin.Settings_Styles_Fonts', 'seraphinite-accelerator' ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
+								$o .= ( Ui::TagOpen( 'td', array( 'style' => array( 'padding-left' => '1.5em' ), 'class' => 'blck' ) ) );
+								{
+									$o .= ( Ui::Label( esc_html_x( 'NonCritExclLbl', 'admin.Settings_Styles_Fonts', 'seraphinite-accelerator' ) ) );
+
+									$fldId = 'contPr/css/font/nonCritExcl';
+									$o .= ( Ui::SettTokensEditor( $fldId, Gen::GetArrField( $sett, $fldId, array(), '/' ), _x( 'InclPhlr', 'admin.Settings_Styles_Fonts', 'seraphinite-accelerator' ), 'seraph_accel', "\n", 5, true ) );
+								}
+								$o .= ( Ui::TagClose( 'td' ) );
+							}
+							$o .= ( Ui::TagClose( 'tr' ) );
+
+							$o .= ( Ui::TagOpen( 'tr' ) );
+							{
 								$o .= ( Ui::TagOpen( 'td' ) );
 								{
 									$fldId = 'contPr/css/font/deinlLrg';
@@ -6970,6 +6994,8 @@ function _OnSaveSettings( $args )
 		{ $fldId = 'contPr/css/groupFontCombine';			Gen::SetArrField( $sett, $fldId, $args[ 'seraph_accel/' . $fldId ] === '1', '/' ); }
 		{ $fldId = 'contPr/css/font/inl/enable';			Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/css/font/inl/items';				Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( $args[ 'seraph_accel/' . $fldId ], null, true ), '/' ); }
+		{ $fldId = 'contPr/css/font/delayNonCritWithJs';	Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
+		{ $fldId = 'contPr/css/font/nonCritExcl';			Gen::SetArrField( $sett, $fldId, Ui::TokensList_GetVal( $args[ 'seraph_accel/' . $fldId ], null, true ), '/' ); }
 		{ $fldId = 'contPr/css/sepImp';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/css/min';						Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }
 		{ $fldId = 'contPr/css/corrErr';					Gen::SetArrField( $sett, $fldId, isset( $args[ 'seraph_accel/' . $fldId ] ), '/' ); }

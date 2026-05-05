@@ -23,18 +23,18 @@ function Image_MakeOwnRedirUrlArgsEx( $path, $aiFileId, $nonce = null )
 	return( array( 'seraph_accel_gi' => $path, 'ai' => $aiFileId, 'n' => $nonce ) );
 }
 
-function Image_MakeOwnRedirUrlArgs( $path, $aiFileId = null )
+function Image_MakeOwnRedirUrlArgs( $salt, $path, $aiFileId = null )
 {
 
 	$path = Gen::GetNormalizedPath( $path );
-	return( Image_MakeOwnRedirUrlArgsEx( $path, _Image_GetAiFileId( $aiFileId ), Gen::GetNonce( $path, GetSalt() ) ) );
+	return( Image_MakeOwnRedirUrlArgsEx( $path, _Image_GetAiFileId( $aiFileId ), Gen::GetNonce( $path, $salt ) ) );
 }
 
-function Image_MakeAiUrlArgs( $args, $path, $aiFileId )
+function Image_MakeAiUrlArgs( $salt, $args, $path, $aiFileId )
 {
 
 	$path = Gen::GetNormalizedPath( $path );
 
-	return( array_merge( ( array )$args, array( 'seraph_accel_ai' => _Image_GetAiFileId( $aiFileId ), 'n' => Gen::GetNonce( $path, GetSalt() ) ) ) );
+	return( array_merge( ( array )$args, array( 'seraph_accel_ai' => _Image_GetAiFileId( $aiFileId ), 'n' => Gen::GetNonce( $path, $salt ) ) ) );
 }
 

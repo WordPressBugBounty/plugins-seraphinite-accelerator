@@ -372,6 +372,8 @@ class Img
 
 						$cmdline = Gen::ExecEscArg( $mdl ) . ' --quality 0-' . $quality . ' --speed ' . $speed . ' --force --output ' . Gen::ExecEscArg( $fileNew ) . ' ' . Gen::ExecEscArg( $file );
 
+						$tmCpu = microtime( true );
+
 						$hProc = @proc_open( $cmdline, array( 2 => array( 'pipe', 'w' ) ), $pipes, null, null, array( 'bypass_shell' => true ) );
 						if( $hProc )
 						{
@@ -393,6 +395,8 @@ class Img
 							else
 								@unlink( $fileNew );
 						}
+
+						Gen::GetExtProcCpuTime( microtime( true ) - $tmCpu );
 					}
 				}
 			}
@@ -726,6 +730,8 @@ class Img
 			return( Gen::E_ACCESS_DENIED );
 		}
 
+		$tmCpu = microtime( true );
+
 		$hProc = @proc_open( $cmdline, array( 2 => array( 'pipe', 'w' ) ), $pipes, null, null, array( 'bypass_shell' => true ) );
 		if( $hProc )
 		{
@@ -755,6 +761,8 @@ class Img
 			Gen::LastErrDsc_Set( LocId::Pack( 'ExecErr_%1$s', 'Common', array( $cmdline ) ) );
 			$hr = Gen::E_FAIL;
 		}
+
+		Gen::GetExtProcCpuTime( microtime( true ) - $tmCpu );
 
 		@unlink( $fileTmpIn );
 		if( $fileIsTmp )
@@ -843,6 +851,8 @@ class Img
 			return( Gen::E_ACCESS_DENIED );
 		}
 
+		$tmCpu = microtime( true );
+
 		$hProc = @proc_open( $cmdline, array( 2 => array( 'pipe', 'w' ) ), $pipes, null, null, array( 'bypass_shell' => true ) );
 		if( $hProc )
 		{
@@ -872,6 +882,8 @@ class Img
 			Gen::LastErrDsc_Set( LocId::Pack( 'ExecErr_%1$s', 'Common', array( $cmdline ) ) );
 			$hr = Gen::E_FAIL;
 		}
+
+		Gen::GetExtProcCpuTime( microtime( true ) - $tmCpu );
 
 		@unlink( $fileTmpIn );
 		if( $fileIsTmp )

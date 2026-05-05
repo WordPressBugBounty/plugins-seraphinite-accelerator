@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 200;
+const PLUGIN_SETT_VER								= 201;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1263,6 +1263,12 @@ function OnOptRead_Sett( $sett, $verFrom )
 	    Gen::SetArrField( $sett, array( 'contPr', 'cp', 'elmntrRspnsv' ), false );
 	}
 
+	if( $verFrom && $verFrom < 201 )
+	{
+	    if( Gen::GetArrField( $sett, array( 'contPr', 'rpl', 'items', 0, 'expr' ) ) == '@<head[^>]*>()@' )
+			Gen::SetArrField( $sett, array( 'contPr', 'rpl', 'items', 0, 'expr' ), '@<head(?:\\s[^>]*)?>()@' );
+	}
+
 	return( $sett );
 }
 
@@ -1906,7 +1912,7 @@ function OnOptGetDef_Sett()
 					array(
 						'enable' => false,
 						'descr' => 'DNS Prefetch',
-						'expr' => '@<head[^>]*>()@',
+						'expr' => '@<head(?:\\s[^>]*)?>()@',
 						'data' => '<link rel="dns-prefetch" href="//fonts.gstatic.com">'
 					),
 					array(
@@ -1943,6 +1949,7 @@ function OnOptGetDef_Sett()
 				'asClnTlk' => true,
 				'chbsBkngFrm' => true,
 				'jegElmntr' => true,
+				'divi' => true,
 				'pys' => true,
 			),
 
@@ -4315,7 +4322,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.9 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.10 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5905,7 +5912,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.9';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.10';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -6421,7 +6428,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.9');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.10');
 		$headers[ 'User-Agent' ] = str_replace( 'seraph-accel-Agent/', 'seraph-accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 
 		if( isset( $headers[ 'X-Seraph-Accel-Geo-Remote-Addr' ] ) )

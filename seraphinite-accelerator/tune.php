@@ -492,7 +492,7 @@ function SelfDiag_DetectStateAnd3rdPartySettConflicts( $cb, $ext = false )
 			$optionText = sprintf( Plugin::GetPluginString( 'SubjectTitle_%1$s%2$s' ), esc_html_x( 'Lbl', 'admin.Settings_Images_Compr', 'seraphinite-accelerator' ), Gen::GetArrField( array( 'avif' => sprintf( esc_html_x( 'AvifChk_%1$s%2$s', 'admin.Settings_Images_Compr', 'seraphinite-accelerator' ), '', '' ), 'webp' => sprintf( esc_html_x( 'WebpChk_%1$s', 'admin.Settings_Images_Compr', 'seraphinite-accelerator' ), '' ) ), $comprType, '' ) );
 
 			if( $bRedirOwn )
-				$testUrl = add_query_arg( array_merge( Image_MakeOwnRedirUrlArgs( ltrim( Net::Url2Uri( plugins_url( '/Images/Test.png', __FILE__ ), true ), '/' ) ), array( '_' => Gen::MicroTimeStamp() ) ), Wp::GetSiteWpRootUrl() );
+				$testUrl = add_query_arg( array_merge( Image_MakeOwnRedirUrlArgs( GetSalt(), ltrim( Net::Url2Uri( plugins_url( '/Images/Test.png', __FILE__ ), true ), '/' ) ), array( '_' => Gen::MicroTimeStamp() ) ), Wp::GetSiteWpRootUrl() );
 			else
 				$testUrl = add_query_arg( array( '_' => Gen::MicroTimeStamp() ), plugins_url( '/Images/Test.png', __FILE__ ) );
 

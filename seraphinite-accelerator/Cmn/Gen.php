@@ -530,6 +530,11 @@ class Gen
 	const HTACCESS_SOFT_VER = 1;
 	const HTACCESS_SOFT_SUBNAME = 2;
 
+	static function HtAccess_GetFilePath()
+	{
+		return( Wp::GetHomePath() . '.htaccess' );
+	}
+
 	static function HtAccess_IsSupported()
 	{
 
@@ -2285,6 +2290,14 @@ class Gen
 		return( ( float )$v[ 'ru_utime.tv_sec' ] + $v[ 'ru_utime.tv_usec' ] / ( 1000 * 1000 ) );
 	}
 
+	static function GetExtProcCpuTime( $tmAdd = 0.0 )
+	{
+		static $g_nCpuTime = 0.0;
+		if( $tmAdd )
+			$g_nCpuTime += $tmAdd;
+		return( $g_nCpuTime );
+	}
+
 	static function Explode( $separator, $string, $limit = PHP_INT_MAX )
 	{
 		if( !strlen( $string ) )
@@ -3988,7 +4001,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.9';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.10';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

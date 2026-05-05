@@ -271,6 +271,12 @@ function ContentProcess_InitLocalCbs( &$ctxProcess )
 			return( CachePostPrepareObjEx( $type, $addr, $cbs -> ctxProcess[ 'siteId' ], $priority, $data, $priorityInitiator, $time ) );
 		};
 
+	$cbs -> GetSalt =
+		function( $cbs )
+		{
+			return( GetSalt() );
+		};
+
 	$ctxProcess[ 'cbs' ] = $cbs;
 }
 

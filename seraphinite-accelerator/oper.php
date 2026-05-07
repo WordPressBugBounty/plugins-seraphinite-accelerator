@@ -597,6 +597,7 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $langId = n
 
 			, $op == 2 ? function( &$ctx, $dataType, $dataId, $dataFile )
 			{
+
 				if( $ctx -> isAborted() )
 					return( false );
 
@@ -609,6 +610,7 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $langId = n
 			,
 			function( &$ctx, $viewId, $viewDir, $begin )
 			{
+
 				if( $begin )
 				{
 					$ctx -> curViewDir = $viewDir;
@@ -651,6 +653,7 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $langId = n
 			,
 			function( &$ctx, $siteDir, $begin )
 			{
+
 				if( $begin )
 				{
 					$ctx -> lrnDataPath = $siteDir . '/l';
@@ -1156,7 +1159,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.10' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.11' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{

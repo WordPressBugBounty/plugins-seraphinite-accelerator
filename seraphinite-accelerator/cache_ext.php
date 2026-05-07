@@ -374,8 +374,45 @@ function CacheExt_Clear( $url = null )
 			LogWrite( 'DreamHost: ' . _CacheExt_GetResponseResString( $requestRes ), Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
+	global $wpaas_cache_class;
+
+	if( ( Gen::DoesFuncExist( '\\WPaaS\\Cache_V2::ban' ) && $wpaas_cache_class ) )
+	{
+
+		$logInfo = '';
+
+		if( $url )
+		{
+			if( method_exists( $wpaas_cache_class, 'purge' ) )
+				$wpaas_cache_class -> purge( array( $url ) );
+			if( method_exists( $wpaas_cache_class, 'flush_cdn' ) )
+				$wpaas_cache_class -> flush_cdn();
+
+			$logInfo = 'URL \'' . $url . '\' purged';
+		}
+		else
+		{
+			if( method_exists( $wpaas_cache_class, 'ban' ) )
+				$wpaas_cache_class -> ban();
+			if( method_exists( $wpaas_cache_class, 'flush_transients' ) )
+				$wpaas_cache_class -> flush_transients();
+
+			if( method_exists( $wpaas_cache_class, 'flush_ob' ) )
+				$wpaas_cache_class -> flush_ob();
+			if( method_exists( $wpaas_cache_class, 'flush_object_cache' ) )
+				$wpaas_cache_class -> flush_object_cache();
+
+			$logInfo = 'Purged all';
+		}
+
+		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
+			LogWrite( 'WPAAS: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
+	}
+	else
+
 	if( Gen::DoesFuncExist( '\\WPaaS\\Plugin::vip' ) )
 	{
+
 		$urlPurge = $url;
 		if( !$urlPurge )
 			$urlPurge = Wp::GetSiteRootUrl();
@@ -591,31 +628,6 @@ function CacheExt_Clear( $url = null )
 
 		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
 			LogWrite( 'WPEngine: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
-	}
-
-	global $wpaas_cache_class;
-	if( ( Gen::DoesFuncExist( '\\WPaaS\\Cache_V2::ban' ) && $wpaas_cache_class ) )
-	{
-		$logInfo = '';
-
-		if( $url )
-		{
-			$wpaas_cache_class -> purge( array( $url ) );
-			$wpaas_cache_class -> flush_cdn();
-
-			$logInfo = 'URL \'' . $url . '\' purged';
-		}
-		else
-		{
-			$wpaas_cache_class -> ban();
-			$wpaas_cache_class -> flush_transients();
-			$wpaas_cache_class -> flush_ob();
-
-			$logInfo = 'Purged all';
-		}
-
-		if( ($sett[ 'log' ]??null) && ($sett[ 'logScope' ][ 'srvClr' ]??null) )
-			LogWrite( 'WPAAS: ' . $logInfo, Ui::MsgInfo, 'Server/cloud cache update' );
 	}
 
 	if( Gen::DoesFuncExist( '\\Tenweb_Manager\\Helper::clear_cache' ) )

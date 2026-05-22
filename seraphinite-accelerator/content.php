@@ -11,7 +11,7 @@ require( __DIR__ . '/content_js.php' );
 require( __DIR__ . '/content_css.php' );
 require( __DIR__ . '/content_frm.php' );
 
-function GetContentProcessCtxEx( $serverArgs, $sett, $siteId, $siteUrl, $siteRootPath, $siteContentPath, $wpRootSubPath, $cacheDir, $scriptDebug )
+function GetContentProcessCtxEx( $serverArgs, $sett, $siteId, $siteUrl, $siteRootPath, $siteContentPath, $wpRootSubPath, $cacheDir, $pluginUrl, $scriptDebug )
 {
 	$ctx = array(
 		'siteDomainUrl' => Net::GetSiteAddrFromUrl( $siteUrl, true ),
@@ -20,6 +20,7 @@ function GetContentProcessCtxEx( $serverArgs, $sett, $siteId, $siteUrl, $siteRoo
 		'siteContPath' => Gen::SetLastSlash( $siteContentPath, false ),
 		'siteRootDataPath' => null,
 		'siteCacheRootDir' => $cacheDir,
+		'sitePluginUri' => Gen::SetLastSlash( Net::Url2Uri( $pluginUrl ), false ),
 		'dataPath' => GetCacheDataDir( $cacheDir . '/s/' . $siteId ),
 		'wpRootSubPath' => $wpRootSubPath . '/',
 		'siteId' => $siteId,
@@ -93,7 +94,7 @@ function &GetContentProcessCtx( $serverArgs, $sett )
 				$siteRootPath = substr( rtrim( $siteRootPath, '\\/' ), 0, - strlen( $siteWpRootSubPath ) );
 		}
 
-		$seraph_accel_g_ctxProcess = GetContentProcessCtxEx( $serverArgs, $sett, GetSiteId(), $siteRootUrl, $siteRootPath, WP_CONTENT_DIR, $siteWpRootSubPath, GetCacheDir(), defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG );
+		$seraph_accel_g_ctxProcess = GetContentProcessCtxEx( $serverArgs, $sett, GetSiteId(), $siteRootUrl, $siteRootPath, WP_CONTENT_DIR, $siteWpRootSubPath, GetCacheDir(), plugins_url( '', __FILE__ ), defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG );
 		ContentProcess_InitLocalCbs( $seraph_accel_g_ctxProcess );
 	}
 

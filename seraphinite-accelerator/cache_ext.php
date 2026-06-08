@@ -609,16 +609,17 @@ function CacheExt_Clear( $url = null )
 					\WpeCommon::purge_varnish_cache();
 					remove_filter( 'wpe_purge_varnish_cache_paths', array( $ctx, 'cb' ) );
 
-					$logInfo = 'URL \'' . $url . '\' Varnish cache purged';
+					$logInfo = 'URL \'' . $url . '\' cache purged';
 				}
 				else
 					$logInfo = 'URL \'' . $url . '\' invalid';
 			}
 			else
 			{
-                \WpeCommon::purge_varnish_cache();
 
-				$logInfo = 'Purged all Varnish cache';
+				\WpeCommon::purge_varnish_cache();
+
+				$logInfo = 'Purged all cache';
 			}
         }
 		catch( \Exception $e )

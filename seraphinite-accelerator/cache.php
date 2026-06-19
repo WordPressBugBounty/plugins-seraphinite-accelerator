@@ -444,7 +444,11 @@ function _Process( $sites )
 	$dscFileTm = Gen::FileMTime( $seraph_accel_g_dscFile );
 	$dscFileTmAge = $tmCur - $dscFileTm;
 
-	if( !$dscFileTm || ( $timeoutCln > 0 && $dscFileTmAge > $timeoutCln && ( $dscFileTm >= 60 ) ) || ( $timeout > 0 ? ( $dscFileTmAge > $timeout ) : ( $dscFileTm < 60 ) ) || ( $tmCur > $sessExpiration ) || ( $seraph_accel_g_ctxCache -> isUserSess && $httpCacheControl == 'no-cache' && Gen::GetArrField( $settCache, array( 'ctxCliRefresh' ), false ) ) )
+	$bSkipCacheContentStart = false;
+	if( stripos( $userAgent, 'Seraph-Accel-Agent-WarmUp/' ) !== false )
+		$bSkipCacheContentStart = true;
+
+	if( !$bSkipCacheContentStart && ( !$dscFileTm || ( $timeoutCln > 0 && $dscFileTmAge > $timeoutCln && ( $dscFileTm >= 60 ) ) || ( $timeout > 0 ? ( $dscFileTmAge > $timeout ) : ( $dscFileTm < 60 ) ) || ( $tmCur > $sessExpiration ) || ( $seraph_accel_g_ctxCache -> isUserSess && $httpCacheControl == 'no-cache' && Gen::GetArrField( $settCache, array( 'ctxCliRefresh' ), false ) ) ) )
 	{
 		$lock = new Lock( 'dl', $cacheRootPath );
 		if( !$lock -> Acquire() )
@@ -556,7 +560,11 @@ function _Process( $sites )
 
 		$reasonOutputErr = null;
 		if( !$dsc )
+		{
+			if( $bSkipCacheContentStart )
+				return( Gen::S_FALSE );
 			$reasonOutputErr = 'brokenDsc';
+		}
 		else
 		{
 

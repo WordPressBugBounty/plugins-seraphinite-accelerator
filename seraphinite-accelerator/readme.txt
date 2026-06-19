@@ -4,8 +4,8 @@ Donate link: https://www.s-sols.com/products/wordpress/accelerator#offer
 Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
-Tested up to: 6.9
-Stable tag: 2.29.14
+Tested up to: 7.0
+Stable tag: 2.29.15
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -163,6 +163,13 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.29.15 =
+
+Fixes:
+
+* Adding URL to processing queue while server cache warming up.
+* %D0%A1ache is not updated after TTL is expired after auto-revalidation.
 
 = 2.29.14 =
 

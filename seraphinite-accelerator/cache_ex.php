@@ -66,7 +66,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.29.14;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.29.15;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -709,7 +709,7 @@ function _CacheSetRequestToPrepareAsyncEx( $siteId, $method, $url, $hdrs, $tmp =
 			ProcessQueueItemCtx::MakeRequest( $asyncMode, $method, $urlProc, $hdrs );
 	}
 
-	if( $tmp != 'only' && CachePostPreparePageEx( $method, $url, $siteId, 10, null, $hdrs ) )
+	if( $tmp !== 'only' && CachePostPreparePageEx( $method, $url, $siteId, 10, null, $hdrs ) )
 		CachePushQueueProcessor();
 }
 
@@ -1000,7 +1000,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( ($settCache[ 'normAgent' ]??null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = ($_SERVER[ 'HTTP_USER_AGENT' ]??'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.14';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.15';
 	}
 
 	if( ($settCache[ 'views' ]??null) )

@@ -14,7 +14,7 @@ class Ui
 			$attrs = array();
 
 		if( $href === null )
-			$href = $content;
+			$href = is_array( $content ) ? implode( '', $content ) : $content;
 
 		$showLink = !empty( $href ) || ($prms[ 'showIfNoHref' ]??null);
 

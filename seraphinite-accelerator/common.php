@@ -4340,7 +4340,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.18 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.19 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5930,7 +5930,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.18';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.19';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -6033,7 +6033,7 @@ function CacheExtractPreparePageParams( &$args )
 	Net::CurRequestRemoveArgs( $args, array( 'seraph_accel_prep' ) );
 
 	$prms = @json_decode( @base64_decode( Gen::SanitizeTextData( $prms ) ), true );
-	if( hash_hmac( 'md5', '' . ($prms[ '_tm' ]??null), GetSalt() ) != ($prms[ 'nonce' ]??null) )
+	if( hash_hmac( 'md5', '' . ($prms[ '_tm' ]??null), GetSalt() ) !== ($prms[ 'nonce' ]??null) )
 		return( false );
 
 	unset( $prms[ '_tm' ] );
@@ -6446,7 +6446,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.18');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.19');
 		$headers[ 'User-Agent' ] = str_ireplace( 'Seraph-Accel-Agent/', 'Seraph-Accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 		unset( $headers[ 'X-Seraph-Accel-Postpone-User-Agent' ] );
 

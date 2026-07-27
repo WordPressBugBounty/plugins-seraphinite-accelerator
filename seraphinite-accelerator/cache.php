@@ -198,6 +198,16 @@ function _Process( $sites )
 						if( $requestMethod == 'POST' )
 						{
 							AddCurPostArgs( $args );
+							if( $path && Gen::StrStartsWith( $path, Gen::GetArrField( $settCache, array( '_restUrlPrefix' ), 'RESTURLPREFIX_DUMMY' ) . '/' ) )
+							{
+
+								global $HTTP_RAW_POST_DATA;
+								if( !isset( $HTTP_RAW_POST_DATA ) )
+									$HTTP_RAW_POST_DATA = file_get_contents( 'php://input' );
+								if( strlen( $HTTP_RAW_POST_DATA ) )
+									$args[ '__body' ] = $HTTP_RAW_POST_DATA;
+							}
+
 							$requestURICheck = Net::UrlAddArgs( $requestURICheck, $args );
 						}
 					}

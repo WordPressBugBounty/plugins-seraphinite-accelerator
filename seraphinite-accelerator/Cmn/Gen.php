@@ -2188,7 +2188,7 @@ class Gen
 			$time = array( null );
 
 		foreach( $time as $timeCheck )
-			if( $nonce == Gen::GetNonce( $data, $key, $ttl, $timeCheck ) )
+			if( $nonce === Gen::GetNonce( $data, $key, $ttl, $timeCheck ) )
 				return( true );
 
 		return( false );
@@ -4001,7 +4001,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.18';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.19';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

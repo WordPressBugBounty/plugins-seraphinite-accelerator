@@ -34,5 +34,22 @@ class CloudFlareHooksEx extends \Cloudflare\APO\WordPress\Hooks
 
 		$this -> api -> zonePurgeFiles( $zoneTag, $files );
 	}
+
+	public function purgeAll()
+	{
+		$bFound = false;
+		foreach( Gen::GetArrField( $this -> integrationAPI -> getDomainList(), array( '' ), array() ) as $domain )
+		{
+			$bFound = true;
+			break;
+		}
+		if( !$bFound )
+			return;
+
+        if( !( $zoneTag = $this -> api -> getZoneTag( $domain ) ) )
+            return;
+
+		$this -> api -> zonePurgeCache( $zoneTag );
+	}
 }
 

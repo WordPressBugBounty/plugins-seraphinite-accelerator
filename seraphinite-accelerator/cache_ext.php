@@ -1035,7 +1035,7 @@ function CacheExt_Clear( $url = null )
 		}
 		else
 		{
-			( new CloudFlareHooksEx() ) -> purgeCacheEverything();
+			( new CloudFlareHooksEx() ) -> purgeAll();
 			$logInfo = 'Purged all';
 		}
 

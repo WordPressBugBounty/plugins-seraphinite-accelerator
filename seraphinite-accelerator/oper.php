@@ -1162,7 +1162,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.22' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.23' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1585,7 +1585,7 @@ function CacheInitEnvDropin( $sett, $init = true, $bAllMultisites = false )
 	if( $cont != $contNew )
 	{
 
-		$hr = Gen::HrAccom( $hr, Gen::FilePutContents( $file, $contNew ) !== false ? Gen::S_OK : Gen::E_FAIL );
+		$hr = Gen::HrAccom( $hr, Gen::FileWriteTmpAndReplace( null, $file, $contNew ) !== false ? Gen::S_OK : Gen::E_FAIL );
 		_OpCache_Invalidate( $file );
 	}
 

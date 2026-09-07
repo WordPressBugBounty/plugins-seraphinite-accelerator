@@ -43,9 +43,9 @@ function SettTimeoutEditor_GetDays( $v, $dayStartAt1 = false )
 function _SettTimeoutEditor( $fldId, $v, $txt, $tag = 'label', $fldsAdd = array(), $dayStartAt1 = false )
 {
 	return( Ui::Tag( $tag, vsprintf( $txt, array_merge( array(
-		Ui::NumberBox( $fldId . 'Mins', SettTimeoutEditor_GetMins( $v ), array( 'class' => 'inline', 'min' => 0, 'placeholder' => _x( 'TimeoutMinsPlchldr', 'admin.Settings_Cache_Common', 'seraphinite-accelerator' ), 'style' => array( 'width' => '4em' ) ), true ),
-		Ui::NumberBox( $fldId . 'Hours', SettTimeoutEditor_GetHours( $v ), array( 'class' => 'inline', 'min' => 0, 'placeholder' => _x( 'TimeoutHoursPlchldr', 'admin.Settings_Cache_Common', 'seraphinite-accelerator' ), 'style' => array( 'width' => '4em' ) ), true ),
-		Ui::NumberBox( $fldId . 'Days', SettTimeoutEditor_GetDays( $v, $dayStartAt1 ), array( 'class' => 'inline', 'min' => 0, 'placeholder' => _x( 'TimeoutDaysPlchldr', 'admin.Settings_Cache_Common', 'seraphinite-accelerator' ), 'style' => array( 'width' => '4em' ) ), true ),
+		Ui::NumberBox( $fldId . 'Mins', SettTimeoutEditor_GetMins( $v ), array( 'class' => 'inline', 'min' => 0, 'placeholder' => _x( 'TimeoutMinsPlchldr', 'admin.Settings_Cache_Common', 'seraphinite-accelerator' ), 'style' => array( 'width' => '6em' ) ), true ),
+		Ui::NumberBox( $fldId . 'Hours', SettTimeoutEditor_GetHours( $v ), array( 'class' => 'inline', 'min' => 0, 'placeholder' => _x( 'TimeoutHoursPlchldr', 'admin.Settings_Cache_Common', 'seraphinite-accelerator' ), 'style' => array( 'width' => '6em' ) ), true ),
+		Ui::NumberBox( $fldId . 'Days', SettTimeoutEditor_GetDays( $v, $dayStartAt1 ), array( 'class' => 'inline', 'min' => 0, 'placeholder' => _x( 'TimeoutDaysPlchldr', 'admin.Settings_Cache_Common', 'seraphinite-accelerator' ), 'style' => array( 'width' => '6em' ) ), true ),
 	), $fldsAdd ) ) ) );
 }
 
@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.22' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.23' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 

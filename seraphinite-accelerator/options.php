@@ -141,7 +141,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.23' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.24' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1455,7 +1455,7 @@ function _SettingsPage_Server( $callbacks_args, $box )
 									$fldId = 'cache/srv';
 									$fldIdEx = 'cache/srvShrdTtl';
 									$o .= ( Ui::CheckBox( sprintf( esc_html_x( 'SrvChk_%1$s', 'admin.Settings_Cache_Srv', 'seraphinite-accelerator' ),
-										Ui::NumberBox( 'seraph_accel/' . $fldIdEx, Gen::NormVal( Gen::GetArrField( $sett, $fldIdEx, 3600, '/' ), array( 'min' => 1 ) ), array( 'min' => 1, 'placeholder' => '3600', 'style' => array( 'width' => '7em' ), 'class' => 'inline' ), true )
+										Ui::NumberBox( 'seraph_accel/' . $fldIdEx, Gen::NormVal( Gen::GetArrField( $sett, $fldIdEx, 3600, '/' ), array( 'min' => 0 ) ), array( 'min' => 0, 'placeholder' => '3600', 'style' => array( 'width' => '7em' ), 'class' => 'inline' ), true )
 									), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 								}
 								$o .= ( Ui::TagClose( 'td' ) );

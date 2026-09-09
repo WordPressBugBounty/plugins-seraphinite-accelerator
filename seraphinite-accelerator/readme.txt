@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 7.1
-Stable tag: 2.29.23
+Stable tag: 2.29.24
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -163,6 +163,16 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.29.24 =
+
+Improvements:
+
+* Allowing set 0 TTL in 'Allow cache with time to live'.
+
+Fixes:
+
+* PHP 8 error on 'firstUseTimeStamp' field if it is not numeric.
 
 = 2.29.23 =
 

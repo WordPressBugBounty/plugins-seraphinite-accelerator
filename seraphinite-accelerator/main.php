@@ -42,7 +42,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.29.24', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.29.25', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -1291,7 +1291,7 @@ function _OnUpdateGeoDb_Mm_Finish()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.24' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.25' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1537,7 +1537,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.29.24' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.29.25' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -1907,12 +1907,6 @@ function GetStatCont( $siteId, $info = null )
 			{
 				extract( $args );
 				return( array( esc_html_x( 'DataObjCountLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ), Ui::Label( $info && isset( $info[ 'nDataObj' ] ) ? ( string )$info[ 'nDataObj' ] : '-' ) ) );
-			},
-
-			function( $args )
-			{
-				extract( $args );
-				return( array( esc_html_x( 'CacheObjCountLbl', 'admin.Manage_Stat', 'seraphinite-accelerator' ), Ui::Label( sprintf( esc_html_x( 'CountSizeVal_%1$s%2$s', 'admin.Manage_Stat', 'seraphinite-accelerator' ), $info && isset( $info[ 'nCacheObj' ] ) ? ( string )$info[ 'nCacheObj' ] : '-', $info && isset( $info[ 'sizeCacheObj' ] ) ? size_format( $info[ 'sizeCacheObj' ], 1 ) : '-' ) ) ) );
 			},
 
 			function( $args )
@@ -2623,7 +2617,7 @@ function OnAdminApi_HtmlCheck( $args )
 	if( !Gen::StrStartsWith( Gen::SetLastSlash( ($aUrl[ 'path' ]??'') ), Gen::SetLastSlash( ($aUrlSite[ 'path' ]??'') ) ) )
 		return( array( 'err' => 'access_denied' ) );
 
-	$requestRes = Wp::RemoteGet( $url, array( 'timeout' => 15, 'sslverify' => false ) );
+	$requestRes = Wp::RemoteGet( $url, array( 'timeout' => 30, 'sslverify' => false ) );
 	if( is_wp_error( $requestRes ) )
 		return( array( 'err' => $requestRes -> get_error_message() ) );
 
@@ -2640,60 +2634,133 @@ function OnAdminApi_HtmlCheck( $args )
 		'cssInl' => array( 'n' => 0, 'sz' => 0, 'szGz' => 0, 'a' => array() ),
 	);
 
-	for( $item = null; $item = HtmlNd::GetNextTreeChild( $doc, $item );  )
 	{
-		if( $item -> nodeType != XML_ELEMENT_NODE )
-		    continue;
-
-		$aInfo[ 'all' ][ 'n' ] += 1;
-
-		if( $item -> nodeName == 'img' )
+		for( $item = null; $item = HtmlNd::GetNextTreeChild( $doc, $item );  )
 		{
-			$aInfo[ 'img' ][ 'n' ] += 1;
-
-			$cont = HtmlNd::DeParse( $item );
-			$ia = array( 'sz' => strlen( $cont ), 'szGz' => strlen( gzencode( $cont ) ), 'item' => $item );
-			$aInfo[ 'img' ][ 'sz' ] += $ia[ 'sz' ];
-			$aInfo[ 'img' ][ 'szGz' ] += $ia[ 'szGz' ];
-			unset( $cont );
-
-			$aInfo[ 'img' ][ 'a' ][] = $ia;
+			if( $item -> nodeType == XML_ELEMENT_NODE )
+				$aInfo[ 'all' ][ 'n' ] += 1;
 		}
-		else if( $item -> nodeName == 'svg' )
-		{
-			$aInfo[ 'svgInl' ][ 'n' ] += 1;
+	}
 
-			$cont = HtmlNd::DeParse( $item );
-			$ia = array( 'sz' => strlen( $cont ), 'szGz' => strlen( gzencode( $cont ) ), 'item' => $item );
-			$aInfo[ 'svgInl' ][ 'sz' ] += $ia[ 'sz' ];
-			$aInfo[ 'svgInl' ][ 'szGz' ] += $ia[ 'szGz' ];
-			unset( $cont );
-
-			$aInfo[ 'svgInl' ][ 'a' ][] = $ia;
-		}
-		else if( $item -> nodeName == 'script' )
+	{
+		$docCut = clone( $doc );
+		$item = HtmlNd::GetNextTreeChild( $docCut, null );
+		while( $item )
 		{
-			if( !$item -> getAttribute( 'src' ) )
+			$itemCut = null;
+
+			if( $item -> nodeType == XML_ELEMENT_NODE && $item -> nodeName == 'img' )
 			{
-				$aInfo[ 'jsInl' ][ 'n' ] += 1;
+				$aInfo[ 'img' ][ 'n' ] += 1;
+
+				$cont = HtmlNd::DeParse( $item );
+				$ia = array( 'sz' => strlen( $cont ), 'szGz' => strlen( gzencode( $cont ) ), 'item' => $item );
+				$aInfo[ 'img' ][ 'sz' ] += $ia[ 'sz' ];
+				unset( $cont );
+
+				$aInfo[ 'img' ][ 'a' ][] = $ia;
+
+				$itemCut = $item;
+			}
+
+			$item = HtmlNd::GetNextTreeChild( $docCut, $item );
+			if( $itemCut )
+				$itemCut -> parentNode -> removeChild( $itemCut );
+		}
+
+		$aInfo[ 'img' ][ 'szGz' ] = strlen( gzencode( ( string )$doc -> saveHTML() ) ) - strlen( gzencode( ( string )$docCut -> saveHTML() ) );
+
+		unset( $itemCut, $docCut );
+	}
+
+	{
+		$docCut = clone( $doc );
+		$item = HtmlNd::GetNextTreeChild( $docCut, null );
+		while( $item )
+		{
+			$itemCut = null;
+
+			if( $item -> nodeType == XML_ELEMENT_NODE && $item -> nodeName == 'svg' )
+			{
+				$aInfo[ 'svgInl' ][ 'n' ] += 1;
+
+				$cont = HtmlNd::DeParse( $item );
+				$ia = array( 'sz' => strlen( $cont ), 'szGz' => strlen( gzencode( $cont ) ), 'item' => $item );
+				$aInfo[ 'svgInl' ][ 'sz' ] += $ia[ 'sz' ];
+				unset( $cont );
+
+				$aInfo[ 'svgInl' ][ 'a' ][] = $ia;
+
+				$itemCut = $item;
+			}
+
+			$item = HtmlNd::GetNextTreeChild( $docCut, $item );
+			if( $itemCut )
+				$itemCut -> parentNode -> removeChild( $itemCut );
+		}
+
+		$aInfo[ 'svgInl' ][ 'szGz' ] = strlen( gzencode( ( string )$doc -> saveHTML() ) ) - strlen( gzencode( ( string )$docCut -> saveHTML() ) );
+
+		unset( $itemCut, $docCut );
+	}
+
+	{
+		$docCut = clone( $doc );
+		$item = HtmlNd::GetNextTreeChild( $docCut, null );
+		while( $item )
+		{
+			$itemCut = null;
+
+			if( $item -> nodeType == XML_ELEMENT_NODE && $item -> nodeName == 'script' )
+			{
+				if( !$item -> getAttribute( 'src' ) )
+				{
+					$aInfo[ 'jsInl' ][ 'n' ] += 1;
+
+					$ia = array( 'sz' => strlen( $item -> nodeValue ), 'szGz' => strlen( gzencode( $item -> nodeValue ) ), 'item' => $item );
+					$aInfo[ 'jsInl' ][ 'sz' ] += $ia[ 'sz' ];
+					$aInfo[ 'jsInl' ][ 'a' ][] = $ia;
+
+					$itemCut = $item;
+				}
+			}
+
+			$item = HtmlNd::GetNextTreeChild( $docCut, $item );
+			if( $itemCut )
+				$itemCut -> parentNode -> removeChild( $itemCut );
+		}
+
+		$aInfo[ 'jsInl' ][ 'szGz' ] = strlen( gzencode( ( string )$doc -> saveHTML() ) ) - strlen( gzencode( ( string )$docCut -> saveHTML() ) );
+
+		unset( $itemCut, $docCut );
+	}
+
+	{
+		$docCut = clone( $doc );
+		$item = HtmlNd::GetNextTreeChild( $docCut, null );
+		while( $item )
+		{
+			$itemCut = null;
+
+			if( $item -> nodeType == XML_ELEMENT_NODE && $item -> nodeName == 'style' )
+			{
+				$aInfo[ 'cssInl' ][ 'n' ] += 1;
 
 				$ia = array( 'sz' => strlen( $item -> nodeValue ), 'szGz' => strlen( gzencode( $item -> nodeValue ) ), 'item' => $item );
-				$aInfo[ 'jsInl' ][ 'sz' ] += $ia[ 'sz' ];
-				$aInfo[ 'jsInl' ][ 'szGz' ] += $ia[ 'szGz' ];
+				$aInfo[ 'cssInl' ][ 'sz' ] += $ia[ 'sz' ];
+				$aInfo[ 'cssInl' ][ 'a' ][] = $ia;
 
-				$aInfo[ 'jsInl' ][ 'a' ][] = $ia;
+				$itemCut = $item;
 			}
-		}
-		else if( $item -> nodeName == 'style' )
-		{
-			$aInfo[ 'cssInl' ][ 'n' ] += 1;
 
-			$ia = array( 'sz' => strlen( $item -> nodeValue ), 'szGz' => strlen( gzencode( $item -> nodeValue ) ), 'item' => $item );
-			$aInfo[ 'cssInl' ][ 'sz' ] += $ia[ 'sz' ];
-			$aInfo[ 'cssInl' ][ 'szGz' ] += $ia[ 'szGz' ];
-
-			$aInfo[ 'cssInl' ][ 'a' ][] = $ia;
+			$item = HtmlNd::GetNextTreeChild( $docCut, $item );
+			if( $itemCut )
+				$itemCut -> parentNode -> removeChild( $itemCut );
 		}
+
+		$aInfo[ 'cssInl' ][ 'szGz' ] = strlen( gzencode( ( string )$doc -> saveHTML() ) ) - strlen( gzencode( ( string )$docCut -> saveHTML() ) );
+
+		unset( $itemCut, $docCut );
 	}
 
 	foreach( array( 'img', 'svgInl', 'jsInl', 'cssInl' ) as $fld )

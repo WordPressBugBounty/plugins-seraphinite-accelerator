@@ -1162,7 +1162,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.24' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.29.25' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1231,8 +1231,8 @@ function _CacheVerifyEnvDropin_Norm( $cont )
 
 function _CacheVerifyEnvDropin_NormCmp( $cont )
 {
-	return( $cont );
 
+	return( trim( str_replace( array( "\r" ), array( '' ), $cont ) ) );
 }
 
 function CacheVerifyEnvDropin( &$file, $sett, $verifyEnvDropin = null )
@@ -1549,6 +1549,14 @@ function GetDropinLockedFileContent( $sett, $sLock, $init = true, $bAllMultisite
 	return( $contNew );
 }
 
+function _CacheWriteDropin( $file, $cont )
+{
+	$res = Gen::FileWriteTmpAndReplace( null, $file, $cont );
+	if( $res === false )
+		$res = Gen::FilePutContents( $file, $cont );
+	return( $res );
+}
+
 function CacheInitEnvDropin( $sett, $init = true, $bAllMultisites = false )
 {
 
@@ -1585,7 +1593,7 @@ function CacheInitEnvDropin( $sett, $init = true, $bAllMultisites = false )
 	if( $cont != $contNew )
 	{
 
-		$hr = Gen::HrAccom( $hr, Gen::FileWriteTmpAndReplace( null, $file, $contNew ) !== false ? Gen::S_OK : Gen::E_FAIL );
+		$hr = Gen::HrAccom( $hr, _CacheWriteDropin( $file, $contNew ) !== false ? Gen::S_OK : Gen::E_FAIL );
 		_OpCache_Invalidate( $file );
 	}
 
@@ -1605,7 +1613,7 @@ function CacheInitEnvObjDropin( $settGlob, $init = true )
 	$hr = Gen::S_OK;
 	if( $cont != $contNew )
 	{
-		$hr = Gen::HrAccom( $hr, ( strlen( $contNew ) ? Gen::FilePutContents( $file, $contNew ) : @unlink( $file ) ) !== false ? Gen::S_OK : Gen::E_FAIL );
+		$hr = Gen::HrAccom( $hr, ( strlen( $contNew ) ? _CacheWriteDropin( $file, $contNew ) : @unlink( $file ) ) !== false ? Gen::S_OK : Gen::E_FAIL );
 		_OpCache_Invalidate( $file );
 
 		if( strlen( $contNew ) )

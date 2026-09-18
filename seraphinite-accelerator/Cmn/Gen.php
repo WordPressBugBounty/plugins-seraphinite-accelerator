@@ -3756,6 +3756,10 @@ class Net
 		if( $serverArgs === null )
 			$serverArgs = $_SERVER;
 
+		https:
+		if( isset( $serverArgs[ 'HTTP_CF_CONNECTING_IP' ] ) )
+			return( Gen::SanitizeTextData( stripslashes( ( string )$serverArgs[ 'HTTP_CF_CONNECTING_IP' ] ) ) );
+
 		if( isset( $serverArgs[ 'HTTP_X_REAL_IP' ] ) )
 			return( Gen::SanitizeTextData( stripslashes( ( string )$serverArgs[ 'HTTP_X_REAL_IP' ] ) ) );
 
@@ -4001,7 +4005,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.24';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.25';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

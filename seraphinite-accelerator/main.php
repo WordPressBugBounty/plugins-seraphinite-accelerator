@@ -42,7 +42,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.29.26', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.29.27', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -164,7 +164,7 @@ function _InitCatchDataUpdate( $level )
 
 		if( _CheckUpdatePost_Rtn::$level < 3 && $level >= 3 )
 		{
-			add_action( 'added_post_meta', function( $object_id, $meta_key, $_meta_value ) { _OnPostMetaUpdated( $object_id, $meta_key, $_meta_value ); }, 99999, 3 );
+			add_action( 'added_post_meta', function( $meta_id, $object_id, $meta_key, $_meta_value ) { _OnPostMetaUpdated( $object_id, $meta_key, $_meta_value ); }, 99999, 4 );
 			add_action( 'updated_post_meta', function( $meta_id, $object_id, $meta_key, $_meta_value ) { _OnPostMetaUpdated( $object_id, $meta_key, $_meta_value ); }, 99999, 4 );
 			add_action( 'deleted_post_meta', function( $meta_ids, $object_id, $meta_key, $_meta_value ) { _OnPostMetaUpdated( $object_id, $meta_key, $_meta_value ); }, 99999, 4 );
 
@@ -434,7 +434,14 @@ function _OnPostMetaUpdated( $postId, $metaKey, $metaValue )
 			$exclPattern = substr( $exclPattern, 7 );
 		}
 
-		if( ContProcGetExclStatus_KeyValMatch( $exclPattern, ( string )$metaKey, '', '' ) )
+		$bVal = false;
+		if( Gen::StrStartsWith( $exclPattern, 'v:' ) )
+		{
+			$bVal = true;
+			$exclPattern = substr( $exclPattern, 2 );
+		}
+
+		if( ContProcGetExclStatus_KeyValMatch( $exclPattern, ( string )$metaKey, $bVal ? $metaValue : '', $bVal ? '=' : '' ) )
 		{
 			if( $tmSch !== null )
 				$seraph_accel_g_postUpdateSche[ $postId ][ 'meta' ][ $metaKey ] = $tmSch;
@@ -1291,7 +1298,7 @@ function _OnUpdateGeoDb_Mm_Finish()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.26' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.27' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1537,7 +1544,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.29.26' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.29.27' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';

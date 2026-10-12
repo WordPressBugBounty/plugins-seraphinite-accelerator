@@ -40,6 +40,7 @@ class Gen
 	const E_BUSY									= 0x800700AA;
 	const E_ERRORINAPP								= 0x800401F7;
 	const E_CONTEXT_EXPIRED							= 0x8007078B;
+	const E_NOT_ENOUGH_QUOTA						= 0x80070718;
 
 	const SevInfo					= 0;
 	const SevSucc					= 1;
@@ -357,7 +358,7 @@ class Gen
 		return( $cached_salts[ $scheme ] );
 	}
 
-	static function StrEncode( $str, $type = null )
+	static function StrEncode( $str, $type = null, $salt = null )
 	{
 		if( empty( $str ) || !is_string( $str ) )
 			return( '' );
@@ -376,29 +377,19 @@ class Gen
 		switch( $type )
 		{
 		case self::CRYPT_METHOD_OPENSSL:
-			if( !function_exists( 'openssl_encrypt' ) || !function_exists( 'wp_salt' ) )
+			if( !function_exists( 'wp_salt' ) )
 				return( '' );
 
-			$key = openssl_digest( self::_StrEncDecSalt( 'own' ), 'SHA256', true );
-
-			$ivSize = ( function_exists( 'openssl_cipher_iv_length' ) && function_exists( 'openssl_random_pseudo_bytes' ) ) ? openssl_cipher_iv_length( 'AES-256-CBC' ) : null;
-			$iv = null;
-			if( $ivSize )
-				$iv = openssl_random_pseudo_bytes( $ivSize );
-
-			$str = openssl_encrypt( $str, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv );
-			if( $str === false )
+			$str = Gen::OpenSSLEncode( $str, $salt ? $salt : self::_StrEncDecSalt( 'own' ) );
+			if( $str === '' )
 				return( '' );
-
-			if( $ivSize )
-				$str = $iv . $str;
 			break;
 
 		case self::CRYPT_METHOD_MCRYPT:
 			if( !function_exists( 'mcrypt_encrypt' ) || !function_exists( 'wp_salt' ) )
 				return( '' );
 
-			$key = md5( self::_StrEncDecSalt( 'own' ), true );
+			$key = md5( $salt ? $salt : self::_StrEncDecSalt( 'own' ), true );
 			$str = @call_user_func( 'mcrypt_encrypt', 'MCRYPT_RIJNDAEL_256', $key, $str, 'MCRYPT_MODE_ECB' );
 			if( $str === false )
 				return( '' );
@@ -408,7 +399,7 @@ class Gen
 			if( !function_exists( 'wp_salt' ) )
 				return( '' );
 
-			$str = self::XorData( $str, self::_StrEncDecSalt( 'own' ) );
+			$str = self::XorData( $str, $salt ? $salt : self::_StrEncDecSalt( 'own' ) );
 			break;
 
 		default:
@@ -420,7 +411,7 @@ class Gen
 		return( $str );
 	}
 
-	static function StrDecode( $str )
+	static function StrDecode( $str, $salt = null )
 	{
 		if( empty( $str ) || !is_string( $str ) )
 			return( '' );
@@ -444,24 +435,10 @@ class Gen
 		case 'os':
 		case 'os2':
 		case self::CRYPT_METHOD_OPENSSL:
-			if( !function_exists( 'openssl_decrypt' ) || !function_exists( 'wp_salt' ) )
+			if( !function_exists( 'wp_salt' ) )
 				return( '' );
 
-			$key = openssl_digest( self::_StrEncDecSalt( $type === 'os' ? 'auth' : ( $type === 'os2' ? 'perm_storage' : 'own' ) ), 'SHA256', true );
-
-			$ivSize = ( function_exists( 'openssl_cipher_iv_length' ) && function_exists( 'openssl_random_pseudo_bytes' ) ) ? openssl_cipher_iv_length( 'AES-256-CBC' ) : null;
-			$iv = null;
-			if( $ivSize )
-			{
-				$iv = mb_substr( $str, 0, $ivSize, '8bit' );
-				$str = mb_substr( $str, $ivSize, null, '8bit' );
-			}
-
-			$strD = openssl_decrypt( $str, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv );
-			if( $strD === false )
-				$str = '';
-			else
-				$str = $strD;
+			$str = Gen::OpenSSLDecode( $str, $salt ? $salt : self::_StrEncDecSalt( $type === 'os' ? 'auth' : ( $type === 'os2' ? 'perm_storage' : 'own' ) ) );
 			break;
 
 		case 'mc':
@@ -470,7 +447,7 @@ class Gen
 			if( !function_exists( 'mcrypt_decrypt' ) || !function_exists( 'wp_salt' ) )
 				return( '' );
 
-			$key = md5( self::_StrEncDecSalt( $type === 'mc' ? 'auth' : ( $type === 'mc2' ? 'perm_storage' : 'own' ) ), true );
+			$key = md5( $salt ? $salt : self::_StrEncDecSalt( $type === 'mc' ? 'auth' : ( $type === 'mc2' ? 'perm_storage' : 'own' ) ), true );
 			$str = @call_user_func( 'mcrypt_decrypt', 'MCRYPT_RIJNDAEL_256', $key, $str, 'MCRYPT_MODE_ECB' );
 			if( $str === false )
 				$str = '';
@@ -482,7 +459,7 @@ class Gen
 			if( !function_exists( 'wp_salt' ) )
 				return( '' );
 
-			$str = self::XorData( $str, self::_StrEncDecSalt( $type === 'x' ? 'auth' : ( $type === 'x2' ? 'perm_storage' : 'own' ) ) );
+			$str = self::XorData( $str, $salt ? $salt : self::_StrEncDecSalt( $type === 'x' ? 'auth' : ( $type === 'x2' ? 'perm_storage' : 'own' ) ) );
 			break;
 
 		default:
@@ -505,6 +482,50 @@ class Gen
 		}
 
 		return( $res );
+	}
+
+	static function OpenSSLEncode( $data, $key )
+	{
+		if( !function_exists( 'openssl_encrypt' ) )
+			return( '' );
+
+		$key = openssl_digest( $key, 'SHA256', true );
+
+		$ivSize = ( function_exists( 'openssl_cipher_iv_length' ) && function_exists( 'openssl_random_pseudo_bytes' ) ) ? openssl_cipher_iv_length( 'AES-256-CBC' ) : null;
+		$iv = null;
+		if( $ivSize )
+			$iv = openssl_random_pseudo_bytes( $ivSize );
+
+		$data = openssl_encrypt( $data, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv );
+		if( $data === false )
+			return( '' );
+
+		if( $ivSize )
+			$data = $iv . $data;
+		return( $data );
+	}
+
+	static function OpenSSLDecode( $data, $key )
+	{
+		if( !function_exists( 'openssl_decrypt' ) )
+			return( '' );
+
+		$key = openssl_digest( $key, 'SHA256', true );
+
+		$ivSize = ( function_exists( 'openssl_cipher_iv_length' ) && function_exists( 'openssl_random_pseudo_bytes' ) ) ? openssl_cipher_iv_length( 'AES-256-CBC' ) : null;
+		$iv = null;
+		if( $ivSize )
+		{
+			$iv = mb_substr( $data, 0, $ivSize, '8bit' );
+			$data = mb_substr( $data, $ivSize, null, '8bit' );
+		}
+
+		$dataD = openssl_decrypt( $data, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv );
+		if( $dataD === false )
+			$data = '';
+		else
+			$data = $dataD;
+		return( $data );
 	}
 
 	static function XorData( $data, $key )
@@ -3539,6 +3560,7 @@ class Net
 	const E_HTTP_STATUS_END							= 0x400;
 
 	const E_HTTP_STATUS_400							= 0x80190290;
+	const E_HTTP_STATUS_402							= 0x80190292;
 	const E_HTTP_STATUS_403							= 0x80190293;
 	const E_HTTP_STATUS_404							= 0x80190294;
 
@@ -4005,7 +4027,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.27';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.28';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

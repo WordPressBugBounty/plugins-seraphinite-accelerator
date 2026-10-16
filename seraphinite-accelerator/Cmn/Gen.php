@@ -4027,7 +4027,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.28';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.29.29';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -6742,6 +6742,8 @@ class Wp
 
 	static function GetLocale()
 	{
+		if( is_admin() && !defined( 'SECURE_AUTH_COOKIE' ) )
+			return( get_locale() );
 		return( Gen::DoesFuncExist( 'determine_locale' ) ? determine_locale() : ( is_admin() ? get_user_locale() : get_locale() ) );
 	}
 

@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 7.1
-Stable tag: 2.29.29
+Stable tag: 2.30
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -164,6 +164,20 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 
 == Changelog ==
 
+= 2.30 =
+
+Improvements:
+
+* Absolute paths for partial content.
+* Adding custom headers to cached pages.
+* Auto-update cache for Redirection plugin.
+* Operate: selecting current language of WMPL.
+* Updating cache of particular language if PolyLang is used.
+
+Fixes:
+
+* Styles in 'template' tags are processed.
+
 = 2.29.29 =
 
 Fixes:
@@ -228,7 +242,7 @@ Fixes:
 
 Improvements:
 
-* Dropping server/cloud cache immediately after post changing if lazy revalidation id disabled.
+* Dropping server/cloud cache immediately after post changing if lazy revalidation is disabled.
 * Independence of temporary cache from lazy revalidation.
 
 = 2.29.21 =

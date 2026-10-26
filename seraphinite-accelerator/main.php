@@ -42,7 +42,7 @@ function RunOpt( $op = 0, $push = true )
 
 function _AddMenus( $accepted = false )
 {
-	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.29.29', __FILE__ ) );
+	add_menu_page( Plugin::GetPluginString( 'TitleLong' ), Plugin::GetNavMenuTitle(), 'manage_options', 'seraph_accel_manage',																		$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent', Plugin::FileUri( 'icon.png?v=2.30', __FILE__ ) );
 	add_submenu_page( 'seraph_accel_manage', esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), esc_html_x( 'Title', 'admin.Manage', 'seraphinite-accelerator' ), 'manage_options', 'seraph_accel_manage',	$accepted ? 'seraph_accel\\_ManagePage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 	add_submenu_page( 'seraph_accel_manage', Wp::GetLocString( 'Settings' ), Wp::GetLocString( 'Settings' ), 'manage_options', 'seraph_accel_settings',										$accepted ? 'seraph_accel\\_SettingsPage' : 'seraph_accel\\Plugin::OutputNotAcceptedPageContent' );
 }
@@ -169,6 +169,14 @@ function _InitCatchDataUpdate( $level )
 			add_action( 'deleted_post_meta', function( $meta_ids, $object_id, $meta_key, $_meta_value ) { _OnPostMetaUpdated( $object_id, $meta_key, $_meta_value ); }, 99999, 4 );
 
 			add_filter( 'pre_update_option_permalink-manager-uris', function( $value, $old_value, $option ) { _OnOptionUpdated_PermalinkManagerUris( $option, $value, $old_value ); return( $value ); }, 99999, 3 );
+
+			add_action( 'redirection_redirect_updated',
+				function( $id, $redirect )
+				{
+					if( $redirect && !$redirect -> is_regex() )
+						_OnUpdated_Redirection( $redirect -> get_url() );
+				}
+			, 99999, 2 );
 		}
 	}
 
@@ -409,6 +417,14 @@ function _OnOptionUpdated_PermalinkManagerUris( $option, $value, $valueOld )
 	}
 
 	$permalink_manager_uris = $permalink_manager_uris_prev;
+}
+
+function _OnUpdated_Redirection( $url )
+{
+	global $seraph_accel_g_aDelUrls;
+
+	$seraph_accel_g_aDelUrls[ $url ] = array( 'reason' => 'redirection', 'action' => 'updated' );
+
 }
 
 function _OnPostMetaUpdated( $postId, $metaKey, $metaValue )
@@ -704,7 +720,7 @@ function _OnCheckUpdatePost()
 			{
 				foreach( $seraph_accel_g_aDelUrls as $url => $aU )
 					if( count( $aU ) > 1 )
-						LogWrite( 'Automatic deleting due to URL was changed ' . json_encode( $aU ) . ', old URL: ' . $url, Ui::MsgInfo, 'Cache update' );
+						LogWrite( 'Automatic deleting due to URL was changed ' . json_encode( $aU ) . ', URL: ' . $url, Ui::MsgInfo, 'Cache update' );
 			}
 
 			CacheOpUrls( false, $aUrl, 2, 5, false );
@@ -1298,7 +1314,7 @@ function _OnUpdateGeoDb_Mm_Finish()
 function _ManagePage()
 {
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.29.29' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.30' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -1544,7 +1560,7 @@ function GetHostingBannerContent()
 {
 	$rmtCfg = PluginRmtCfg::Get();
 
-	$urlLogoImg = add_query_arg( array( 'v' => '2.29.29' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
+	$urlLogoImg = add_query_arg( array( 'v' => '2.30' ), Plugin::FileUri( 'Images/hosting-icon-banner.svg', __FILE__ ) );
 	$urlMoreInfo = Plugin::RmtCfgFld_GetLoc( $rmtCfg, 'Links.UrlHostingInfo' );
 
 	$res = '';
@@ -2208,7 +2224,11 @@ function GetLangsList( &$aLangsSel )
 
 			foreach( Gen::GetArrField( $sitepress -> get_languages( false, true ), '', array() ) as $lang => $langInfo )
 				$aLangs[ $lang ] = array( 'name' => $langInfo[ 'display_name' ] );
+
 			$aLangsSel = array();
+			$langCur = $sitepress -> get_current_language();
+			if( $langCur )
+			    $aLangsSel[] = $langCur;
 		}
 		catch( \Exception $e )
 		{
@@ -2225,8 +2245,30 @@ function GetLangsList( &$aLangsSel )
 
 			foreach( Gen::GetArrField( $oTrp -> get_component( 'settings' ) -> get_settings(), array( 'publish-languages' ), array() ) as $lang )
 				$aLangs[ $lang ] = array( 'name' => $lang );
+
 			$aLangsSel = array_keys( $aLangs );
 			$aLangsSel[] = 'ALL';
+		}
+		catch( \Exception $e )
+		{
+		}
+	}
+	else
+
+	if( Gen::DoesFuncExist( 'pll_languages_list' ) )
+	{
+		try
+		{
+			$lsN = pll_languages_list( array( 'fields' => 'name' ) );
+			$ls = pll_languages_list();
+			foreach( $ls as $li => $l )
+				$aLangs[ $l ] = array( 'name' => $lsN[ $li ] );
+
+			$aLangsSel = array();
+
+			$langCur = pll_current_language();
+			if( $langCur )
+			    $aLangsSel[] = $langCur;
 		}
 		catch( \Exception $e )
 		{

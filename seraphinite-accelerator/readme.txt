@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.1
 Requires at least: 4.5
 Tested up to: 7.1
-Stable tag: 2.30
+Stable tag: 2.30.1
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -163,6 +163,17 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.30.1 =
+
+Improvements:
+
+* Fresh parts cleanup exclusions.
+
+Fixes:
+
+* Error of writing drop-in can be shown in optimization process.
+* Redirect while page optimizing.
 
 = 2.30 =
 

@@ -345,8 +345,9 @@ function _Process( $sites )
 	add_filter( 'wp_redirect_status',
 		function( $status, $location )
 		{
+
 			global $seraph_accel_g_sRedirLocation;
-			$seraph_accel_g_sRedirLocation = $location;
+			$seraph_accel_g_sRedirLocation = ProcessQueueItemCtx::ClearUrlProcessingArgs( $location, true );
 			return( $status );
 		}
 	, 99999, 2 );

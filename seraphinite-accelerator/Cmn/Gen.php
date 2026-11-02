@@ -1892,9 +1892,17 @@ class Gen
 		return( $g_nCpu = false );
 	}
 
+	static function LastErrDsc_Skip( $v )
+	{
+		$vPrev = self::$_lastErrDscSkip;
+		self::$_lastErrDscSkip = $v;
+		return( $vPrev );
+	}
+
 	static function LastErrDsc_Set( $txt )
 	{
-		self::$_lastErrDsc = $txt;
+		if( !self::$_lastErrDscSkip )
+			self::$_lastErrDsc = $txt;
 	}
 
 	static function LastErrDsc_Get()
@@ -2326,6 +2334,7 @@ class Gen
 		return( explode( $separator, $string, $limit ) );
 	}
 
+	static private $_lastErrDscSkip;
 	static private $_lastErrDsc = null;
 	static private $_fnGetTmpDir = null;
 }
@@ -4027,7 +4036,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.30';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.30.1';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

@@ -1162,7 +1162,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.30' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.30.1' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{
@@ -1551,9 +1551,13 @@ function GetDropinLockedFileContent( $sett, $sLock, $init = true, $bAllMultisite
 
 function _CacheWriteDropin( $file, $cont )
 {
+	$vLastErrDscSkip = Gen::LastErrDsc_Skip( true );
+
 	$res = Gen::FileWriteTmpAndReplace( null, $file, $cont );
 	if( $res === false )
 		$res = Gen::FilePutContents( $file, $cont );
+
+	Gen::LastErrDsc_Skip( $vLastErrDscSkip );
 	return( $res );
 }
 

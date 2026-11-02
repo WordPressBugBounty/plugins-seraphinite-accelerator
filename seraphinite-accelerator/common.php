@@ -12,7 +12,7 @@ require_once( __DIR__ . '/Cmn/Db.php' );
 require_once( __DIR__ . '/Cmn/Img.php' );
 require_once( __DIR__ . '/Cmn/Plugin.php' );
 
-const PLUGIN_SETT_VER								= 203;
+const PLUGIN_SETT_VER								= 204;
 const PLUGIN_DATA_VER								= 1;
 const PLUGIN_EULA_VER								= 1;
 const QUEUE_DB_VER									= 4;
@@ -1997,6 +1997,9 @@ function OnOptGetDef_Sett()
 				'smoothAppear' => true,
 				'items' => array(
 
+				),
+				'itemsExclCln' => array(
+					'.//style[starts-with(@id,"loop-dynamic-")]',
 				),
 			),
 
@@ -4364,7 +4367,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.30 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.30.1 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5186,7 +5189,7 @@ class ProcessQueueItemCtx
 
 		if( $this -> urlRedir && $this -> urlRedir != ($this -> data[ 'u' ]??null) )
 		{
-			$this -> urlRedir = remove_query_arg( array( 'seraph_accel_prep' ), $this -> urlRedir );
+			$this -> urlRedir = ProcessQueueItemCtx::ClearUrlProcessingArgs( $this -> urlRedir, true );
 			if( Gen::StrStartsWith( $this -> urlRedir, '//' ) )
 			{
 				GetUrlWithoutProtoEx( $this -> url, $proto );
@@ -5333,6 +5336,26 @@ class ProcessQueueItemCtx
 		PluginFileValues::SetEx( PluginFileValues::GetDirVar( '' ), 'pelt', ( int )$this -> tmFinish );
 
 		CachePushQueueProcessor( true, $this -> immediatelyPushQueue, $this -> hr != Gen::S_OK && Gen::HrSucc( $this -> hr ) );
+
+	}
+
+	static function ClearUrlProcessingArgs( $url, $htmlDecode = false )
+	{
+		if( $htmlDecode )
+			$url = str_replace( '&#038;', '&', $url );
+
+		$args = Net::UrlExtractArgs( $url );
+
+		unset( $args[ 'seraph_accel_prep' ] );
+
+		if( isset( $args[ 'seraph_accel_at' ] ) )
+		{
+			unset( $args[ 'seraph_accel_at' ] );
+			unset( $args[ 'rt' ] );
+			unset( $args[ 'nonce' ] );
+		}
+
+		return( Net::UrlAddArgsEx( $url, $args ) );
 
 	}
 
@@ -5954,7 +5977,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.30';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.30.1';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -6479,7 +6502,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.30');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.30.1');
 		$headers[ 'User-Agent' ] = str_ireplace( 'Seraph-Accel-Agent/', 'Seraph-Accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 		unset( $headers[ 'X-Seraph-Accel-Postpone-User-Agent' ] );
 

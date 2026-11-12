@@ -4036,7 +4036,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.30.2';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.30.3';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -5697,6 +5697,13 @@ class Wp
 		}
 
 		return( $p );
+	}
+
+	static function MakeErrRes( $code, $message = '', $data = '' )
+	{
+		if( class_exists( '\\WP_Error' ) )
+			return( new \WP_Error( $code, $message, $data ) );
+		return( new AnyObj( array( 'code' => $code, 'message' => $message, 'data' => $data ) ) );
 	}
 
 	static function GetAbsPathFromUri( $uri )

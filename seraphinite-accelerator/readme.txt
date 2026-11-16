@@ -2,10 +2,10 @@
 Contributors: seraphinitesoft
 Donate link: https://www.s-sols.com/products/wordpress/accelerator#offer
 Tags: optimize,pagespeed,performance,speed up,cache
-Requires PHP: 7.1
+Requires PHP: 7.2
 Requires at least: 4.5
 Tested up to: 7.1
-Stable tag: 2.30.3
+Stable tag: 2.31
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -78,7 +78,7 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 **Requirements**
 
 *	[WordPress](https://wordpress.org/download) 4.5 or higher.
-*	PHP 7.1 or higher.
+*	PHP 7.2 or higher.
 *	Browser (Google Chrome, Firefox, IE).
 
 **Compatibility**
@@ -163,6 +163,18 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.31 =
+
+Improvements:
+
+* Exclusions for lazy HTML.
+* Filter nested elements in fresh parts.
+* Log viewer.
+
+Fixes:
+
+* Raster images are interpreted as SVG if they contain SVG tags.
 
 = 2.30.3 =
 

@@ -66,7 +66,7 @@ function _ProcessOutHdrTrace( $sett, $bHdr, $bLog, $state, $data = null, $dscFil
 		}
 
 	if( $bHdr )
-		@header( 'X-Seraph-Accel-Cache: 2.30.3;' . $debugInfo );
+		@header( 'X-Seraph-Accel-Cache: 2.31;' . $debugInfo );
 
 	if( $bLog )
 	{
@@ -930,10 +930,16 @@ function _CbContentFinishEx( $content, $urlCur = null, $serverArgs = null )
 		if( !$seraph_accel_g_noFo && $skipStatus !== 'notChanged' )
 			_ProcessOutHdrTrace( $sett, true, true, 'skipped', array( 'reason' => $skipStatus ) );
 
-		CacheDscWriteCancel( $skipStatus !== 'aborted' && $skipStatus !== 'engineRemoteQuotaReached' && $skipStatus !== 'engineRemoteBusy' && !Gen::StrStartsWith( $skipStatus, 'lrnNeed' ), $skipStatus === 'notChanged', $skipStatus !== 'engineRemoteQuotaReached' && $skipStatus !== 'engineRemoteBusy' );
+		{
+			$dscDel = $skipStatus !== 'aborted' && $skipStatus !== 'engineRemoteQuotaReached' && $skipStatus !== 'engineRemoteBusy' && !Gen::StrStartsWith( $skipStatus, 'lrnNeed' );
 
-		if( $skipStatus !== 'aborted' && !Gen::StrStartsWith( $skipStatus, 'lrnNeed' ) && $skipStatus !== 'notChanged' )
-			CacheAdditional_UpdateCurUrl( $settCache, false, $urlCur );
+			CacheDscWriteCancel( $dscDel, $skipStatus === 'notChanged', $skipStatus !== 'engineRemoteQuotaReached' && $skipStatus !== 'engineRemoteBusy' );
+
+			if( $dscDel && $skipStatus !== 'notChanged' )
+				CacheAdditional_UpdateCurUrl( $settCache, false, $urlCur );
+
+			unset( $dscDel );
+		}
 
 		if( $seraph_accel_g_prepPrms !== null )
 			ProcessCtlData_Update( ($seraph_accel_g_prepPrms[ 'pc' ]??null), array_merge( array( 'finish' => true, 'skip' => $skipStatus ), ($sett[ 'debugInfo' ]??null) ? array( 'infos' => array( LocId::Pack( 'SrvArgs' ) => PackKvArrInfo( $serverArgs ) ) ) : array() ), false, false );
@@ -1000,7 +1006,7 @@ function GetCacheViewId( $ctxCache, $settCache, $userAgent, $path, $pathOrig, &$
 	if( ($settCache[ 'normAgent' ]??null) )
 	{
 		$_SERVER[ 'SERAPH_ACCEL_ORIG_USER_AGENT' ] = ($_SERVER[ 'HTTP_USER_AGENT' ]??'');
-		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.30.3';
+		$_SERVER[ 'HTTP_USER_AGENT' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.31';
 	}
 
 	if( ($settCache[ 'views' ]??null) )

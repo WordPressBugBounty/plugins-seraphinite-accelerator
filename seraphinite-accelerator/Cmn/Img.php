@@ -82,7 +82,7 @@ class Img
 
 		$infoEx = $ext ? array() : null;
 
-		if( @preg_match( '@^(?:<\\?xml[^>]*>\\s*)?<svg[\\s>]@i', $data ) )
+		if( @preg_match( '@^\\s*(?:<\\?xml[^>]*>\\s*)?(?:<!--[\\s\\S]*-->\\s*)*(?:<!DOCTYPE[^>]*>\\s*)?(?:<!--[\\s\\S]*-->\\s*)*<svg[\\s>]@iS', substr( $data, 0, 0x1000 ) ) )
 		{
 			$info = array( 'mime' => 'image/svg+xml', 'cx' => null, 'cy' => null );
 

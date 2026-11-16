@@ -6,14 +6,14 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.30.3)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.30.3\n"
+"#-#-#-#-#  cmn.admin.pot (seraphinite-accelerator 2.31)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.31\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.30.3)  #-#-#-#-#\n"
-"Project-Id-Version: seraphinite-accelerator 2.30.3\n"
+"#-#-#-#-#  main.admin.pot (seraphinite-accelerator 2.31)  #-#-#-#-#\n"
+"Project-Id-Version: seraphinite-accelerator 2.31\n"
 "Report-Msgid-Bugs-To: support@s-sols.com\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -278,6 +278,12 @@ msgstr ""
 #, php-format
 msgctxt "admin.Common_Msg"
 msgid "FileMakeExecErr_%1$s"
+msgstr ""
+
+# Syntax error in '%1$s'.
+#, php-format
+msgctxt "admin.Common_Msg"
+msgid "SyntaxErr:%1$s"
 msgstr ""
 
 # Can't download '%1$s'
@@ -1112,6 +1118,10 @@ msgstr ""
 # delete server's
 msgctxt "admin.Settings_Cache_Revalidate"
 msgid "OpSrvDelCmbItem"
+msgstr ""
+
+msgctxt "admin.Settings_LogView"
+msgid "Title"
 msgstr ""
 
 # General
@@ -2312,6 +2322,7 @@ msgctxt "admin.Settings_Html_Lazy"
 msgid "ItemsPhlr"
 msgstr ""
 
+# Cleanup exclusions:
 msgctxt "admin.Settings_Html_Fresh"
 msgid "ExclsClnLbl"
 msgstr ""
@@ -4031,10 +4042,10 @@ msgctxt "admin.Settings_Advanced_Debug"
 msgid "EnableInfoChk"
 msgstr ""
 
-# Enable logging (%1$sopen%2$s, %3$sclear%4$s)
+# Enable logging (%1$sview%2$s, %3$sopen%4$s, %5$sclear%6$s)
 #, php-format
 msgctxt "admin.Settings_Advanced_Debug"
-msgid "LogChk_%1$s%2$s%3$s%4$s"
+msgid "LogChk_%1$s%2$s%3$s%4$s%5$s%6$s"
 msgstr ""
 
 # Cache updating

@@ -133,6 +133,50 @@ function _SettCacheOps( $sett, $fldIdEx, $ns, $bSrv = false )
 function _SettingsPage()
 {
 
+	if( isset( $_REQUEST[ 'viewlog' ] ) )
+	{
+		$contLog = '';
+		$fileLogId = '';
+		$fileLogPrevId = null;
+		if( current_user_can( 'manage_options' ) )
+		{
+			$fileLogId = Gen::SanitizeId( $_REQUEST[ 'viewlog' ] );
+			$contLog = Gen::LogGetCont( GetCacheDir() . LogGetRelativeFile( $fileLogId ), $fileLogPrevId );
+			$fileLogPrevId = Gen::LogFileGetChunkId( $fileLogPrevId );
+		}
+
+		$aFileLogNextId = isset( $_REQUEST[ 'logsnext' ] ) ? array_map( function( $v ) { return( Gen::SanitizeId( $v ) ); }, explode( ',', $_REQUEST[ 'logsnext' ] ) ) : array();
+
+		Ui::PostBoxes_MetaboxAdd( 'logView', esc_html_x( 'Title', 'admin.Settings_LogView', 'seraphinite-accelerator' ), false,
+			function( $callbacks_args, $box )
+			{
+				extract( $box[ 'args' ] );
+				$o = Ui::TextArea( null, $contLog, array( 'wrap' => 'off', 'class' => 'code', 'style' => array( 'width' => '100%', 'min-height' => '17em', 'max-height' => '100em' ) ) );
+				echo( $o );
+			}
+			, get_defined_vars(), 'body', '', null
+		);
+
+		Ui::PostBoxes( Plugin::GetSettingsTitle(), array( 'body' => array( 'nosort' => true ), 'normal' => array() ),
+			array(
+				'bodyContentEnd' =>
+				function( $callbacks_args )
+					{
+						extract( $callbacks_args );
+
+						$aFileLogNextIdForPrev = $aFileLogNextId; array_splice( $aFileLogNextIdForPrev, 0, 0, array( $fileLogId ) );
+						echo( Ui::Button( Wp::GetLocString( array( 'WizPrevBtn', 'admin.Common_Settings' ), null, 'seraphinite-accelerator' ), false, null, null, 'button', array( 'class' => 'wizPrev ctlSpaceAfter ctlSpaceVAfter ctlVaMiddle', 'style' => array( 'min-width' => '7em' ), 'disabled' => !$fileLogPrevId, 'onclick' => 'location.href="' . Net::UrlAddArgs( $_SERVER[ 'REQUEST_URI' ], array( 'viewlog' => $fileLogPrevId, 'logsnext' => implode( ',', $aFileLogNextIdForPrev ) ) ) . '"' ) ) );
+
+						$aFileLogNextIdForNext = $aFileLogNextId; array_splice( $aFileLogNextIdForNext, 0, 1 );
+						echo( Ui::Button( Wp::GetLocString( array( 'WizNextBtn', 'admin.Common_Settings' ), null, 'seraphinite-accelerator' ), false, null, null, 'button', array( 'class' => 'wizNext ctlSpaceAfter ctlSpaceVAfter ctlVaMiddle', 'style' => array( 'min-width' => '7em' ), 'disabled' => !$aFileLogNextId, 'onclick' => 'location.href="' . Net::UrlAddArgs( $_SERVER[ 'REQUEST_URI' ], array( 'viewlog' => ($aFileLogNextId[ 0 ]??''), 'logsnext' => $aFileLogNextIdForNext ? implode( ',', $aFileLogNextIdForNext ) : null ) ) . '"' ) ) );
+					}
+			),
+			get_defined_vars()
+		);
+
+		return;
+	}
+
 	if( version_compare( PHP_VERSION, '8.2' ) >= 0 )
 	{
 		@touch( __DIR__ . '/options.php' );
@@ -141,7 +185,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.30.3' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.31' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 
@@ -6078,7 +6122,7 @@ function _SettingsPage_Advanced( $callbacks_args, $box )
 					$o .= ( Ui::TagOpen( 'td' ) );
 					{
 						$fldId = 'log';
-						$o .= ( Ui::CheckBox( vsprintf( esc_html_x( 'LogChk_%1$s%2$s%3$s%4$s', 'admin.Settings_Advanced_Debug', 'seraphinite-accelerator' ), array_merge( Ui::Link( array( '', '' ), Wp::GetSiteWpRootUrl( ltrim( substr( GetCacheDir(), strlen( $siteRootDataPath ) ), "/\\" ) . LogGetRelativeFile() ), true ), Ui::Link( array( '', '' ), '#', false, null, array( 'onclick' => 'if(confirm("?"))seraph_accel.Settings._int.OnLogClear(this);return false' ) ) ) ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
+						$o .= ( Ui::CheckBox( vsprintf( esc_html_x( 'LogChk_%1$s%2$s%3$s%4$s%5$s%6$s', 'admin.Settings_Advanced_Debug', 'seraphinite-accelerator' ), array_merge( Ui::Link( array( '', '' ), Net::UrlAddArgs( $_SERVER[ 'REQUEST_URI' ], array( 'viewlog' => '' ) ), true ), Ui::Link( array( '', '' ), Wp::GetSiteWpRootUrl( ltrim( substr( GetCacheDir(), strlen( $siteRootDataPath ) ), "/\\" ) . LogGetRelativeFile() ), true ), Ui::Link( array( '', '' ), '#', false, null, array( 'onclick' => 'if(confirm("?"))seraph_accel.Settings._int.OnLogClear(this);return false' ) ) ) ), 'seraph_accel/' . $fldId, Gen::GetArrField( $sett, $fldId, false, '/' ), true ) );
 					}
 					$o .= ( Ui::TagClose( 'td' ) );
 				}

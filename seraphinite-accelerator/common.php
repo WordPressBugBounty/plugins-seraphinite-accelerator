@@ -2000,6 +2000,7 @@ function OnOptGetDef_Sett()
 				),
 				'itemsExclCln' => array(
 					'.//style[starts-with(@id,"loop-dynamic-")]',
+					'.//*[contains(@class,"jet-listing-dynamic")]//style',
 				),
 			),
 
@@ -4367,7 +4368,7 @@ function ContProcIsCompatView( $settCache, $userAgent  )
 
 function GetViewTypeUserAgent( $viewsDeviceGrp )
 {
-	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.30.3 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
+	return( 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.31 ' . ucwords( implode( ' ', Gen::GetArrField( $viewsDeviceGrp, array( 'agents' ), array() ) ) ) );
 }
 
 function CorrectRequestScheme( &$serverArgs, $target = null )
@@ -5977,7 +5978,7 @@ function GetExtContents( &$ctxProcess, $url, &$contMimeType = null, $userAgentCm
 
 	$args = array( 'sslverify' => false, 'timeout' => $timeout, 'headers' => array() );
 	if( $userAgentCmn )
-		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.30.3';
+		$args[ 'headers' ][ 'User-Agent' ] = 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.31';
 
 	if( $serverId = Net::UrlParse( $url ) )
 	{
@@ -6502,7 +6503,7 @@ function CacheAdditional_WarmupUrl( $settCache, $url, $aHdrs, $cbIsAborted = nul
 	foreach( $aHdrs as $hdrsId => $headers )
 	{
 		if( !isset( $headers[ 'User-Agent' ] ) )
-			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.30.3');
+			$headers[ 'User-Agent' ] = ($headers[ 'X-Seraph-Accel-Postpone-User-Agent' ]??'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.31');
 		$headers[ 'User-Agent' ] = str_ireplace( 'Seraph-Accel-Agent/', 'Seraph-Accel-Agent-WarmUp/', $headers[ 'User-Agent' ] );
 		unset( $headers[ 'X-Seraph-Accel-Postpone-User-Agent' ] );
 
@@ -6683,12 +6684,12 @@ function BatCache_DontProcessCurRequest( $bForce = false )
 
 }
 
-function LogGetRelativeFile()
+function LogGetRelativeFile( $idPrev = '' )
 {
 	static $g_fileRel;
 
 	if( $g_fileRel === null )
-		$g_fileRel = '/logs/log.' . Gen::GetNonce( 'logFileSfx', GetSalt() ) . '.txt';
+		$g_fileRel = '/logs/log.' . Gen::GetNonce( 'logFileSfx', GetSalt() ) . ( $idPrev ? ( '.' . $idPrev ) : '' ) . '.txt';
 
 	return( $g_fileRel );
 }

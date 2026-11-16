@@ -1495,7 +1495,12 @@ class Gen
 	static function ArrSetIntPtrToIdx( array &$array, $i )
 	{
 		reset( $array );
-		for( ; $i > 0; $i-- )
+		Gen::ArrNext( $array, $i );
+	}
+
+	static function ArrNext( array &$array, $n )
+	{
+		for( ; $n > 0; $n-- )
 			next( $array );
 	}
 
@@ -1694,6 +1699,33 @@ class Gen
 			@unlink( $filePrev );
 
 		@file_put_contents( $file, '' );
+	}
+
+	static function LogGetCont( $file, &$filePrev = null )
+	{
+		$cont = Gen::FileGetContents( $file );
+		if( !$cont )
+			return;
+
+		if( !preg_match( '@^Previous:\\s([\\w\\.]+)\\r?\\n\\r?\\n@', $cont, $filePrev ) )
+		{
+			$filePrev = null;
+			return( $cont );
+		}
+
+		$cont = substr( $cont, strlen( $filePrev[ 0 ] ) );
+		$filePrev = $filePrev[ 1 ];
+		return( $cont );
+	}
+
+	static function LogFileGetChunkId( $file )
+	{
+		if( !is_string( $file ) )
+			return( null );
+
+		if( !preg_match( '@^[\\w\\.]+\\.([0-9A-F]{8})\\.\\w+@', Gen::GetFileName( $file ), $m ) )
+			return( '' );
+		return( $m[ 1 ] );
 	}
 
 	static function GetAlignNShift( $val, $size )
@@ -2343,7 +2375,7 @@ class LocId
 {
 	static function Pack( $id, $comp = null, $args = null )
 	{
-		$text = "\x01" . $id;
+		$text = "\x01" . str_replace( array( '.', ':' ), array( "\x02", "\x03" ), $id );
 		if( $comp )
 			$text .= '.' . $comp;
 		if( is_array( $args ) )
@@ -2351,10 +2383,10 @@ class LocId
 		return( $text );
 	}
 
-	static function UnPack( $v, $cbIdExpander )
+	static function UnPack( $v, $cbIdExpander = null )
 	{
 		$ctx = new AnyObj();
-		$ctx -> cbIdExpander = $cbIdExpander;
+		$ctx -> cbIdExpander = ($cbIdExpander??function( $v, $comp ) { return( $v ); });
 
 		$ctx -> cb = function( $ctx, $v, $top = false )
 		{
@@ -2388,7 +2420,7 @@ class LocId
 			else
 				$comp = null;
 
-			return( vsprintf( call_user_func( $ctx -> cbIdExpander, $v, $comp ), $args ) );
+			return( vsprintf( call_user_func( $ctx -> cbIdExpander, str_replace( array( "\x02", "\x03" ), array( '.', ':' ), $v ), $comp ), $args ) );
 		};
 
 		return( $ctx -> cb( $v, true ) );
@@ -4036,7 +4068,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.30.3';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.31';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 
@@ -4300,23 +4332,28 @@ class HtmlNd
 		return( HtmlNd::FindUpBy( $nd, function( $nd, $tag ) { return( HtmlNd::IsNodeTag( $nd, $tag ) ); }, $tag ) );
 	}
 
-	static function ChildrenAsArr( $children )
+	static function ChildrenAsArr( $children, $notExistedOnly = false, $childrenIter = false )
 	{
 		$res = array();
-		HtmlNd::ChildrenAddToArr( $res, $children );
+		HtmlNd::ChildrenAddToArr( $res, $children, $notExistedOnly, $childrenIter );
 		return( $res );
 	}
 
-	static function ChildrenAddToArr( array &$res, $children, $notExistedOnly = false )
+	static function ChildrenAddToArr( array &$res, $children, $notExistedOnly = false, $childrenIter = false )
 	{
 		if( !$children )
 			return;
 
-		for( $i = 0; $i < $children -> length; $i++ )
+		if( is_callable( $notExistedOnly ) )
 		{
-			$item = $children -> item( $i );
-			if( !$notExistedOnly || !in_array( $item, $res, true ) )
-				$res[] = $item;
+			foreach( ( $childrenIter ? HtmlNd::ChildrenIter( $children ) : $children ) as $item )
+				$res += array( $notExistedOnly( $item ) => $item );
+		}
+		else
+		{
+			foreach( ( $childrenIter ? HtmlNd::ChildrenIter( $children ) : $children ) as $item )
+				if( !$notExistedOnly || !in_array( $item, $res, true ) )
+					$res[] = $item;
 		}
 	}
 
@@ -4408,7 +4445,7 @@ class HtmlNd
 		return( HtmlNd::GetNextTreeSibling( $ndPrev, $ndTopParent ) );
 	}
 
-	static function GetNextTreeSibling( $ndPrev, $ndTopParent = null )
+	static function GetNextTreeSibling( $ndPrev, $ndTopParent = null, $fnFilter = null, $next = true )
 	{
 		if( !$ndPrev )
 			return( null );
@@ -4418,9 +4455,15 @@ class HtmlNd
 
 		while( $ndPrev )
 		{
-			$nd = $ndPrev -> nextSibling;
+			$nd = $next ? $ndPrev -> nextSibling : $ndPrev -> previousSibling;
 			if( $nd )
-				return( $nd );
+			{
+				if( !$fnFilter || $fnFilter( $nd ) )
+					return( $nd );
+
+				$ndPrev = $nd;
+				continue;
+			}
 
 			$nd = $ndPrev -> parentNode;
 			if( in_array( $nd, $ndTopParent, true ) )
@@ -4894,6 +4937,32 @@ class HtmlNd
 			$res[ 'children' ][] = self::Dump( $children -> item( $i ) );
 
 		return( $res );
+	}
+
+	static function FilterNestedElements( array &$a, $fnNode2Key, $fnNodeElemAccessor = null )
+	{
+		if( count( $a ) < 2 )
+			return;
+
+		if( !$fnNodeElemAccessor )
+		    $fnNodeElemAccessor = function( $v ) { return( $v ); };
+
+		foreach( $a as $k => $v )
+		{
+			$isNested = false;
+
+			for( $ndParent = $fnNodeElemAccessor( $v ) -> parentNode; $ndParent; $ndParent = $ndParent -> parentNode )
+			{
+				if( isset( $a[ $fnNode2Key( $ndParent ) ] ) )
+				{
+					$isNested = true;
+					break;
+				}
+			}
+
+			if( $isNested )
+				unset( $a[ $k ] );
+		}
 	}
 }
 

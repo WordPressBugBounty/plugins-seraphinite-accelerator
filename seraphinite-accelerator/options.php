@@ -151,7 +151,7 @@ function _SettingsPage()
 			function( $callbacks_args, $box )
 			{
 				extract( $box[ 'args' ] );
-				$o = Ui::TextArea( null, $contLog, array( 'wrap' => 'off', 'class' => 'code', 'style' => array( 'width' => '100%', 'min-height' => '17em', 'max-height' => '100em' ) ) );
+				$o = Ui::TextArea( null, Ui::EscHtml( $contLog ), array( 'wrap' => 'off', 'class' => 'code', 'style' => array( 'width' => '100%', 'min-height' => '17em', 'max-height' => '100em' ) ) );
 				echo( $o );
 			}
 			, get_defined_vars(), 'body', '', null
@@ -185,7 +185,7 @@ function _SettingsPage()
 	}
 
 	Plugin::CmnScripts( array( 'Cmn', 'Gen', 'Ui', 'Net', 'AdminUi' ) );
-	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.31' );
+	wp_register_script( Plugin::ScriptId( 'Admin' ), add_query_arg( Plugin::GetFileUrlPackageParams(), Plugin::FileUrl( 'Admin.js', __FILE__ ) ), array_merge( array( 'jquery' ), Plugin::CmnScriptId( array( 'Cmn', 'Gen', 'Ui', 'Net' ) ) ), '2.31.1' );
 	Plugin::Loc_ScriptLoad( Plugin::ScriptId( 'Admin' ) );
 	wp_enqueue_script( Plugin::ScriptId( 'Admin' ) );
 

@@ -687,7 +687,7 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $langId = n
 
 					if( $ctx -> op == 1 )
 					{
-						if( Images_ProcessSrcSizeAlternatives_Cache_Cleanup( $siteDir . '/d', $ctx -> tmCur - $ctx -> timeout, array( $ctx, 'isAborted' ) ) === false )
+						if( $ctx -> timeout > 0 && Images_ProcessSrcSizeAlternatives_Cache_Cleanup( $siteDir . '/d', $ctx -> tmCur - $ctx -> timeout, array( $ctx, 'isAborted' ) ) === false )
 							return( false );
 
 						if( ExtContents_Local_CacheClean( $siteDir, $ctx -> tmCur - $ctx -> timeoutExtObj, $ctx -> tmCur, array( $ctx, 'isAborted' ) ) === false )
@@ -728,7 +728,7 @@ function CacheOp( $op, $priority = 0, $viewId = null, $geoId = null, $langId = n
 					if( ($ctx -> datasDel[ $dataType ][ $dataId ]??null) )
 					{
 						$tmFile = @filemtime( $dataFile );
-						if( $tmFile !== false && $ctx -> tmCur - $tmFile > min( $ctx -> timeout, ( 48 * 60 * 60 ) ) )
+						if( $tmFile !== false && $ctx -> tmCur - $tmFile > ( $ctx -> timeout > 0 ? min( $ctx -> timeout, ( 48 * 60 * 60 ) ) : ( 48 * 60 * 60 ) ) )
 							@unlink( $dataFile );
 					}
 				}
@@ -1162,7 +1162,7 @@ function CacheOpGetViewsHeaders( $settCache, $viewId = null )
 
 	foreach( $viewId === null ? array( 'cmn' ) : $viewId as $viewIdI )
 		if( CacheOpViewsHeadersGetViewId( $viewIdI ) == 'cmn' )
-			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.31' );
+			$res[ $viewIdI ] = array( 'User-Agent' => 'Mozilla/99999.9 AppleWebKit/9999999.99 (KHTML, like Gecko) Chrome/999999.0.9999.99 Safari/9999999.99 Seraph-Accel-Agent/2.31.1' );
 
 	if( ($settCache[ 'views' ]??null) )
 	{

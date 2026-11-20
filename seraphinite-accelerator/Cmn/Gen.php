@@ -2143,7 +2143,8 @@ class Gen
 			if( $fmt[ 'escValNl' ] )
 			{
 				$v = str_replace( array( "\r", "\n" ), array( '\'."\\r".\'', '\'."\\n".\'' ), $v );
-				$v = str_replace( array( '\'\'.', '.\'\'', '\\r"."\\n', '\\n"."\\r' ), array( '', '', '\\r\\n', '\\n\\r' ), $v );
+				$v = preg_replace( array( '@(^|\\.)\'\'\\.@', '@\\.\'\'$@' ), array( '${1}', '' ), $v );
+				$v = Gen::StrReplaceWhileChanging( array( '\\r"."\\r', '\\n"."\\n', '\\r"."\\n', '\\n"."\\r' ), array( '\\r\\r', '\\n\\n', '\\r\\n', '\\n\\r' ), $v );
 			}
 
 			return( $v );
@@ -4068,7 +4069,7 @@ class Net
 		if( !isset( $args[ 'provider' ] ) )
 			$args[ 'provider' ] = 'CURL';
 		if( !isset( $args[ 'user-agent' ] ) )
-			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.31.2';
+			$args[ 'user-agent' ] = 'seraph-accel-Agent/2.31.3';
 		if( !isset( $args[ 'timeout' ] ) )
 			$args[ 'timeout' ] = 5;
 

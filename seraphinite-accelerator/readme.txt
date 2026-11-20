@@ -5,7 +5,7 @@ Tags: optimize,pagespeed,performance,speed up,cache
 Requires PHP: 7.2
 Requires at least: 4.5
 Tested up to: 7.1
-Stable tag: 2.31.2
+Stable tag: 2.31.3
 License: GPLv2 or later (if another license is not provided)
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Privacy policy: https://www.s-sols.com/privacy-policy
@@ -163,6 +163,16 @@ We kindly ask you to [post reviews](https://wordpress.org/support/plugin/seraphi
 17. Settings - Advanced.
 
 == Changelog ==
+
+= 2.31.3 =
+
+Improvements:
+
+* Display drop-ins difference in error only for admin users.
+
+Fixes:
+
+* Variable export as single line with escaped single quote.
 
 = 2.31.2 =
 

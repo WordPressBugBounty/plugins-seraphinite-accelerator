@@ -579,7 +579,7 @@ function _Process( $sites )
 		else
 		{
 
-			$hr = _ProcessOutCachedData( $seraph_accel_g_simpCacheMode === null, null, $settGlob, $sett, $settCache, $dsc, $dscFileTm, $tmCur, $isCip ? 'revalidating' : ( $isCip === false ? 'revalidating-begin' : 'cache' ), $reason, true );
+			$hr = _ProcessOutCachedData( $seraph_accel_g_simpCacheMode === null, null, $settGlob, $sett, $settCache, $dsc, substr( $seraph_accel_g_dscFile, strlen( $cacheRootPath ) ), $dscFileTm, $tmCur, $isCip ? 'revalidating' : ( $isCip === false ? 'revalidating-begin' : 'cache' ), $reason, true );
 			if( Gen::HrFail( $hr ) )
 				return( $hr );
 
